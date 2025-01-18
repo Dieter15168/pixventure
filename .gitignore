@@ -1,0 +1,43 @@
+# General OS and editor files
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Python & Django
+*.pyc
+__pycache__/
+db.sqlite3
+migrations
+*.sql
+.env
+*.env
+*.venv
+venv/
+ENV/
+env/
+
+# Virtual environment configuration files
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Django media (if you choose to track it, though typically it's excluded)
+media/
+
+# Node.js & React
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# React build files
+build/
+dist/
+
+# Cache and temporary files
+.cache/
+*.tmp
