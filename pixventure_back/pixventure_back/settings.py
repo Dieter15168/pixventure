@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'taxonomy',
     'moderation',
     'reports',
+    'memberships',
 ]
 
 MIDDLEWARE = [
