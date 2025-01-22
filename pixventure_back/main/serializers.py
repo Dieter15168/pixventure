@@ -90,7 +90,7 @@ class MediaItemInPostSerializer(serializers.Serializer):
     - item_id
     - id of previous item
     - id of next item
-    - item_url (could be original_file or whatever is needed)
+    - item_url (could be original_file or something else)
     """
     item_id = serializers.IntegerField()
     previous_item_id = serializers.IntegerField(allow_null=True)
