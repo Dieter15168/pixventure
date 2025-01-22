@@ -25,7 +25,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Django media (if you choose to track it, though typically it's excluded)
-media/
+media_files/
 
 # Node.js & React
 node_modules/
