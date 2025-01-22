@@ -49,6 +49,9 @@ class Post(models.Model):
     
     # Featured posts will appear in a special feed on the main page
     is_featured_post = models.BooleanField(default=False)
+    
+    # Blurred posts will have all content blurred for non-paying users
+    is_blurred = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

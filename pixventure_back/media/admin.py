@@ -30,7 +30,7 @@ class MediaItemAdmin(admin.ModelAdmin):
             ),
         }),
         ('Metadata', {
-            'fields': ('width', 'height', 'file_size', 'is_renamed', 'likes_counter', 'created', 'updated'),
+            'fields': ('width', 'height', 'file_size', 'is_blurred', 'is_renamed', 'likes_counter', 'created', 'updated'),
         }),
     )
 

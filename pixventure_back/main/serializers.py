@@ -2,8 +2,8 @@ from rest_framework import serializers
 from posts.models import Post
 from posts.models import PostMedia
 from media.models import MediaItem
-from social.models import Like
 from social.utils import user_has_liked
+from media.utils import get_media_file_for_display
 
 class PostSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True, source='pk')
@@ -39,13 +39,24 @@ class PostSerializer(serializers.ModelSerializer):
         return False
 
     def get_thumbnail_url(self, obj):
+        """
+        Return the appropriate thumbnail for the featured media item, 
+        respecting paywall and blur logic.
+        """
+        request = self.context.get('request')
+        user = request.user if request else None
         featured = obj.featured_item
-        if featured:
-            if featured.item_type == MediaItem.PHOTO and featured.thumbnail_file:
-                return featured.thumbnail_file.url
-            if featured.item_type == MediaItem.VIDEO and featured.preview_file:
-                return featured.preview_file.url
-        return None
+
+        # If there's no featured item, return None
+        if not featured:
+            return None
+
+        return get_media_file_for_display(
+            media_item=featured,  # We pass the MediaItem itself
+            user=user,
+            post=obj,  # in case the post is blurred
+            thumbnail=True  # we want the 'thumbnail' variant
+        )
 
 
 class MediaItemSerializer(serializers.ModelSerializer):
@@ -78,12 +89,18 @@ class MediaItemSerializer(serializers.ModelSerializer):
         return False
 
     def get_thumbnail_url(self, obj):
-        # For photos, you might show `thumbnail_file`; for videos, `preview_file`.
-        if obj.item_type == MediaItem.PHOTO and obj.thumbnail_file:
-            return obj.thumbnail_file.url
-        elif obj.item_type == MediaItem.VIDEO and obj.preview_file:
-            return obj.preview_file.url
-        return None
+        request = self.context.get('request')
+        user = request.user if request else None
+        # Retrieve the post from context (defaulting to None if not present)
+        post = self.context.get('post', None)
+
+        # If we don't have a "post" context, pass None or self.context.get('post')
+        return get_media_file_for_display(
+            media_item=obj,
+            user=user,
+            post=post,
+            thumbnail=True
+        )
 
 
 class PostMediaItemDetailSerializer(serializers.ModelSerializer):
@@ -162,8 +179,18 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
         return next_pm.media_item_id if next_pm else None
 
     def get_item_url(self, obj):
-        """Return an appropriate URL for the file. Adjust logic for photos/videos if needed."""
+        """Return an appropriate URL for the file."""
+        request = self.context.get('request')
+        user = request.user if request else None
         media_item = obj.media_item
-        if media_item and media_item.original_file:
-            return media_item.original_file.url
-        return ""
+
+        if not media_item:
+            return ""
+
+        # We assume in "PostMedia" we can do obj.post to see if post is blurred
+        return get_media_file_for_display(
+            media_item=media_item,
+            user=user,
+            post=obj.post,
+            thumbnail=False  # we want the "full" version
+        )

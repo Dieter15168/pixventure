@@ -18,7 +18,7 @@ class PostAdmin(admin.ModelAdmin):
 
     list_display = (
         'id', 'name', 'owner', 'status', 'main_category', 
-        'is_featured_post', 'likes_counter', 'created', 'updated', 'featured_item_preview'
+        'is_featured_post', 'likes_counter', 'created', 'updated', 'featured_item_preview', 'is_blurred'
     )
     list_filter = ('status', 'main_category', 'is_featured_post', 'created', 'updated')
     search_fields = ('name', 'slug', 'owner__username', 'main_category__name')
@@ -29,7 +29,7 @@ class PostAdmin(admin.ModelAdmin):
         (None, {
             'fields': (
                 'name', 'slug', 'status', 'text', 'owner', 
-                'main_category', 'tags', 'featured_item', 'is_featured_post'
+                'main_category', 'tags', 'featured_item', 'is_featured_post', 'is_blurred'
             )
         }),
         ('Metadata', {

@@ -74,6 +74,9 @@ class MediaItem(models.Model):
 
     # Simple likes counter
     likes_counter = models.IntegerField(default=0)
+    
+    # Blurred posts will be blurred for non-paying users
+    is_blurred = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.id} (Type: {self.get_item_type_display()})"

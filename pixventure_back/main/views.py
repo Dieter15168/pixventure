@@ -55,8 +55,13 @@ class PostMediaListView(generics.ListAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs['pk']
-        post = get_object_or_404(Post, pk=post_id)
-        return MediaItem.objects.filter(post_links__post=post).order_by('post_links__position')
+        self.post = get_object_or_404(Post, pk=post_id)
+        return MediaItem.objects.filter(post_links__post=self.post)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['post'] = self.post
+        return context
     
     
 class PostMediaItemDetailView(APIView):
