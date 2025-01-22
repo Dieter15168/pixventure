@@ -9,7 +9,7 @@ from media.models import MediaItem
 from .serializers import (
     PostSerializer,
     MediaItemSerializer,
-    MediaItemInPostSerializer
+    PostMediaItemDetailSerializer
 )
 from .pagination import StandardResultsSetPagination
 
@@ -62,70 +62,26 @@ class PostMediaListView(generics.ListAPIView):
 class PostMediaItemDetailView(APIView):
     """
     Returns data about a single MediaItem within a specific Post, 
-    along with the IDs of the previous and next items for easy navigation.
+    along with the IDs of the previous and next items for navigation,
+    plus like info (count and whether current user has liked it).
     
-    URL pattern might be: /posts/<int:post_id>/items/<int:media_item_id>/
-    
-    Response structure (JSON):
-    {
-      "item_id": <int>,
-      "previous_item_id": <int or null>,
-      "next_item_id": <int or null>,
-      "item_url": <str>
-    }
+    Example endpoint: /posts/<int:post_id>/items/<int:media_item_id>/
     """
     permission_classes = [AllowAny]
 
     def get(self, request, post_id, media_item_id, *args, **kwargs):
-        """
-        HTTP GET method that retrieves the specified post/media item relationship
-        and computes the next/previous items based on position.
-        """
-        # 1. Find the specific PostMedia record linking the post and media item.
+        # 1. Retrieve the relevant PostMedia record
         post_media = get_object_or_404(
             PostMedia,
             post_id=post_id,
             media_item_id=media_item_id
         )
 
-        # 2. Determine the position of the current item.
-        current_position = post_media.position
-
-        # 3. Find the previous item (lowest position < current_position).
-        previous_pm = (
-            PostMedia.objects
-            .filter(post_id=post_id, position__lt=current_position)
-            .order_by('-position')
-            .first()
+        # 2. Serialize the data
+        serializer = PostMediaItemDetailSerializer(
+            post_media,
+            context={'request': request}  # Pass the request for 'has_liked' checks
         )
-        previous_item_id = previous_pm.media_item_id if previous_pm else None
-
-        # 4. Find the next item (lowest position > current_position).
-        next_pm = (
-            PostMedia.objects
-            .filter(post_id=post_id, position__gt=current_position)
-            .order_by('position')
-            .first()
-        )
-        next_item_id = next_pm.media_item_id if next_pm else None
-
-        # 5. Construct the URL for the current media item.
-        #    You might use original_file, or handle logic for photos vs. videos.
-        current_item = post_media.media_item
-        if current_item and current_item.original_file:
-            item_url = current_item.original_file.url
-        else:
-            item_url = ""
-
-        # 6. Prepare the data for serialization.
-        response_data = {
-            "item_id": current_item.id,
-            "previous_item_id": previous_item_id,
-            "next_item_id": next_item_id,
-            "item_url": item_url,
-        }
-
-        serializer = MediaItemInPostSerializer(data=response_data)
-        serializer.is_valid(raise_exception=True)  # Validate the constructed data
-
+        
+        # 3. Return the final JSON response
         return Response(serializer.data)

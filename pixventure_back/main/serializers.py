@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from posts.models import Post
+from posts.models import PostMedia
 from media.models import MediaItem
 from social.models import Like
+from social.utils import user_has_liked
 
 class PostSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True, source='pk')
@@ -33,7 +35,7 @@ class PostSerializer(serializers.ModelSerializer):
     def get_has_liked(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return Like.objects.filter(post=obj, user=request.user).exists()
+            return user_has_liked(request.user, post=obj)
         return False
 
     def get_thumbnail_url(self, obj):
@@ -72,7 +74,7 @@ class MediaItemSerializer(serializers.ModelSerializer):
     def get_has_liked(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return Like.objects.filter(media_item=obj, user=request.user).exists()
+            return user_has_liked(request.user, media_item=obj)
         return False
 
     def get_thumbnail_url(self, obj):
@@ -84,15 +86,84 @@ class MediaItemSerializer(serializers.ModelSerializer):
         return None
 
 
-class MediaItemInPostSerializer(serializers.Serializer):
+class PostMediaItemDetailSerializer(serializers.ModelSerializer):
     """
-    Serializer for a single item in a post, including:
-    - item_id
-    - id of previous item
-    - id of next item
-    - item_url (could be original_file or something else)
+    Serializes a single PostMedia object, returning:
+    - item_id: The ID of the MediaItem
+    - likes_counter: Number of likes on that MediaItem
+    - has_liked: Whether the current user has liked this MediaItem
+    - previous_item_id: ID of the previous MediaItem in the same Post
+    - next_item_id: ID of the next MediaItem in the same Post
+    - item_url: The URL for the MediaItem file (e.g., original_file.url)
     """
-    item_id = serializers.IntegerField()
-    previous_item_id = serializers.IntegerField(allow_null=True)
-    next_item_id = serializers.IntegerField(allow_null=True)
-    item_url = serializers.CharField()
+
+    item_id = serializers.SerializerMethodField()
+    likes_counter = serializers.SerializerMethodField()
+    has_liked = serializers.SerializerMethodField()
+    previous_item_id = serializers.SerializerMethodField()
+    next_item_id = serializers.SerializerMethodField()
+    item_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PostMedia
+        fields = [
+            'item_id',
+            'likes_counter',
+            'has_liked',
+            'previous_item_id',
+            'next_item_id',
+            'item_url',
+        ]
+
+    def get_item_id(self, obj):
+        """Return the primary key of the related MediaItem."""
+        return obj.media_item.id
+
+    def get_likes_counter(self, obj):
+        """How many likes does this MediaItem have?"""
+        return obj.media_item.likes_counter
+
+    def get_has_liked(self, obj):
+        """
+        Checks if the current user has liked this specific MediaItem,
+        using our DRY utility function.
+        """
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return user_has_liked(request.user, media_item=obj.media_item)
+        return False
+
+    def get_previous_item_id(self, obj):
+        """
+        Retrieves the ID of the previous MediaItem in the same Post, 
+        based on the position field in PostMedia.
+        """
+        current_position = obj.position
+        prev_pm = (
+            PostMedia.objects
+            .filter(post=obj.post, position__lt=current_position)
+            .order_by('-position')
+            .first()
+        )
+        return prev_pm.media_item_id if prev_pm else None
+
+    def get_next_item_id(self, obj):
+        """
+        Retrieves the ID of the next MediaItem in the same Post,
+        based on the position field in PostMedia.
+        """
+        current_position = obj.position
+        next_pm = (
+            PostMedia.objects
+            .filter(post=obj.post, position__gt=current_position)
+            .order_by('position')
+            .first()
+        )
+        return next_pm.media_item_id if next_pm else None
+
+    def get_item_url(self, obj):
+        """Return an appropriate URL for the file. Adjust logic for photos/videos if needed."""
+        media_item = obj.media_item
+        if media_item and media_item.original_file:
+            return media_item.original_file.url
+        return ""
