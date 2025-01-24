@@ -6,11 +6,24 @@ from social.utils import user_has_liked
 from media.utils import get_media_file_for_display
 
 class PostSerializer(serializers.ModelSerializer):
+    """
+    Returns core information about a Post, including:
+    - post id
+    - name
+    - likes_counter
+    - number of images
+    - number of videos
+    - whether current user has liked this post
+    - post thumbnail URL
+    - owner's username
+    """
     id = serializers.IntegerField(read_only=True, source='pk')
     images_count = serializers.SerializerMethodField()
     videos_count = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
+    owner_username = serializers.CharField(source='owner.username', read_only=True)
+
 
     class Meta:
         model = Post
@@ -22,6 +35,7 @@ class PostSerializer(serializers.ModelSerializer):
             'videos_count',
             'has_liked',
             'thumbnail_url',
+            'owner_username',
         ]
 
     def get_images_count(self, obj):
