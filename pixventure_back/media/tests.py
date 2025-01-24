@@ -138,8 +138,118 @@ class BlurLogicTest(TestCase):
 
         url = self._get_url(self.photo_item, self.user_non_paying, post=self.post, thumbnail=True)
         self.assertEqual(url, '/media/thumb.jpg')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=False)
+    def test_photo_nonblurred_nonpaying_post_blurred_thumb(self, mock_check):
+        """
+        Photo => non-paying => post blurred, item not => thumbnail => blurred_thumbnail_file
+        Expect '/media/thumb_blurred.jpg'
+        """
+        self.post.is_blurred = True
+        self.post.save()
+        self.photo_item.is_blurred = False
+        self.photo_item.save()
 
-    ### Additional combos: post blurred, item not, or vice versa, can be added as needed ###
+        url = self._get_url(self.photo_item, self.user_non_paying, post=self.post, thumbnail=True)
+        self.assertEqual(url, '/media/thumb_blurred.jpg')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=False)
+    def test_photo_nonblurred_nonpaying_post_blurred_full(self, mock_check):
+        """
+        Photo => non-paying => post blurred, item not blurred => full => preview_blurred
+        Expect '/media/preview_blurred.jpg'
+        """
+        self.post.is_blurred = True
+        self.post.save()
+        self.photo_item.is_blurred = False
+        self.photo_item.save()
+
+        url = self._get_url(self.photo_item, self.user_non_paying, post=self.post, thumbnail=False)
+        self.assertEqual(url, '/media/preview_blurred.jpg')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=False)
+    def test_photo_blurred_nonpaying_post_nonblurred_thumb(self, mock_check):
+        """
+        Photo => non-paying => post non-blurred, item blurred => thumbnail => blurred_thumbnail_file
+        Expect '/media/thumb_blurred.jpg'
+        """
+        self.post.is_blurred = False
+        self.post.save()
+        self.photo_item.is_blurred = True
+        self.photo_item.save()
+
+        url = self._get_url(self.photo_item, self.user_non_paying, post=self.post, thumbnail=True)
+        self.assertEqual(url, '/media/thumb_blurred.jpg')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=False)
+    def test_photo_blurred_nonpaying_post_nonblurred_full(self, mock_check):
+        """
+        Photo => non-paying => post non-blurred, item blurred => full => preview_blurred
+        Expect '/media/preview_blurred.jpg'
+        """
+        self.post.is_blurred = False
+        self.post.save()
+        self.photo_item.is_blurred = True
+        self.photo_item.save()
+
+        url = self._get_url(self.photo_item, self.user_non_paying, post=self.post, thumbnail=False)
+        self.assertEqual(url, '/media/preview_blurred.jpg')
+
+    @patch('media.utils.check_if_user_is_paying', return_value=True)
+    def test_photo_nonblurred_paying_post_blurred_thumb(self, mock_check):
+        """
+        Photo => paying => post blurred, item not => thumbnail => thumb
+        Expect '/media/thumb.jpg'
+        """
+        self.post.is_blurred = True
+        self.post.save()
+        self.photo_item.is_blurred = False
+        self.photo_item.save()
+
+        url = self._get_url(self.photo_item, self.user_non_paying, post=self.post, thumbnail=True)
+        self.assertEqual(url, '/media/thumb.jpg')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=True)
+    def test_photo_nonblurred_paying_post_blurred_full(self, mock_check):
+        """
+        Photo => paying => post blurred, item not blurred => full => watermarked
+        Expect '/media/watermarked.jpg'
+        """
+        self.post.is_blurred = True
+        self.post.save()
+        self.photo_item.is_blurred = False
+        self.photo_item.save()
+
+        url = self._get_url(self.photo_item, self.user_non_paying, post=self.post, thumbnail=False)
+        self.assertEqual(url, '/media/watermarked.jpg')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=True)
+    def test_photo_blurred_paying_post_nonblurred_thumb(self, mock_check):
+        """
+        Photo => paying => post non-blurred, item blurred => thumbnail => thumb.jpg
+        Expect '/media/thumb.jpg'
+        """
+        self.post.is_blurred = False
+        self.post.save()
+        self.photo_item.is_blurred = True
+        self.photo_item.save()
+
+        url = self._get_url(self.photo_item, self.user_non_paying, post=self.post, thumbnail=True)
+        self.assertEqual(url, '/media/thumb.jpg')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=True)
+    def test_photo_blurred_paying_post_nonblurred_full(self, mock_check):
+        """
+        Photo => paying => post non-blurred, item blurred => full => watermarked
+        Expect '/media/watermarked.jpg'
+        """
+        self.post.is_blurred = False
+        self.post.save()
+        self.photo_item.is_blurred = True
+        self.photo_item.save()
+
+        url = self._get_url(self.photo_item, self.user_non_paying, post=self.post, thumbnail=False)
+        self.assertEqual(url, '/media/watermarked.jpg')
 
 
     ### VIDEO TESTS (no blurred files) ###
@@ -182,6 +292,19 @@ class BlurLogicTest(TestCase):
 
         url = self._get_url(self.video_item, self.user_paying, post=self.post, thumbnail=False)
         self.assertEqual(url, '/media/watermarked_video.mp4')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=True)
+    def test_video_nonblurred_paying_post_blurred_full(self, mock_check):
+        """
+        Video => paying => post is blurred => still we ignore blur for paying => watermarked_video.mp4
+        """
+        self.post.is_blurred = True
+        self.post.save()
+        self.video_item.is_blurred = False
+        self.video_item.save()
+
+        url = self._get_url(self.video_item, self.user_paying, post=self.post, thumbnail=False)
+        self.assertEqual(url, '/media/watermarked_video.mp4')
 
     @patch('media.utils.check_if_user_is_paying', return_value=False)
     def test_video_blurred_nonpaying_post_blurred_full(self, mock_check):
@@ -195,5 +318,29 @@ class BlurLogicTest(TestCase):
 
         url = self._get_url(self.video_item, self.user_non_paying, post=self.post, thumbnail=False)
         self.assertEqual(url, '/media/preview_video.mp4')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=False)
+    def test_video_blurred_nonpaying_post_nonblurred_full(self, mock_check):
+        """
+        Video => non-paying => video blurred => no blurred video file => fallback to preview_video.mp4
+        """
+        self.post.is_blurred = False
+        self.post.save()
+        self.video_item.is_blurred = True
+        self.video_item.save()
 
-    # You can add more combos if needed, e.g. post blurred but item not, user non-paying, etc.
+        url = self._get_url(self.video_item, self.user_non_paying, post=self.post, thumbnail=False)
+        self.assertEqual(url, '/media/preview_video.mp4')
+        
+    @patch('media.utils.check_if_user_is_paying', return_value=False)
+    def test_video_nonblurred_nonpaying_post_blurred_full(self, mock_check):
+        """
+        Video => non-paying => post blurred => no blurred video file => fallback to preview_video.mp4
+        """
+        self.post.is_blurred = True
+        self.post.save()
+        self.video_item.is_blurred = False
+        self.video_item.save()
+
+        url = self._get_url(self.video_item, self.user_non_paying, post=self.post, thumbnail=False)
+        self.assertEqual(url, '/media/preview_video.mp4')
