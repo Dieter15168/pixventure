@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/albums/', include('albums.urls')),
     path('api/posts/', include('posts.urls')),
     path('api/moderation/', include('moderation.urls')),
+    path('api/reports/', include('reports.urls')),
 ]
 
 if settings.DEBUG:
