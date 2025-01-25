@@ -16,13 +16,17 @@ class MediaItem(models.Model):
     DRAFT = 0
     PENDING_MODERATION = 1
     PUBLISHED = 2
-    DELETED = 3
-    ARCHIVED = 4
+    PRIVATE = 3
+    REJECTED = 4
+    DELETED = 5
+    ARCHIVED = 6
 
     STATUS_CHOICES = [
         (DRAFT, 'Draft'),
         (PENDING_MODERATION, 'Pending moderation'),
         (PUBLISHED, 'Published'),
+        (PRIVATE, 'Private'),
+        (REJECTED, 'Rejected by moderation'),
         (DELETED, 'Deleted'),
         (ARCHIVED, 'Archived'),
     ]
