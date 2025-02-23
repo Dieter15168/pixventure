@@ -103,3 +103,5 @@ class MediaItemHash(models.Model):
 
     def __str__(self):
         return f"Hashes for: {self.media_item}"
+    
+# Make a separate models for hash type, make hash items flexible
