@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import Link from 'next/link';
 
 type PostTileProps = {
   post: {
@@ -10,15 +13,18 @@ type PostTileProps = {
     has_liked: boolean;
     thumbnail_url: string;
     owner_username: string;
+    slug: string;
   };
 };
 
 const PostTile: React.FC<PostTileProps> = ({ post }) => {
   return (
     <div style={{ border: '1px solid #ddd', padding: '10px', marginBottom: '10px' }}>
-      <div>
-        <img src={post.thumbnail_url} alt={post.name} style={{ width: '100px', height: '100px' }} />
-      </div>
+      <Link href={`/${post.slug}`}>
+        <div>
+          <img src={post.thumbnail_url} alt={post.name} style={{ width: '100px', height: '100px' }} />
+        </div>
+      </Link>
       <div>
         <h3>{post.name}</h3>
         <p>Owner: {post.owner_username}</p>

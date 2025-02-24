@@ -30,6 +30,7 @@ class PostSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
+            'slug',
             'likes_counter',
             'images_count',
             'videos_count',
