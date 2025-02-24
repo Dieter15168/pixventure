@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 
 interface PostDetail {
   id: number;
@@ -26,8 +27,8 @@ interface PostItem {
 
 export default function PostPage() {
   const params = useParams();
-  const slug = params.slug;    // This corresponds to the [slug] in the route /[slug]
-  
+  const slug = params.slug; // This corresponds to the [slug] in the route /[slug]
+
   const [post, setPost] = useState<PostDetail | null>(null);
   const [items, setItems] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -55,7 +56,7 @@ export default function PostPage() {
           throw new Error(`No post found for slug: ${slug}`);
         }
         setPost(foundPost);
-        
+
         // Step B: Once we have the post's ID, fetch the items
         const postId = foundPost.id;
         const resItems = await fetch(`${baseUrl}/posts/${postId}/items/`);
@@ -64,7 +65,6 @@ export default function PostPage() {
         }
         const itemsData = await resItems.json();
         setItems(itemsData.results);
-
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -86,22 +86,37 @@ export default function PostPage() {
       <h1>{post.name}</h1>
       <p>By {post.owner_username}</p>
       <p>Likes: {post.likes_counter}</p>
-      <p>Images: {post.images_count}, Videos: {post.videos_count}</p>
-      <p>Has Liked: {post.has_liked ? 'Yes' : 'No'}</p>
-      
+      <p>
+        Images: {post.images_count}, Videos: {post.videos_count}
+      </p>
+      <p>Has Liked: {post.has_liked ? "Yes" : "No"}</p>
+
       <hr />
-      
+
       <h2>Post Items:</h2>
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
         {items.map((item) => (
-          <div
+          <Link
             key={item.id}
-            style={{ border: '1px solid #ddd', padding: '10px', width: '120px' }}
+            href={`/${slug}/${item.id}`}
           >
-            <img src={item.thumbnail_url} alt={`Item ${item.id}`} width={100} />
-            <p>Type: {item.item_type === 1 ? 'Photo' : 'Video'}</p>
-            <p>Likes: {item.likes_counter}</p>
-          </div>
+            <div
+              key={item.id}
+              style={{
+                border: "1px solid #ddd",
+                padding: "10px",
+                width: "120px",
+              }}
+            >
+              <img
+                src={item.thumbnail_url}
+                alt={`Item ${item.id}`}
+                width={100}
+              />
+              <p>Type: {item.item_type === 1 ? "Photo" : "Video"}</p>
+              <p>Likes: {item.likes_counter}</p>
+            </div>
+          </Link>
         ))}
       </div>
     </div>
