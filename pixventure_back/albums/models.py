@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from media.models import MediaItem
 
 class Album(models.Model):
     """
@@ -45,6 +46,11 @@ class Album(models.Model):
         on_delete=models.PROTECT,
         related_name='albums'
     )
+    
+    # The featured item is used as a thumbnail or cover image
+    featured_item = models.ForeignKey(MediaItem, null=True, blank=True,
+                                      on_delete=models.PROTECT, related_name='+')
+
 
     # Whether to display the album creator's name/avatar to other users
     show_creator_to_others = models.BooleanField(default=True)

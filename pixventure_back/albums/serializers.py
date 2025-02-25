@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from .models import Album, AlbumElement
 from media.models import MediaItem
 from posts.models import Post
+from social.utils import user_has_liked
+from media.utils import get_media_file_for_display
 
 # Import your existing Post and MediaItem serializers from their respective apps
 from posts.serializers import PostSerializer
@@ -51,6 +53,8 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
     posts_count = serializers.SerializerMethodField()
     images_count = serializers.SerializerMethodField()
     videos_count = serializers.SerializerMethodField()
+    has_liked = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Album
@@ -63,6 +67,8 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
             'posts_count',
             'images_count',
             'videos_count',
+            'has_liked',
+            'thumbnail_url',
             'owner_username',
             'show_creator_to_others',
             'created',
@@ -88,6 +94,32 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
             element_type=AlbumElement.MEDIA_TYPE,
             element_media__item_type=MediaItem.VIDEO
         ).count()
+        
+    def get_has_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return user_has_liked(request.user, post=obj)
+        return False
+    
+    def get_thumbnail_url(self, obj):
+        """
+        Return the appropriate thumbnail for the featured media item, 
+        respecting paywall and blur logic.
+        """
+        request = self.context.get('request')
+        user = request.user if request else None
+        featured = obj.featured_item
+
+        # If there's no featured item, return None
+        if not featured:
+            return None
+
+        return get_media_file_for_display(
+            media_item=featured,  # We pass the MediaItem itself
+            user=user,
+            post=obj,  # in case the post is blurred
+            thumbnail=True  # we want the 'thumbnail' variant
+        )
 
 
 class AlbumElementSerializer(serializers.ModelSerializer):
