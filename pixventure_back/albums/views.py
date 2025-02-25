@@ -39,9 +39,9 @@ class AlbumDetailView(APIView):
     """
     permission_classes = [AllowAny]
 
-    def get(self, request, pk):
+    def get(self, request, slug):
         # 1. Retrieve the album
-        album = get_object_or_404(Album, pk=pk)
+        album = get_object_or_404(Album, slug=slug)
 
         # 2. Serialize album detail
         album_data = AlbumDetailSerializer(album, context={'request': request}).data
