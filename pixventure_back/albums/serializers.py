@@ -98,7 +98,7 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
     def get_has_liked(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return user_has_liked(request.user, post=obj)
+            return user_has_liked(request.user, album=obj)
         return False
     
     def get_thumbnail_url(self, obj):
@@ -117,7 +117,6 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
         return get_media_file_for_display(
             media_item=featured,  # We pass the MediaItem itself
             user=user,
-            post=obj,  # in case the post is blurred
             thumbnail=True  # we want the 'thumbnail' variant
         )
 

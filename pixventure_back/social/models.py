@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from posts.models import Post
 from media.models import MediaItem
+from albums.models import Album
 
 User = get_user_model()
 
@@ -12,6 +13,7 @@ class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, null=True, blank=True, on_delete=models.CASCADE)
     media_item = models.ForeignKey(MediaItem, null=True, blank=True, on_delete=models.CASCADE)
+    album = models.ForeignKey(Album, null=True, blank=True, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
