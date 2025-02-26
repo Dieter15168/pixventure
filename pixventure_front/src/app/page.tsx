@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import PostTile from '../components/PostTile';
-import { fetchPosts } from '../utils/api';
+import { usePostsAPI } from '../utils/api/posts';
 
 interface Post {
   id: number;
@@ -19,6 +19,7 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { fetchPosts } = usePostsAPI();
 
   useEffect(() => {
     const getPosts = async () => {

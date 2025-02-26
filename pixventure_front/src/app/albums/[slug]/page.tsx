@@ -1,62 +1,52 @@
+// src/app/album/[slug]/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import AlbumElementTile from './AlbumElementTile';
+import { useAlbumsAPI } from '../../../utils/api/albums';
 
 interface Album {
   id: number;
   name: string;
   slug: string;
   likes_counter: number;
-  has_liked: boolean;
-  thumbnail_url: string;
-  // etc.
+  has_liked?: boolean;
+  thumbnail_url?: string;
+  // ...
 }
 
-// element_type=1 => post_data, element_type=2 => media_data
+// from your existing code
 interface AlbumElement {
   id: number;
   element_type: number;
   position: number;
-  post_data: null | {
-    id: number;
-    name: string;
-    slug: string;
-    likes_counter: number;
-    has_liked: boolean;
-    thumbnail_url: string;
+  post_data?: {
+    // ...
   };
-  media_data: null | {
-    id: number;
-    item_type: number;
-    likes_counter: number;
-    has_liked: boolean;
-    thumbnail_url: string;
+  media_data?: {
+    // ...
   };
-  // other fields
 }
 
 export default function AlbumDetailPage() {
-  const params = useParams();          // e.g. { slug: 'test-album' }
-  const slug = params.slug as string;  // dynamic route segment
+  const params = useParams(); // e.g. { slug: 'test-album' }
+  const slug = params.slug as string;
 
   const [album, setAlbum] = useState<Album | null>(null);
   const [elements, setElements] = useState<AlbumElement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // custom hook
+  const { fetchAlbumBySlug } = useAlbumsAPI();
+
   useEffect(() => {
     if (!slug) return;
 
-    const fetchAlbumDetail = async () => {
+    const loadAlbumDetail = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL; // e.g. http://127.0.0.1:8000/api
-        const res = await fetch(`${baseUrl}/albums/${slug}/`);
-        if (!res.ok) {
-          throw new Error(`Failed to fetch album: ${res.statusText}`);
-        }
-        const data = await res.json();
+        const data = await fetchAlbumBySlug(slug);
         // data = { album: {...}, album_elements: [...], count, next, prev }
         setAlbum(data.album);
         setElements(data.album_elements || []);
@@ -67,8 +57,8 @@ export default function AlbumDetailPage() {
       }
     };
 
-    fetchAlbumDetail();
-  }, [slug]);
+    loadAlbumDetail();
+  }, [slug, fetchAlbumBySlug]);
 
   if (loading) return <p>Loading album...</p>;
   if (error) return <p>Error: {error}</p>;

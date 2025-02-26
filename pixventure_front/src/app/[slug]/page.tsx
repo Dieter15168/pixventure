@@ -1,8 +1,11 @@
+// src/app/[slug]/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { usePostsAPI } from '../../utils/api/posts';
 
 interface PostDetail {
   id: number;
@@ -14,7 +17,6 @@ interface PostDetail {
   has_liked: boolean;
   thumbnail_url: string;
   owner_username: string;
-  // additional fields if needed
 }
 
 interface PostItem {
@@ -28,6 +30,7 @@ interface PostItem {
 export default function PostPage() {
   const params = useParams();
   const slug = params.slug; // This corresponds to the [slug] in the route /[slug]
+  const { fetchPostBySlug, fetchPostItems } = usePostsAPI();
 
   const [post, setPost] = useState<PostDetail | null>(null);
   const [items, setItems] = useState<PostItem[]>([]);
@@ -37,34 +40,16 @@ export default function PostPage() {
   useEffect(() => {
     if (!slug) return;
 
-    // 1) Fetch the post detail by slug
-    //    For example, you might have an API that allows queries like /api/posts/?slug=test-post
-    //    Or you might do a special route like /api/posts/slug/test-post
-    //    For demonstration, we'll assume /api/posts/?slug=<slug>
-    const fetchPostBySlug = async () => {
+    const loadPostData = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL; // e.g. http://127.0.0.1:8000/api
-        // Step A: Get the post detail
-        const resPost = await fetch(`${baseUrl}/posts/?slug=${slug}`);
-        if (!resPost.ok) {
-          throw new Error(`Failed to fetch post: ${resPost.statusText}`);
-        }
-        const postData = await resPost.json();
-        // We assume postData.results[0] is the matching post
-        const foundPost = postData.results[0];
-        if (!foundPost) {
-          throw new Error(`No post found for slug: ${slug}`);
-        }
+        // Fetch post details using the new API utility
+        const foundPost = await fetchPostBySlug(slug);
         setPost(foundPost);
 
-        // Step B: Once we have the post's ID, fetch the items
+        // Once we have the post's ID, fetch the post items
         const postId = foundPost.id;
-        const resItems = await fetch(`${baseUrl}/posts/${postId}/items/`);
-        if (!resItems.ok) {
-          throw new Error(`Failed to fetch post items: ${resItems.statusText}`);
-        }
-        const itemsData = await resItems.json();
-        setItems(itemsData.results);
+        const postItems = await fetchPostItems(postId);
+        setItems(postItems);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -72,7 +57,7 @@ export default function PostPage() {
       }
     };
 
-    fetchPostBySlug();
+    loadPostData();
   }, [slug]);
 
   if (loading) return <div>Loading post...</div>;
@@ -101,7 +86,6 @@ export default function PostPage() {
             href={`/${slug}/${item.id}`}
           >
             <div
-              key={item.id}
               style={{
                 border: "1px solid #ddd",
                 padding: "10px",

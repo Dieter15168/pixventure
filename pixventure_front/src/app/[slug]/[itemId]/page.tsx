@@ -1,9 +1,16 @@
-// app/[slug]/[itemId]/page.tsx
-'use client';
+// src/app/[slug]/[itemId]/page.tsx
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { usePostsAPI } from "@/utils/api/posts";
+
+interface Post {
+  id: number;
+  slug: string;
+  // ...
+}
 
 interface ItemDetail {
   item_id: number;
@@ -12,54 +19,33 @@ interface ItemDetail {
   previous_item_id: number | null;
   next_item_id: number | null;
   item_url: string;
-  // add other fields if needed
-}
-
-interface Post {
-  id: number;
-  slug: string;
-  // ...
 }
 
 export default function ItemViewerPage() {
-  const params = useParams();
-  const slug = params.slug;       // e.g. "test-post"
-  const itemIdParam = params.itemId; // e.g. "2"
-  
+  const { slug, itemId } = useParams() as { slug: string; itemId: string };
   const [post, setPost] = useState<Post | null>(null);
   const [itemDetail, setItemDetail] = useState<ItemDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { fetchPostBySlug, fetchPostItem } = usePostsAPI();
 
   useEffect(() => {
-    if (!slug || !itemIdParam) return;
+    if (!slug || !itemId) return;
 
-    const fetchData = async () => {
+    const loadData = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL; // e.g. "http://127.0.0.1:8000/api"
-        
-        // 1) Fetch the post using slug
-        const postRes = await fetch(`${baseUrl}/posts/?slug=${slug}`);
-        if (!postRes.ok) {
-          throw new Error(`Failed to fetch post for slug ${slug}`);
-        }
-        const postData = await postRes.json();
-        const foundPost = postData.results[0];
+        // Step A: fetch the post to get its ID
+        const foundPost = await fetchPostBySlug(slug);
         if (!foundPost) {
           throw new Error(`No post found for slug: ${slug}`);
         }
         setPost(foundPost);
 
-        // 2) Using foundPost.id, fetch the item detail
+        // Step B: fetch the item from that post
         const postId = foundPost.id;
-        const itemId = parseInt(itemIdParam, 10);
-        const itemRes = await fetch(`${baseUrl}/posts/${postId}/items/${itemId}/`);
-        if (!itemRes.ok) {
-          throw new Error(`Failed to fetch item ${itemId}`);
-        }
-        const detailData: ItemDetail = await itemRes.json();
+        const numericItemId = parseInt(itemId, 10);
+        const detailData = await fetchPostItem(postId, numericItemId);
         setItemDetail(detailData);
-
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -67,8 +53,8 @@ export default function ItemViewerPage() {
       }
     };
 
-    fetchData();
-  }, [slug, itemIdParam]);
+    loadData();
+  }, [slug, itemId, fetchPostBySlug, fetchPostItem]);
 
   if (loading) return <p>Loading item...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -78,22 +64,26 @@ export default function ItemViewerPage() {
 
   return (
     <div>
-      <h2>Viewing Item #{item_id} of Post “{post.slug}”</h2>
-      
-      <div style={{ margin: '10px 0' }}>
-        <img src={item_url} alt={`Item ${item_id}`} style={{ maxWidth: '400px' }} />
+      <h2>
+        Viewing Item #{item_id} of Post "{post.slug}"
+      </h2>
+      <div style={{ margin: "10px 0" }}>
+        <img
+          src={item_url}
+          alt={`Item ${item_id}`}
+          style={{ maxWidth: "400px" }}
+        />
       </div>
 
-      <div style={{ marginTop: '20px' }}>
+      <div style={{ marginTop: "20px" }}>
         {previous_item_id && (
           <Link href={`/${slug}/${previous_item_id}`}>
             <button>Previous</button>
           </Link>
         )}
-
         {next_item_id && (
           <Link href={`/${slug}/${next_item_id}`}>
-            <button style={{ marginLeft: '10px' }}>Next</button>
+            <button style={{ marginLeft: "10px" }}>Next</button>
           </Link>
         )}
       </div>

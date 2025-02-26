@@ -1,7 +1,9 @@
+// src/app/albums/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import AlbumTile from './AlbumTile';
+import { useAlbumsAPI } from '../../utils/api/albums';
 
 interface Album {
   id: number;
@@ -16,6 +18,8 @@ interface Album {
   show_creator_to_others: boolean;
   created: string;
   updated: string;
+  has_liked?: boolean;
+  thumbnail_url?: string;
 }
 
 export default function AlbumsPage() {
@@ -23,16 +27,14 @@ export default function AlbumsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Use our custom hook
+  const { fetchAlbums } = useAlbumsAPI();
+
   useEffect(() => {
-    const fetchAlbums = async () => {
+    const loadAlbums = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL; // e.g. http://127.0.0.1:8000/api
-        const res = await fetch(`${apiUrl}/albums/`);
-        if (!res.ok) {
-          throw new Error(`Error fetching albums: ${res.statusText}`);
-        }
-        const data = await res.json();
-        setAlbums(data.results);
+        const data = await fetchAlbums();
+        setAlbums(data);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -40,8 +42,8 @@ export default function AlbumsPage() {
       }
     };
 
-    fetchAlbums();
-  }, []);
+    loadAlbums();
+  }, [fetchAlbums]);
 
   if (loading) return <p>Loading albums...</p>;
   if (error) return <p>Error: {error}</p>;
