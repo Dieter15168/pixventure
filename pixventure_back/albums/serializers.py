@@ -3,25 +3,43 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Album, AlbumElement
+from .utils import generate_unique_slug
 from media.models import MediaItem
 from posts.models import Post
 from social.utils import user_has_liked
 from media.utils import get_media_file_for_display
-
-# Import your existing Post and MediaItem serializers from their respective apps
 from posts.serializers import PostSerializer
 from media.serializers import MediaItemSerializer
 
 User = get_user_model()
 
 
+class AlbumCreateSerializer(serializers.ModelSerializer):
+    """
+    Creates a new album. If slug is not provided,
+    auto-generate a unique slug from the name.
+    """
+
+    class Meta:
+        model = Album
+        fields = [
+            'name',
+            'slug',
+            'status',
+            'show_creator_to_others',
+        ]
+
+    def validate(self, data):
+        name = data.get('name')
+        slug = data.get('slug')
+        if not slug:  # auto-derive from name if no slug given
+            data['slug'] = generate_unique_slug(name)
+        return data
+
+
 class AlbumListSerializer(serializers.ModelSerializer):
     """
     Serializer for listing albums in /api/albums/.
-    Includes minimal or summary fields:
-      - id, name, slug
-      - likes_counter
-      - owner_username (if show_creator_to_others is True)
     """
     owner_username = serializers.SerializerMethodField()
 
@@ -43,11 +61,7 @@ class AlbumListSerializer(serializers.ModelSerializer):
 
 class AlbumDetailSerializer(serializers.ModelSerializer):
     """
-    Shows detailed info about the album, including:
-      - id, name, slug, status
-      - likes_counter
-      - counts for posts, images, and videos in the album
-      - owner_username
+    Shows detailed info about the album, including post/image/video counts.
     """
     owner_username = serializers.SerializerMethodField()
     posts_count = serializers.SerializerMethodField()
@@ -94,38 +108,35 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
             element_type=AlbumElement.MEDIA_TYPE,
             element_media__item_type=MediaItem.VIDEO
         ).count()
-        
+
     def get_has_liked(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return user_has_liked(request.user, album=obj)
         return False
-    
+
     def get_thumbnail_url(self, obj):
         """
-        Return the appropriate thumbnail for the featured media item, 
-        respecting paywall and blur logic.
+        Return the appropriate thumbnail for the featured media item.
         """
         request = self.context.get('request')
         user = request.user if request else None
         featured = obj.featured_item
 
-        # If there's no featured item, return None
         if not featured:
             return None
 
         return get_media_file_for_display(
-            media_item=featured,  # We pass the MediaItem itself
+            media_item=featured,
             user=user,
-            thumbnail=True  # we want the 'thumbnail' variant
+            thumbnail=True
         )
 
 
 class AlbumElementSerializer(serializers.ModelSerializer):
     """
-    An album element referencing either a Post or a MediaItem.
-    Reuses PostSerializer / MediaItemSerializer for data, 
-    preventing redundant logic.
+    An album element referencing either a Post or a MediaItem,
+    reusing PostSerializer / MediaItemSerializer for data.
     """
     post_data = serializers.SerializerMethodField()
     media_data = serializers.SerializerMethodField()
@@ -138,8 +149,8 @@ class AlbumElementSerializer(serializers.ModelSerializer):
             'position',
             'created',
             'updated',
-            'post_data',   # Reuse PostSerializer
-            'media_data',  # Reuse MediaItemSerializer
+            'post_data',
+            'media_data',
         ]
 
     def get_post_data(self, obj):
@@ -147,12 +158,7 @@ class AlbumElementSerializer(serializers.ModelSerializer):
         If element references a Post, use PostSerializer.
         """
         if obj.element_type == AlbumElement.POST_TYPE and obj.element_post:
-            # Pass the request in context so that PostSerializer can handle 
-            # paywall / blur logic if needed
-            return PostSerializer(
-                obj.element_post,
-                context=self.context
-            ).data
+            return PostSerializer(obj.element_post, context=self.context).data
         return None
 
     def get_media_data(self, obj):
@@ -160,8 +166,5 @@ class AlbumElementSerializer(serializers.ModelSerializer):
         If element references a MediaItem, use MediaItemSerializer.
         """
         if obj.element_type == AlbumElement.MEDIA_TYPE and obj.element_media:
-            return MediaItemSerializer(
-                obj.element_media,
-                context=self.context
-            ).data
+            return MediaItemSerializer(obj.element_media, context=self.context).data
         return None
