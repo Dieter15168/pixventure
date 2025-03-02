@@ -1,7 +1,31 @@
 from django.contrib import admin
-from .models import Post, PostMedia
 from django.utils.html import mark_safe
+from .models import Post, PostMedia
+from media.models import MediaItemVersion
 
+class PostMediaInline(admin.TabularInline):
+    """
+    Inline admin for the PostMedia model, which connects Post to MediaItems.
+    Displays a thumbnail for each media item and allows for reordering.
+    """
+    model = PostMedia
+    extra = 1
+    fields = ['media_item', 'position', 'media_item_preview']
+    readonly_fields = ['media_item_preview']
+    ordering = ('position',)
+
+    def media_item_preview(self, obj):
+        """
+        Show the thumbnail version of the media item in the inline admin.
+        """
+        if obj.media_item:
+            # Retrieve the thumbnail version of the media item
+            thumbnail_version = obj.media_item.versions.filter(version_type=MediaItemVersion.THUMBNAIL).first()
+            if thumbnail_version and thumbnail_version.file:
+                return mark_safe(f'<img src="{thumbnail_version.file.url}" style="max-height: 50px;" />')
+        return "No thumbnail available"
+    
+    media_item_preview.short_description = "Thumbnail"
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
@@ -10,21 +34,24 @@ class PostAdmin(admin.ModelAdmin):
     """
     
     def featured_item_preview(self, obj):
-        if obj.featured_item and obj.featured_item.thumbnail_file:
-            return mark_safe(f'<img src="{obj.featured_item.thumbnail_file.url}" style="max-height: 100px;" />')
+        if obj.featured_item:
+            # Retrieve the thumbnail version of the featured item
+            thumbnail_version = obj.featured_item.versions.filter(version_type=MediaItemVersion.THUMBNAIL).first()
+            if thumbnail_version and thumbnail_version.file:
+                return mark_safe(f'<img src="{thumbnail_version.file.url}" style="max-height: 100px;" />')
         return "No preview available"
+
     featured_item_preview.short_description = "Featured Item Preview"
 
-
     list_display = (
-        'id', 'name', 'owner', 'status', 'main_category', 
-        'is_featured_post', 'likes_counter', 'created', 'updated', 'featured_item_preview', 'is_blurred'
+        'id', 'name', 'owner', 'status', 'main_category',
+        'is_featured_post', 'likes_counter', 'created', 'updated', 
+        'featured_item_preview', 'is_blurred'
     )
     list_filter = ('status', 'main_category', 'is_featured_post', 'created', 'updated')
     search_fields = ('name', 'slug', 'owner__username', 'main_category__name')
     readonly_fields = ('created', 'updated', 'likes_counter')
     ordering = ('-created',)
-
     fieldsets = (
         (None, {
             'fields': (
@@ -37,6 +64,7 @@ class PostAdmin(admin.ModelAdmin):
         }),
     )
     filter_horizontal = ('tags',)
+    inlines = [PostMediaInline]  # Add PostMediaInline for handling MediaItems
 
 
 @admin.register(PostMedia)

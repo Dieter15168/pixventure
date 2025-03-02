@@ -1,10 +1,8 @@
-# test_blur_logic.py
-
 from django.test import TestCase
 from unittest.mock import patch
 from django.contrib.auth.models import User
 from posts.models import Post
-from media.models import MediaItem
+from media.models import MediaItem, MediaItemVersion
 from taxonomy.models import Category
 from media.utils import get_media_file_for_display
 
@@ -27,27 +25,87 @@ class BlurLogicTest(TestCase):
         self.post = Post.objects.create(name='Test Post', is_blurred=False, main_category=self.category)
 
         # PHOTO item with all file fields
-        # We'll assume Django's FileField populates .url with '/media/<filename>'
         self.photo_item = MediaItem.objects.create(
             item_type=MediaItem.PHOTO,
             is_blurred=False,
-            watermarked_file='watermarked.jpg',          # => '/media/watermarked.jpg'
-            preview_file='preview.jpg',                  # => '/media/preview.jpg'
-            thumbnail_file='thumb.jpg',                  # => '/media/thumb.jpg'
-            blurred_preview_file='preview_blurred.jpg',  # => '/media/preview_blurred.jpg'
-            blurred_thumbnail_file='thumb_blurred.jpg',  # => '/media/thumb_blurred.jpg'
         )
+
+        # Create different versions for the photo item
+        original_version = MediaItemVersion.objects.create(
+            media_item=self.photo_item,
+            version_type=MediaItemVersion.ORIGINAL,
+            file='original.jpg',
+            width=1024, height=768, file_size=123456
+        )
+        thumbnail_version = MediaItemVersion.objects.create(
+            media_item=self.photo_item,
+            version_type=MediaItemVersion.THUMBNAIL,
+            file='thumb.jpg',
+            width=100, height=100, file_size=12345
+        )
+        preview_version = MediaItemVersion.objects.create(
+            media_item=self.photo_item,
+            version_type=MediaItemVersion.PREVIEW,
+            file='preview.jpg',
+            width=640, height=480, file_size=67890
+        )
+        blurred_preview_version = MediaItemVersion.objects.create(
+            media_item=self.photo_item,
+            version_type=MediaItemVersion.BLURRED_PREVIEW,
+            file='preview_blurred.jpg',
+            width=640, height=480, file_size=98765
+        )
+        blurred_thumbnail_version = MediaItemVersion.objects.create(
+            media_item=self.photo_item,
+            version_type=MediaItemVersion.BLURRED_THUMBNAIL,
+            file='thumb_blurred.jpg',
+            width=100, height=100, file_size=54321
+        )
+        watermarked_version = MediaItemVersion.objects.create(
+            media_item=self.photo_item,
+            version_type=MediaItemVersion.WATERMARKED,
+            file='watermarked.jpg',
+            width=1024, height=768, file_size=234567
+        )
+
+        # Manually add the versions to the versions field of the media item
+        self.photo_item.versions.add(original_version, thumbnail_version, preview_version, 
+                                     blurred_preview_version, blurred_thumbnail_version, watermarked_version)
 
         # VIDEO item with no blurred files
         self.video_item = MediaItem.objects.create(
             item_type=MediaItem.VIDEO,
             is_blurred=False,
-            watermarked_file='watermarked_video.mp4',  # => '/media/watermarked_video.mp4'
-            preview_file='preview_video.mp4',          # => '/media/preview_video.mp4'
-            thumbnail_file='video_thumb.jpg',          # => '/media/video_thumb.jpg'
-            blurred_preview_file='',                   # no blurred version
-            blurred_thumbnail_file='',                 # no blurred version
         )
+
+        # Create different versions for the video item
+        video_original_version = MediaItemVersion.objects.create(
+            media_item=self.video_item,
+            version_type=MediaItemVersion.ORIGINAL,
+            file='original_video.mp4',
+            width=1920, height=1080, file_size=12345678
+        )
+        video_thumbnail_version = MediaItemVersion.objects.create(
+            media_item=self.video_item,
+            version_type=MediaItemVersion.THUMBNAIL,
+            file='video_thumb.jpg',
+            width=320, height=240, file_size=1234
+        )
+        video_preview_version = MediaItemVersion.objects.create(
+            media_item=self.video_item,
+            version_type=MediaItemVersion.PREVIEW,
+            file='preview_video.mp4',
+            width=640, height=480, file_size=6789
+        )
+        video_watermarked_version = MediaItemVersion.objects.create(
+            media_item=self.video_item,
+            version_type=MediaItemVersion.WATERMARKED,
+            file='watermarked_video.mp4',
+            width=1920, height=1080, file_size=23456789
+        )
+
+        # Manually add the versions to the versions field of the video item
+        self.video_item.versions.add(video_original_version, video_thumbnail_version, video_preview_version, video_watermarked_version)
 
     # Helper to unify calling the function
     def _get_url(self, media_item, user, post=None, thumbnail=False):

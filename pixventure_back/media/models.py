@@ -7,7 +7,6 @@ class MediaItem(models.Model):
     Represents a piece of media (photo or video) uploaded by users.
     Stores file references, metadata, and status tracking.
     """
-
     # Automatic timestamps for creation and update
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -50,7 +49,6 @@ class MediaItem(models.Model):
 
     # Basic naming / metadata
     original_filename = models.CharField(max_length=256, null=True, blank=True)
-    file_format = models.CharField(max_length=4)  # e.g., "jpg", "png", "mp4"
 
     owner = models.ForeignKey(
         User,
@@ -61,47 +59,88 @@ class MediaItem(models.Model):
     )
 
     # File references: ideally stored on object storage (e.g., S3).
-    original_file = models.FileField(upload_to='original', null=True, blank=True)
-    watermarked_file = models.FileField(upload_to='watermarked', null=True, blank=True)
-    preview_file = models.FileField(upload_to='preview', null=True, blank=True)
-    blurred_preview_file = models.FileField(upload_to='blurred_preview', null=True, blank=True)
-    thumbnail_file = models.FileField(upload_to='thumbnail', null=True, blank=True)
-    blurred_thumbnail_file = models.FileField(upload_to='blurred_thumbnail', null=True, blank=True)
-
-    # Dimensions and size
-    width = models.IntegerField(null=True, blank=True)
-    height = models.IntegerField(null=True, blank=True)
-    file_size = models.BigIntegerField(null=True, blank=True)  # Use BigInteger if >2GB possible
-
-    # Whether the file has been renamed for SEO or other reasons
-    is_renamed = models.BooleanField(default=False)
+    versions = models.ManyToManyField('MediaItemVersion', related_name='media_items_versions', blank=True)
 
     # Simple likes counter
     likes_counter = models.IntegerField(default=0)
     
-    # Blurred posts will be blurred for non-paying users
+    # Blurred items will be blurred for non-paying users
     is_blurred = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.id} (Type: {self.get_item_type_display()})"
+    
 
+class MediaItemVersion(models.Model):
+    """
+    Represents a specific version of a media item (e.g., thumbnail, preview, watermarked).
+    Each version has its own file reference and metadata like dimensions and file size.
+    """
+    # Automatic timestamps for creation and update
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    
+    # Versions
+    ORIGINAL = 0
+    THUMBNAIL = 1
+    PREVIEW = 2
+    BLURRED_THUMBNAIL = 3
+    BLURRED_PREVIEW = 4
+    WATERMARKED = 5
+    
+    VERSION_CHOICES = [
+        (ORIGINAL, 'Original'),
+        (THUMBNAIL, 'Thumbnail'),
+        (PREVIEW, 'Preview'),
+        (BLURRED_THUMBNAIL, 'Blurred Thumbnail'),
+        (BLURRED_PREVIEW, 'Blurred Preview'),
+        (WATERMARKED, 'Watermarked'),
+    ]
+
+    version_type = models.IntegerField(choices=VERSION_CHOICES)
+    media_item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='media_item_versions')
+
+    # File reference for this version
+    file = models.FileField(upload_to='media_versions/', null=True, blank=True)
+
+    # Metadata specific to this version
+    width = models.IntegerField(null=True, blank=True)
+    height = models.IntegerField(null=True, blank=True)
+    file_size = models.BigIntegerField(null=True, blank=True)
+    
+    # Whether the file has been renamed for SEO or other reasons
+    is_renamed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.get_version_type_display()} version of MediaItem {self.media_item.id}"
+
+
+class HashType(models.Model):
+    """
+    Represents a type of hash used for content recognition (e.g., sha256, p-hash).
+    """
+    # Automatic timestamps for creation and update
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    
+    name = models.CharField(max_length=64, unique=True)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class MediaItemHash(models.Model):
     """
-    Stores hash values for a given MediaItem (e.g., sha256, p-hash, etc.),
-    useful for duplicate detection or content recognition.
+    Stores hash values for a given MediaItem version, with references to the HashType.
     """
-    media_item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='hashes')
-    sha256 = models.CharField(max_length=64, null=True, blank=True)
-    a_hash = models.CharField(max_length=64, null=True, blank=True)
-    p_hash = models.CharField(max_length=64, null=True, blank=True)
-    d_hash = models.CharField(max_length=64, null=True, blank=True)
-    w_hash = models.CharField(max_length=64, null=True, blank=True)
-    crop_resistant_hash = models.CharField(max_length=170, null=True, blank=True)
-    color_hash = models.CharField(max_length=64, null=True, blank=True)
+    # Automatic timestamps for creation and update
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    
+    media_item_version = models.ForeignKey(MediaItemVersion, on_delete=models.CASCADE, related_name='hashes')
+    hash_type = models.ForeignKey(HashType, null=True, on_delete=models.CASCADE, related_name='hashes')
+    hash_value = models.CharField(null=True, max_length=64)
 
     def __str__(self):
-        return f"Hashes for: {self.media_item}"
-    
-# Make a separate models for hash type, make hash items flexible
+        return f"Hash ({self.hash_type.name}) for MediaItemVersion {self.media_item_version.id}"
