@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
-from taxonomy.models import Tag, Category, Term
+from taxonomy.models import Term
 from media.models import MediaItem
 
 class Post(models.Model):
