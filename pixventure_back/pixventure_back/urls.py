@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/media/', include('media.urls')),
     path('api/albums/', include('albums.urls')),
     path('api/posts/', include('posts.urls')),
+    path('api/terms/', include('taxonomy.urls')),
     path('api/social/', include('social.urls')),
     path('api/moderation/', include('moderation.urls')),
     path('api/reports/', include('reports.urls')),
