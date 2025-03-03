@@ -73,6 +73,7 @@ class ModerationAction(models.Model):
     # e.g. "Contains personal info"
 
     performed_at = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         entity_label = (
