@@ -1,92 +1,235 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import generics
-from rest_framework.permissions import AllowAny
-from django.shortcuts import get_object_or_404
+# posts/views.py
 
-from posts.models import Post, PostMedia
+import uuid
+from django.shortcuts import get_object_or_404
+from django.db.models import Max
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import PermissionDenied
+from rest_framework import mixins
+
+from .models import Post, PostMedia
 from media.models import MediaItem
 from .serializers import (
     PostSerializer,
+    PostCreateSerializer,
     PostMediaItemDetailSerializer
 )
 from media.serializers import MediaItemSerializer
+from .permissions import IsPostOwnerOrAdminOrPublicRead
 from main.pagination import StandardResultsSetPagination
 
 
-class PostListView(generics.ListAPIView):
+# 1. Public posts list
+class PublicPostListView(generics.ListAPIView):
     """
     GET /api/posts/
-    Returns a paginated list of posts, using PostSerializer.
+    Returns a paginated list of 'published' posts using PostSerializer.
     """
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        # Example: only show PUBLISHED posts
+        # Only show PUBLISHED posts
         return Post.objects.filter(status=Post.PUBLISHED).order_by('-created')
 
 
+# 2. MyPostsView
+class MyPostsView(generics.ListAPIView):
+    """
+    GET /api/posts/mine/
+    Returns the current user’s posts. 
+    If none exist, optionally auto-create a private "Quick save" post.
+    """
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        user_posts = Post.objects.filter(owner=user)
+
+        # Optional: auto-create a "Quick save" post if none exist
+        if not user_posts.exists():
+            Post.objects.create(
+                owner=user,
+                name="Quick save",
+                slug=f"quick-save-{uuid.uuid4().hex[:8]}",
+                status=Post.PRIVATE,
+            )
+            user_posts = Post.objects.filter(owner=user)
+
+        return user_posts.order_by('-created')
+
+
+# 3. Create new post
+class PostCreateView(generics.CreateAPIView):
+    """
+    POST /api/posts/new/
+    Creates a new post for the current user.
+    """
+    serializer_class = PostCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+# 4. PostDetailView
 class PostDetailView(generics.RetrieveAPIView):
     """
     GET /api/posts/<pk>/
     Returns the detail of a single post using PostSerializer.
+    Uses IsPostOwnerOrAdminOrPublicRead for permissions.
     """
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsPostOwnerOrAdminOrPublicRead]
     lookup_field = 'pk'
 
 
-class PostMediaListView(generics.ListAPIView):
+# 5. PostUpdateDestroyView
+class PostUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET /api/posts/<pk>/edit/
+    PATCH /api/posts/<pk>/edit/
+    DELETE /api/posts/<pk>/edit/
+    For the post owner or admin.
+    """
+    queryset = Post.objects.all()
+    serializer_class = PostCreateSerializer
+    permission_classes = [IsPostOwnerOrAdminOrPublicRead]
+    lookup_field = 'pk'
+
+    def perform_destroy(self, instance):
+        # If you prefer archiving instead of actual delete, do so here.
+        instance.delete()
+
+
+# 6. PostMediaListCreateView
+class PostMediaListCreateView(generics.ListCreateAPIView):
     """
     GET /api/posts/<pk>/items/
-    Returns a paginated list of media items in a given post.
-    For each item, we use the standard MediaItemSerializer (or a custom approach).
-    
-    If you need prev/next logic, you could either:
-      - incorporate it into the serializer
-      - or handle it in a custom method below
+      - list media items in a post
+    POST /api/posts/<pk>/items/
+      - add a new media item (only owner or admin) to the post
     """
     serializer_class = MediaItemSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsPostOwnerOrAdminOrPublicRead]
     pagination_class = StandardResultsSetPagination
 
+    def get_post(self):
+        post = get_object_or_404(Post, pk=self.kwargs['pk'])
+        self.check_object_permissions(self.request, post)
+        return post
+
     def get_queryset(self):
-        post_id = self.kwargs['pk']
-        self.post = get_object_or_404(Post, pk=post_id)
-        return MediaItem.objects.filter(post_links__post=self.post)
+        post = self.get_post()
+        return MediaItem.objects.filter(post_links__post=post).order_by('post_links__position')
+
+    def perform_create(self, serializer):
+        """
+        Instead of creating a brand new MediaItem here, 
+        you can either attach an existing MediaItem to the post
+        or create a new one.
+        """
+        post = self.get_post()
+        user = self.request.user
+
+        if (post.owner != user) and not user.is_staff:
+            raise PermissionDenied("Only the post’s owner or admin can add media.")
+
+        # If creating a brand new media item:
+        media_item = serializer.save(owner=user)
+
+        # Attach it to the post via PostMedia with next position
+        max_position = PostMedia.objects.filter(post=post).aggregate(Max('position'))['position__max'] or 0
+        PostMedia.objects.create(
+            post=post,
+            media_item=media_item,
+            position=max_position + 1
+        )
 
     def get_serializer_context(self):
+        """
+        Pass the post into context for blur logic, etc.
+        """
         context = super().get_serializer_context()
-        context['post'] = self.post
+        context['post'] = self.get_post()
         return context
-    
-    
-class PostMediaItemDetailView(APIView):
-    """
-    Returns data about a single MediaItem within a specific Post, 
-    along with the IDs of the previous and next items for navigation,
-    plus like info (count and whether current user has liked it).
-    
-    Example endpoint: /posts/<int:post_id>/items/<int:media_item_id>/
-    """
-    permission_classes = [AllowAny]
 
-    def get(self, request, post_id, media_item_id, *args, **kwargs):
-        # 1. Retrieve the relevant PostMedia record
-        post_media = get_object_or_404(
-            PostMedia,
-            post_id=post_id,
-            media_item_id=media_item_id
-        )
 
-        # 2. Serialize the data
-        serializer = PostMediaItemDetailSerializer(
-            post_media,
-            context={'request': request}  # Pass the request for 'has_liked' checks
+# 7. PostMediaItemRetrieveDestroyView
+class PostMediaItemRetrieveDestroyView(generics.GenericAPIView,
+                                       mixins.RetrieveModelMixin,
+                                       mixins.DestroyModelMixin):
+    """
+    GET /api/posts/<pk>/items/<media_item_id>/
+      -> Returns details about a single MediaItem within a post,
+         including prev/next item IDs and like info.
+
+    DELETE /api/posts/<pk>/items/<media_item_id>/
+      -> Removes this media item from the post. If no longer used in any other post,
+         you can optionally delete it entirely.
+    """
+    serializer_class = PostMediaItemDetailSerializer
+    permission_classes = [IsPostOwnerOrAdminOrPublicRead]
+
+    def get_post(self):
+        post_id = self.kwargs['pk']
+        post = get_object_or_404(Post, pk=post_id)
+        self.check_object_permissions(self.request, post)  # post-level permission
+        return post
+
+    def get_queryset(self):
+        """
+        The serializer references PostMedia, so let's limit queries to
+        PostMedia objects associated with the given post.
+        """
+        post = self.get_post()
+        return PostMedia.objects.filter(post=post)
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        media_item_id = self.kwargs['media_item_id']
+        # We'll find the specific PostMedia entry
+        post_media = get_object_or_404(queryset, media_item_id=media_item_id)
+        # No separate object-level check required for post_media itself,
+        # but if you had custom logic for media item ownership, do it here.
+        return post_media
+
+    def get(self, request, *args, **kwargs):
+        """
+        Returns full details about this specific item in the post, 
+        including next/prev item IDs, likes, etc.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance,
+            context={'request': request}  # needed for blur logic, etc.
         )
-        
-        # 3. Return the final JSON response
         return Response(serializer.data)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Remove this media item from the post. 
+        If it's no longer used elsewhere, optionally delete the MediaItem object entirely.
+        """
+        post = self.get_post()
+        instance = self.get_object()  # This is a PostMedia instance
+        media_item = instance.media_item
+
+        # Ensure post owner or admin
+        if (post.owner != request.user) and not request.user.is_staff:
+            raise PermissionDenied("Only the post’s owner or admin can remove media.")
+
+        # 1) Remove from PostMedia
+        instance.delete()
+
+        # 2) Optionally, if the media item isn't used anywhere else, delete it.
+        if not media_item.post_links.exists() and not media_item.album_elements.exists():
+            media_item.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

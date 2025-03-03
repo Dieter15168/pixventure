@@ -165,3 +165,27 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
             post=obj.post,
             thumbnail=False  # we want the "full" version
         )
+
+
+class PostCreateSerializer(serializers.ModelSerializer):
+    """
+    For creating a new post. 
+    The user can provide name, slug, etc.
+    The `owner` will be set automatically from request.user.
+    """
+    class Meta:
+        model = Post
+        fields = [
+            'name',
+            'slug',
+            'text',
+            'status',
+            'main_category',
+            'tags',
+            'featured_item',
+            'is_featured_post',
+            'is_blurred',
+        ]
+        extra_kwargs = {
+            'slug': {'required': True},
+        }
