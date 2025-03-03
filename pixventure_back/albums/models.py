@@ -17,15 +17,17 @@ class Album(models.Model):
     # - PUBLIC: visible to all
     # - PRIVATE: only owner or authorized users can view
     # - ARCHIVED: no longer visible in normal listings
-    PENDING_MODRATION = 0
+    PENDING_MODERATION = 0
     PUBLIC = 1
     PRIVATE = 2
-    ARCHIVED = 3
+    DELETED = 3
+    ARCHIVED = 4
 
     ALBUM_STATUS_CHOICES = [
-        (PENDING_MODRATION, 'Pending moderation'),
+        (PENDING_MODERATION, 'Pending moderation'),
         (PUBLIC, 'Public'),
         (PRIVATE, 'Private'),
+        (DELETED, 'Deleted'),
         (ARCHIVED, 'Archived'),
     ]
 
