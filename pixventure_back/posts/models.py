@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
-from taxonomy.models import Tag, Category
+from taxonomy.models import Tag, Category, Term
 from media.models import MediaItem
 
 class Post(models.Model):
@@ -40,11 +40,21 @@ class Post(models.Model):
 
 
     # Category: enforce a single main category
-    main_category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='posts')
-
+    main_category = models.ForeignKey(
+        Term,
+        on_delete=models.PROTECT,
+        related_name='posts_with_category',
+        limit_choices_to={'term_type': 2},  # 2 => CATEGORY
+    )
+    
     # Tags:
-    tags = models.ManyToManyField(Tag, blank=True, related_name='posts')
-
+    tags = models.ManyToManyField(
+        Term,
+        blank=True,
+        related_name='posts_with_tag',
+        limit_choices_to={'term_type': 1},  # 1 => TAG
+    )
+    
     # The featured item is used as a thumbnail or cover image
     featured_item = models.ForeignKey(MediaItem, null=True, blank=True,
                                       on_delete=models.PROTECT, related_name='+')
