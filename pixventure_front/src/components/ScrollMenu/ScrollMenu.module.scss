@@ -1,0 +1,26 @@
+// components/ScrollMenu/ScrollMenu.module.scss
+
+.scrollmenu {
+    z-index: 6;
+    overflow: auto;
+    white-space: nowrap;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    background-color: var(--background_color);
+  
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  
+  .scrollLink {
+    display: inline-block;
+    color: var(--secondary_menu_color);
+    text-align: center;
+    padding: 14px;
+    &:hover {
+      background-color: var(--main_dominant_color);
+      color: var(--secondary_menu_color);
+    }
+  }
+  

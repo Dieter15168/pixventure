@@ -1,0 +1,16 @@
+/* Global styles for icons over thumbnails */
+@mixin icon-on-thumbnail() {
+    color: var(--main_dominant_color);
+    -webkit-text-stroke: 0px var(--main_text_stroke_color);
+    transition: color 0.2s ease-in-out;
+  
+    &:hover {
+      color: var(--secondary_color);
+    }
+  }
+  
+/* Global styles for counters (likes, items count) over thumbnails */
+@mixin counter-on-thumbnail() {
+  margin-left: 6px;
+  color: var(--main_dominant_color);
+}

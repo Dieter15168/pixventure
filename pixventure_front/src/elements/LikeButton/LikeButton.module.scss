@@ -1,0 +1,9 @@
+@use '../../styles/mixins' as mix;
+
+.like_icon {
+  @include mix.icon-on-thumbnail();
+}
+
+.like_counter {
+  @include mix.counter-on-thumbnail();
+}

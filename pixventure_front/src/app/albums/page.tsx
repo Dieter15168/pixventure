@@ -1,9 +1,9 @@
 // src/app/albums/page.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import AlbumTile from './AlbumTile';
-import { useAlbumsAPI } from '../../utils/api/albums';
+import { useEffect, useState } from "react";
+import { useAlbumsAPI } from "../../utils/api/albums";
+import Tile, { TileProps } from "../../components/Tile/Tile";
 
 interface Album {
   id: number;
@@ -41,19 +41,38 @@ export default function AlbumsPage() {
         setLoading(false);
       }
     };
-
     loadAlbums();
   }, [fetchAlbums]);
 
   if (loading) return <p>Loading albums...</p>;
   if (error) return <p>Error: {error}</p>;
 
+  // We'll transform each album to match TileProps
+  const tileItems: TileProps[] = albums.map((album) => ({
+    id: album.id,
+    name: album.name,
+    // slug for the album detail route, e.g. "/albums/[slug]"
+    slug: `albums/${album.slug}`,
+    thumbnail_url: album.thumbnail_url,
+    item_type: 3, // e.g. 3 => album
+    images_count: album.images_count,
+    videos_count: album.videos_count,
+    posts_count: album.posts_count,
+    likes_counter: album.likes_counter,
+    has_liked: album.has_liked ?? false,
+    // if the user is hidden, you could set to "Anonymous"
+    owner_username: album.show_creator_to_others ? album.owner_username : "Anonymous",
+    // any optional fields
+    size: "small",
+  }));
+
   return (
     <div>
       <h1>Albums</h1>
-      <div style={{ display: 'grid', gap: '10px' }}>
-        {albums.map((album) => (
-          <AlbumTile key={album.id} album={album} />
+      {/* a container that could be .pin_container if you want the masonry layout */}
+      <div className="pin_container">
+        {tileItems.map((item) => (
+          <Tile key={item.id} item={item} />
         ))}
       </div>
     </div>

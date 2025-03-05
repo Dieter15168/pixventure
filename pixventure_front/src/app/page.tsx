@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import PostTile from '../components/PostTile';
-import { usePostsAPI } from '../utils/api/posts';
+import { useEffect, useState } from "react";
+import PostTile from "../components/Tile/Tile";
+import { usePostsAPI } from "../utils/api/posts";
 
 interface Post {
   id: number;
@@ -45,7 +45,10 @@ export default function Home() {
       <h1>Best Posts</h1>
       <div>
         {posts.map((post) => (
-          <PostTile key={post.id} post={post} />
+          <PostTile
+            key={post.id}
+            item={post}
+          />
         ))}
       </div>
     </div>

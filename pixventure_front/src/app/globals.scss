@@ -1,0 +1,26 @@
+// globals.scss
+
+@import './variables';
+
+html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: var(--background_color) !important;
+    color: white !important;
+    font-family: sans-serif; /* example */
+  }
+  
+  /* Overriding bootstrap .bg-dark or text-light, if desired */
+  .bg-dark {
+    background-color: var(--background_color) !important;
+  }
+  
+  /* Additional global styling */
+  a {
+    text-decoration: none;
+    color: var(--main_dominant_color);
+    &:hover {
+      color: var(--secondary_color);
+    }
+  }

@@ -1,10 +1,12 @@
 // app/layout.tsx
 
-import "./globals.css"; // or your global CSS
-import Header from "./Header";
-import Menu from "./Menu";
+import "./globals.scss";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "@fortawesome/fontawesome-svg-core/styles.css";
+import Header from "../components/Header/Header";
 import { ReactNode } from "react";
 import { AuthProvider } from "../contexts/AuthContext";
+import ElementMenuClientSetup from "./ElementMenuClientSetup";
 
 export const metadata = {
   title: "My App with Global Menu",
@@ -17,9 +19,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head />
       <body>
         <Header />
-        <Menu />
         <main style={{ margin: "1rem" }}>
-          <AuthProvider>{children}</AuthProvider>
+          <ElementMenuClientSetup>
+            <AuthProvider>{children}</AuthProvider>
+          </ElementMenuClientSetup>
         </main>
       </body>
     </html>

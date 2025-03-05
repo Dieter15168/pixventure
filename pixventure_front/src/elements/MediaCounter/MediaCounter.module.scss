@@ -1,0 +1,30 @@
+/* components/MediaCounter/MediaCounter.module.scss */
+@use '../../styles/mixins' as mix;
+
+/* This container is absolutely positioned for the entire group of counters */
+.counters_container {
+  position: absolute;
+  top: 10px;
+  left: 17px;
+  display: flex;
+  flex-direction: column; /* stack vertically */
+  gap: 4px; /* space between each counter row */
+}
+
+/* Each individual row is also flex if you want an icon next to text */
+.counter_row {
+  display: flex;
+  align-items: center;
+  /* you can add a background or style if you want a label behind them */
+}
+
+.counter_icon {
+  @include mix.icon-on-thumbnail();
+  //font-size: 20px; /* override if needed */
+  margin-right: 6px;
+}
+
+.counter_text {
+  @include mix.counter-on-thumbnail();
+  //font-size: 18px;
+}
