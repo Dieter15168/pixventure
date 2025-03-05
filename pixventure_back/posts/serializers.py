@@ -4,6 +4,7 @@ from posts.models import PostMedia
 from media.models import MediaItem
 from social.utils import user_has_liked
 from media.utils import get_media_file_for_display
+from taxonomy.serializers import TermSerializer
 
 class PostSerializer(serializers.ModelSerializer):
     """
@@ -189,3 +190,28 @@ class PostCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'slug': {'required': True},
         }
+        
+
+class PostMetaSerializer(serializers.ModelSerializer):
+    owner_username = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = ['id', 'name', 'slug', 'owner_username', 'categories', 'tags']
+
+    def get_owner_username(self, obj):
+        if obj.owner:
+            return obj.owner.username
+        return None
+
+    def get_categories(self, obj):
+        from taxonomy.serializers import TermSerializer
+        queryset = obj.categories.all()
+        return TermSerializer(queryset, many=True).data
+
+    def get_tags(self, obj):
+        from taxonomy.serializers import TermSerializer
+        queryset = obj.tags.all()
+        return TermSerializer(queryset, many=True).data

@@ -20,6 +20,8 @@ class PostAdminForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # 2 => CATEGORY
         self.fields['main_category'].queryset = Term.objects.filter(term_type=2)
+        # 2 => CATEGORY
+        self.fields['categories'].queryset = Term.objects.filter(term_type=2)
         # 1 => TAG
         self.fields['tags'].queryset = Term.objects.filter(term_type=1)
 
@@ -72,14 +74,14 @@ class PostAdmin(admin.ModelAdmin):
         (None, {
             'fields': (
                 'name', 'slug', 'status', 'text', 'owner', 
-                'main_category', 'tags', 'featured_item', 'is_featured_post', 'is_blurred'
+                'main_category', 'categories', 'tags', 'featured_item', 'is_featured_post', 'is_blurred'
             )
         }),
         ('Metadata', {
             'fields': ('likes_counter', 'created', 'updated'),
         }),
     )
-    filter_horizontal = ('tags',)
+    filter_horizontal = ('categories', 'tags',)
     inlines = [PostMediaInline]
 
 

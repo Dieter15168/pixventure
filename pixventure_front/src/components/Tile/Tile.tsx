@@ -44,7 +44,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     name,
     slug,
     thumbnail_url,
-    item_type,
+    item_type="post",
     images_count = 0,
     videos_count = 0,
     posts_count = 0,

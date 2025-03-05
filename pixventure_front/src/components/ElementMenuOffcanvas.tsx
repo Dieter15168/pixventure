@@ -1,34 +1,57 @@
 // src/components/ElementMenuOffcanvas.tsx
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Offcanvas } from "react-bootstrap";
 import { useElementMenu } from "../contexts/ElementMenuContext";
+import { usePostsAPI } from "../utils/api/posts";
+import TermDisplay from "./TermDisplay"; // the new component from step #1
+
+interface PostMetaData {
+  id: number;
+  name: string;
+  slug: string;
+  owner_username: string | null;
+  categories: Array<{ id: number; term_item_type: number; name: string; slug: string }>;
+  tags: Array<{ id: number; term_item_type: number; name: string; slug: string }>;
+}
 
 export default function ElementMenuOffcanvas() {
   const { showMenu, closeMenu, selectedItem } = useElementMenu();
+  const { fetchPostMeta } = usePostsAPI();
 
-  if (!selectedItem) return null; 
-  // No item => nothing to show (or we can still open an empty menu if you want)
+  const [postMeta, setPostMeta] = useState<PostMetaData | null>(null);
+  const [loadingMeta, setLoadingMeta] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const {
-    item_type,
-    name,
-    canDelete,
-    canAddToAlbum,
-    categories = [],
-    tags = [],
-  } = selectedItem;
+  useEffect(() => {
+    if (!showMenu || !selectedItem) return;
 
-  const handleDelete = () => {
-    console.log("Deleting item id", selectedItem.id, "of item_type", item_type);
-    closeMenu();
+    // if item is a post, fetch meta
+    if (selectedItem.item_type === "post") {
+      loadPostMeta(selectedItem.id);
+    } else {
+      // if not post, optionally reset postMeta
+      setPostMeta(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showMenu, selectedItem]);
+
+  const loadPostMeta = async (postId: number) => {
+    setLoadingMeta(true);
+    setError(null);
+    try {
+      const data = await fetchPostMeta(postId);
+      setPostMeta(data);
+    } catch (err: any) {
+      console.error("Failed to fetch post meta", err);
+      setError(err.message || "Failed to fetch post meta");
+    } finally {
+      setLoadingMeta(false);
+    }
   };
 
-  const handleAddToAlbum = () => {
-    console.log("Adding to album item id", selectedItem.id);
-    closeMenu();
-  };
+  if (!selectedItem) return null;
 
   return (
     <Offcanvas
@@ -41,56 +64,34 @@ export default function ElementMenuOffcanvas() {
         <Offcanvas.Title>Options</Offcanvas.Title>
       </Offcanvas.Header>
       <Offcanvas.Body>
-        <p><strong>{name}</strong> (item_type: {item_type})</p>
-
-        {/* Show categories/tags if any */}
-        {categories.length > 0 && (
-          <div className="mb-3">
-            <h5>Categories:</h5>
-            <div className="d-flex flex-wrap">
-              {categories.map((cat, idx) => (
-                <div key={idx} className="tag m-1 p-1">
-                  {cat.name}
-                </div>
-              ))}
-            </div>
+        {/* If item is post => show post meta logic */}
+        {selectedItem.item_type === "post" && (
+          <div>
+            {loadingMeta && <p>Loading post meta...</p>}
+            {error && <p className="text-danger">{error}</p>}
+            {postMeta && (
+              <>
+                <p>
+                  <strong>{postMeta.name}</strong> (owner: {postMeta.owner_username})
+                </p>
+                {/* Use the TermDisplay component for categories/tags */}
+                <TermDisplay
+                  categories={postMeta.categories}
+                  tags={postMeta.tags}
+                />
+              </>
+            )}
           </div>
         )}
 
-        {tags.length > 0 && (
-          <div className="mb-3">
-            <h5>Tags:</h5>
-            <div className="d-flex flex-wrap">
-              {tags.map((tag, idx) => (
-                <div key={idx} className="tag m-1 p-1">
-                  {tag.name}
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* If it's a media or album, etc. => handle differently */}
+        {selectedItem.item_type === "album" && (
+          <p>Show album logic here if needed...</p>
         )}
-
-        {/* Example actions */}
-        <div className="mb-2">
-          {canAddToAlbum && (
-            <p
-              className="text_over_image_tile mb-2"
-              style={{ cursor: "pointer" }}
-              onClick={handleAddToAlbum}
-            >
-              <i className="fas fa-plus pe-2"></i> Add to album
-            </p>
-          )}
-          {canDelete && (
-            <p
-              className="text_over_image_tile mb-2 text-danger"
-              style={{ cursor: "pointer" }}
-              onClick={handleDelete}
-            >
-              <i className="fas fa-trash pe-2"></i> Delete
-            </p>
-          )}
-        </div>
+        {selectedItem.item_type === "media" && (
+          <p>Show media logic here if needed...</p>
+        )}
+        {/* Additional actions or buttons can go here */}
       </Offcanvas.Body>
     </Offcanvas>
   );

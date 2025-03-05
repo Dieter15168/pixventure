@@ -14,7 +14,8 @@ from media.models import MediaItem
 from .serializers import (
     PostSerializer,
     PostCreateSerializer,
-    PostMediaItemDetailSerializer
+    PostMediaItemDetailSerializer,
+    PostMetaSerializer
 )
 from media.serializers import MediaItemSerializer
 from .permissions import IsPostOwnerOrAdminOrPublicRead
@@ -233,3 +234,14 @@ class PostMediaItemRetrieveDestroyView(generics.GenericAPIView,
             media_item.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+ # 7. PostMetaView   
+class PostMetaView(generics.RetrieveAPIView):
+    """
+    GET /api/posts/<pk>/meta/
+    Returns minimal post meta info (name, slug, categories, tags, etc.)
+    """
+    queryset = Post.objects.all()
+    serializer_class = PostMetaSerializer
+    lookup_field = 'pk'

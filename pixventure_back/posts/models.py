@@ -43,6 +43,14 @@ class Post(models.Model):
     main_category = models.ForeignKey(
         Term,
         on_delete=models.PROTECT,
+        related_name='posts_with_main_category',
+        limit_choices_to={'term_type': 2},  # 2 => CATEGORY
+    )
+    
+    # Categories:
+    categories = models.ManyToManyField(
+        Term,
+        blank=True,
         related_name='posts_with_category',
         limit_choices_to={'term_type': 2},  # 2 => CATEGORY
     )

@@ -33,10 +33,16 @@ export function usePostsAPI() {
     return res.data;
   }, [axios]);
 
+  const fetchPostMeta = useCallback(async (postId: number) => {
+    const res = await axios.get(`/posts/${postId}/meta/`);
+    return res.data; // { id, name, slug, owner_username, categories, tags }
+  }, [axios]);
+
   return {
     fetchPosts,
     fetchPostBySlug,
     fetchPostItems,
     fetchPostItem,
+    fetchPostMeta,
   };
 }

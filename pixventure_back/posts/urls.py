@@ -9,6 +9,7 @@ from .views import (
     PostUpdateDestroyView,
     PostMediaListCreateView,
     PostMediaItemRetrieveDestroyView,
+    PostMetaView,
 )
 
 urlpatterns = [
@@ -32,4 +33,7 @@ urlpatterns = [
 
     # 7. Retrieve / delete a specific media item within a post
     path('<int:pk>/items/<int:media_item_id>/', PostMediaItemRetrieveDestroyView.as_view(), name='post-item-retrieve-destroy'),
+    
+    # 8. Retrieve post meta
+    path('<int:pk>/meta/', PostMetaView.as_view(), name='post-meta'),
 ]
