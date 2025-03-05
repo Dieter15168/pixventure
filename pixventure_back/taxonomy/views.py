@@ -1,37 +1,34 @@
-# taxonomy/views.py
+# item_typeviews.py
 
 from rest_framework import generics, status
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Term
-from .serializers import TermSerializer
+from .serializers import TermSerializer, AllTermsSerializer
 from main.pagination import StandardResultsSetPagination
 
-class TermListView(generics.ListAPIView):
+class AllTermsView(APIView):
     """
-    GET /api/taxonomy/terms/
-    Returns a list of terms (tags + categories).
-    Only admin for now, or expand with custom permissions if needed.
+    GET /api/terms/
+    Returns {"categories": [...], "tags": [...]} using TermSerializer
     """
-    serializer_class = TermSerializer
-    permission_classes = [AllowAny]
-    pagination_class = None
+    def get(self, request, format=None):
+        categories_qs = Term.objects.filter(term_type=2)
+        tags_qs = Term.objects.filter(term_type=1)
 
-    def get_queryset(self):
-        # If you want to list all terms, or just filter by a term_type
-        # e.g., ?term_type=1 for tags, ?term_type=2 for categories
-        qs = Term.objects.all().order_by('name')
-        term_type = self.request.GET.get('term_type')
-        if term_type in ('1', '2'):
-            qs = qs.filter(term_type=term_type)
-        return qs
+        serializer = AllTermsSerializer({
+            "categories": categories_qs,
+            "tags": tags_qs
+        })
+        return Response(serializer.data)
 
 
 class TermCreateView(generics.CreateAPIView):
     """
-    POST /api/taxonomy/terms/new/
+    POST /api/terms/new/
     Creates a new term. Client must pass 'term_type' in the payload.
     """
     serializer_class = TermSerializer
@@ -44,7 +41,7 @@ class TermCreateView(generics.CreateAPIView):
 
 class TermDetailView(generics.RetrieveAPIView):
     """
-    GET /api/taxonomy/terms/<slug>/
+    GET /api/terms/<slug>/
     Retrieve a term by slug. 
     Only admin can access for now.
     """
@@ -56,9 +53,9 @@ class TermDetailView(generics.RetrieveAPIView):
 
 class TermUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET /api/taxonomy/terms/<slug>/edit/
-    PATCH /api/taxonomy/terms/<slug>/edit/
-    DELETE /api/taxonomy/terms/<slug>/edit/
+    GET /api/item_typeterms/<slug>/edit/
+    PATCH /api/item_typeterms/<slug>/edit/
+    DELETE /api/item_typeterms/<slug>/edit/
     Only admin can access for now.
     """
     queryset = Term.objects.all()

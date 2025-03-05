@@ -22,3 +22,8 @@ class TermSerializer(serializers.ModelSerializer):
         with the same term_type.
         """
         return data
+
+
+class AllTermsSerializer(serializers.Serializer):
+    categories = TermSerializer(many=True)
+    tags = TermSerializer(many=True)

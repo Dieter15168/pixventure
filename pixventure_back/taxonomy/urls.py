@@ -2,7 +2,7 @@
 
 from django.urls import path
 from .views import (
-    TermListView,
+    AllTermsView,
     TermCreateView,
     TermDetailView,
     TermUpdateDestroyView,
@@ -10,7 +10,7 @@ from .views import (
 
 urlpatterns = [
     # e.g. /api/terms/
-    path('', TermListView.as_view(), name='term-list'),
+    path('', AllTermsView.as_view(), name='term-list'),
 
     # e.g. /api/terms/new/
     path('new/', TermCreateView.as_view(), name='term-create'),
