@@ -17,13 +17,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head />
+
       <body>
-        <Header />
-        <main style={{ margin: "1rem" }}>
-          <ElementMenuClientSetup>
-            <AuthProvider>{children}</AuthProvider>
-          </ElementMenuClientSetup>
-        </main>
+        <AuthProvider>
+          <Header />
+          <main style={{ margin: "1rem" }}>
+            <ElementMenuClientSetup>{children}</ElementMenuClientSetup>
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );

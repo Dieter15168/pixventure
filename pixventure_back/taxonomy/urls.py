@@ -9,15 +9,15 @@ from .views import (
 )
 
 urlpatterns = [
-    # e.g. /api/taxonomy/terms/
+    # e.g. /api/terms/
     path('', TermListView.as_view(), name='term-list'),
 
-    # e.g. /api/taxonomy/terms/new/
+    # e.g. /api/terms/new/
     path('new/', TermCreateView.as_view(), name='term-create'),
 
-    # e.g. /api/taxonomy/terms/<slug>/
+    # e.g. /api/terms/<slug>/
     path('<slug:slug>/', TermDetailView.as_view(), name='term-detail'),
 
-    # e.g. /api/taxonomy/terms/<slug>/edit/
+    # e.g. /api/terms/<slug>/edit/
     path('<slug:slug>/edit/', TermUpdateDestroyView.as_view(), name='term-update-destroy'),
 ]

@@ -1,7 +1,7 @@
 # taxonomy/views.py
 
 from rest_framework import generics, status
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -12,12 +12,12 @@ from main.pagination import StandardResultsSetPagination
 class TermListView(generics.ListAPIView):
     """
     GET /api/taxonomy/terms/
-    Returns a paginated list of terms (tags + categories).
+    Returns a list of terms (tags + categories).
     Only admin for now, or expand with custom permissions if needed.
     """
     serializer_class = TermSerializer
-    permission_classes = [IsAdminUser]
-    pagination_class = StandardResultsSetPagination
+    permission_classes = [AllowAny]
+    pagination_class = None
 
     def get_queryset(self):
         # If you want to list all terms, or just filter by a term_type
