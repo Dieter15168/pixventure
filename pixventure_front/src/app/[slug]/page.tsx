@@ -1,11 +1,10 @@
 // src/app/[slug]/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
-import { usePostsAPI } from '../../utils/api/posts';
+import { usePostsAPI } from "../../utils/api/posts";
+import Tile, { TileProps } from "../../components/Tile/Tile";
 
 interface PostDetail {
   id: number;
@@ -21,7 +20,7 @@ interface PostDetail {
 
 interface PostItem {
   id: number;
-  item_type: number; // 1=photo, 2=video
+  item_type: number; // 1 = photo, 2 = video
   likes_counter: number;
   has_liked: boolean;
   thumbnail_url: string;
@@ -29,7 +28,8 @@ interface PostItem {
 
 export default function PostPage() {
   const params = useParams();
-  const slug = params.slug; // This corresponds to the [slug] in the route /[slug]
+  const slug = params.slug; // corresponds to the [slug] route
+
   const { fetchPostBySlug, fetchPostItems } = usePostsAPI();
 
   const [post, setPost] = useState<PostDetail | null>(null);
@@ -42,13 +42,12 @@ export default function PostPage() {
 
     const loadPostData = async () => {
       try {
-        // Fetch post details using the new API utility
+        // Fetch post details by slug
         const foundPost = await fetchPostBySlug(slug);
         setPost(foundPost);
 
-        // Once we have the post's ID, fetch the post items
-        const postId = foundPost.id;
-        const postItems = await fetchPostItems(postId);
+        // Fetch post items by post ID
+        const postItems = await fetchPostItems(foundPost.id);
         setItems(postItems);
       } catch (err: any) {
         setError(err.message);
@@ -58,49 +57,35 @@ export default function PostPage() {
     };
 
     loadPostData();
-  }, [slug]);
+  }, [slug, fetchPostBySlug, fetchPostItems]);
 
   if (loading) return <div>Loading post...</div>;
   if (error) return <div>Error: {error}</div>;
-
-  // If we got here, we should have the post and items
   if (!post) return <div>No post found</div>;
+
+  // Transform each post item into a TileProps object
+  // For a post item, we use the post's slug and owner data.
+  const tileItems: TileProps[] = items.map((item) => ({
+    id: item.id,
+    name: post.name, // you may choose a different naming strategy
+    // Detailed view for an item is assumed to be at /[post-slug]/[item-id]
+    slug: `${post.slug}/${item.id}`,
+    thumbnail_url: item.thumbnail_url,
+    item_type: item.item_type as 1 | 2, // assuming only photo (1) or video (2)
+    likes_counter: item.likes_counter,
+    has_liked: item.has_liked,
+    owner_username: post.owner_username,
+    size: "small", // adjust as needed
+  }));
 
   return (
     <div>
       <h1>{post.name}</h1>
       <p>By {post.owner_username}</p>
       <p>Likes: {post.likes_counter}</p>
-      <p>
-        Images: {post.images_count}, Videos: {post.videos_count}
-      </p>
-      <p>Has Liked: {post.has_liked ? "Yes" : "No"}</p>
-
-      <hr />
-
-      <h2>Post Items:</h2>
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-        {items.map((item) => (
-          <Link
-            key={item.id}
-            href={`/${slug}/${item.id}`}
-          >
-            <div
-              style={{
-                border: "1px solid #ddd",
-                padding: "10px",
-                width: "120px",
-              }}
-            >
-              <img
-                src={item.thumbnail_url}
-                alt={`Item ${item.id}`}
-                width={100}
-              />
-              <p>Type: {item.item_type === 1 ? "Photo" : "Video"}</p>
-              <p>Likes: {item.likes_counter}</p>
-            </div>
-          </Link>
+      <div style={{ display: "grid", gap: "10px" }}>
+        {tileItems.map((tile) => (
+          <Tile key={tile.id} item={tile} />
         ))}
       </div>
     </div>
