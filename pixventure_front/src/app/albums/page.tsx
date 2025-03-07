@@ -20,6 +20,7 @@ interface Album {
   updated: string;
   has_liked?: boolean;
   thumbnail_url?: string;
+  tile_size: "small" | "medium" | "large";
 }
 
 export default function AlbumsPage() {
@@ -63,7 +64,7 @@ export default function AlbumsPage() {
     // if the user is hidden, you could set to "Anonymous"
     owner_username: album.show_creator_to_others ? album.owner_username : "Anonymous",
     // any optional fields
-    size: "small",
+    tile_size: album.tile_size,
   }));
 
   return (

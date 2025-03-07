@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from posts.models import Post
 from media.models import MediaItem, MediaItemVersion
 from taxonomy.models import Category
-from media.utils import get_media_file_for_display
+from media.utils.media_file import get_media_file_for_display
 
 class BlurLogicTest(TestCase):
     """

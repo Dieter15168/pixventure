@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from posts.models import Post
 from posts.models import PostMedia
-from media.models import MediaItem
+from media.models import MediaItem, MediaItemVersion
 from social.utils import user_has_liked
-from media.utils import get_media_file_for_display
-from taxonomy.serializers import TermSerializer
+from media.utils.media_file import get_media_file_for_display
+from media.serializers import TileInfoMixin
 
-class PostSerializer(serializers.ModelSerializer):
+class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
     """
     Returns core information about a Post, including:
     - post id
@@ -38,6 +38,7 @@ class PostSerializer(serializers.ModelSerializer):
             'has_liked',
             'thumbnail_url',
             'owner_username',
+            'tile_size',
         ]
 
     def get_images_count(self, obj):
@@ -73,6 +74,16 @@ class PostSerializer(serializers.ModelSerializer):
             post=obj,  # in case the post is blurred
             thumbnail=True  # we want the 'thumbnail' variant
         )
+        
+    # TileInfoMixin's required method:
+    def get_featured_image_dimensions(self, obj):
+        # We assume that the Post has a featured_item field (a MediaItem)
+        if not obj.featured_item:
+            return None
+        thumbnail = obj.featured_item.versions.filter(version_type=MediaItemVersion.THUMBNAIL).first()
+        if thumbnail and thumbnail.width and thumbnail.height:
+            return (thumbnail.width, thumbnail.height)
+        return None
 
 
 class PostMediaItemDetailSerializer(serializers.ModelSerializer):

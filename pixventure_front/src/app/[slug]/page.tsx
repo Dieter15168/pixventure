@@ -24,6 +24,7 @@ interface PostItem {
   likes_counter: number;
   has_liked: boolean;
   thumbnail_url: string;
+  tile_size: "small" | "medium" | "large";
 }
 
 export default function PostPage() {
@@ -67,15 +68,14 @@ export default function PostPage() {
   // For a post item, we use the post's slug and owner data.
   const tileItems: TileProps[] = items.map((item) => ({
     id: item.id,
-    name: post.name, // you may choose a different naming strategy
-    // Detailed view for an item is assumed to be at /[post-slug]/[item-id]
+    name: post.name,
     slug: `${post.slug}/${item.id}`,
     thumbnail_url: item.thumbnail_url,
     item_type: item.item_type as 1 | 2, // assuming only photo (1) or video (2)
     likes_counter: item.likes_counter,
     has_liked: item.has_liked,
     owner_username: post.owner_username,
-    size: "small", // adjust as needed
+    tile_size: item.tile_size,
   }));
 
   return (
@@ -85,7 +85,10 @@ export default function PostPage() {
       <p>Likes: {post.likes_counter}</p>
       <div style={{ display: "grid", gap: "10px" }}>
         {tileItems.map((tile) => (
-          <Tile key={tile.id} item={tile} />
+          <Tile
+            key={tile.id}
+            item={tile}
+          />
         ))}
       </div>
     </div>

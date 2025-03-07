@@ -31,7 +31,7 @@ export interface TileProps {
   owner_username: string;
   lock_logo?: boolean;
   is_moderation?: boolean;
-  size?: "small" | "medium" | "large";
+  tile_size?: "small" | "medium" | "large";
   canDelete?: boolean;
   canAddToAlbum?: boolean;
   categories?: Array<{ name: string; slug: string }>;
@@ -53,7 +53,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     owner_username,
     lock_logo,
     is_moderation,
-    size = "small",
+    tile_size = "small",
     categories,
     tags,
     canDelete=false,
@@ -77,16 +77,16 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
 
   // Sizing logic
   const containerClass =
-    size === "large"
+    tile_size === "large"
       ? styles.container_large
-      : size === "medium"
+      : tile_size === "medium"
       ? styles.container_medium
       : styles.container_small;
 
   const cardClass =
-    size === "large"
+    tile_size === "large"
       ? styles.card_large
-      : size === "medium"
+      : tile_size === "medium"
       ? styles.card_medium
       : styles.card_small;
 

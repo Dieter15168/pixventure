@@ -28,7 +28,7 @@ interface AlbumElement {
     likes_counter: number;
     has_liked: boolean;
     owner_username: string;
-    // other post fields if needed
+    tile_size: "small" | "medium" | "large";
   };
   media_data?: {
     id: number;
@@ -41,7 +41,7 @@ interface AlbumElement {
     owner_username: string;
     images_count?: number;
     videos_count?: number;
-    // other media fields if needed
+    tile_size: "small" | "medium" | "large";
   };
 }
 
@@ -94,7 +94,7 @@ export default function AlbumDetailPage() {
         likes_counter: post.likes_counter,
         has_liked: post.has_liked,
         owner_username: post.owner_username,
-        size: "small",
+        tile_size: post.tile_size,
       };
     }
     // If the element represents a media item:
@@ -112,7 +112,7 @@ export default function AlbumDetailPage() {
         owner_username: media.owner_username,
         images_count: media.images_count,
         videos_count: media.videos_count,
-        size: "small",
+        tile_size: media.tile_size,
       };
     }
     // Fallback for unknown elements:
@@ -124,7 +124,7 @@ export default function AlbumDetailPage() {
       likes_counter: 0,
       has_liked: false,
       owner_username: "",
-      size: "small",
+      tile_size: "small",
     };
   };
 

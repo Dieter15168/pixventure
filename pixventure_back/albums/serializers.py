@@ -4,12 +4,11 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Album, AlbumElement
 from .utils import generate_unique_slug
-from media.models import MediaItem
-from posts.models import Post
+from media.models import MediaItem, MediaItemVersion
 from social.utils import user_has_liked
-from media.utils import get_media_file_for_display
+from media.utils.media_file import get_media_file_for_display
 from posts.serializers import PostSerializer
-from media.serializers import MediaItemSerializer
+from media.serializers import MediaItemSerializer, TileInfoMixin
 
 User = get_user_model()
 
@@ -59,7 +58,7 @@ class AlbumListSerializer(serializers.ModelSerializer):
         return None
 
 
-class AlbumDetailSerializer(serializers.ModelSerializer):
+class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
     """
     Shows detailed info about the album, including post/image/video counts.
     """
@@ -87,6 +86,7 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
             'show_creator_to_others',
             'created',
             'updated',
+            'tile_size',
         ]
 
     def get_owner_username(self, obj):
@@ -131,6 +131,15 @@ class AlbumDetailSerializer(serializers.ModelSerializer):
             user=user,
             thumbnail=True
         )
+        
+    # TileInfoMixin's required method:
+    def get_featured_image_dimensions(self, obj):
+        if not obj.featured_item:
+            return None
+        thumbnail = obj.featured_item.versions.filter(version_type=MediaItemVersion.THUMBNAIL).first()
+        if thumbnail and thumbnail.width and thumbnail.height:
+            return (thumbnail.width, thumbnail.height)
+        return None
 
 
 class AlbumElementSerializer(serializers.ModelSerializer):
