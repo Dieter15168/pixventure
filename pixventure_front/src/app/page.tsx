@@ -9,7 +9,7 @@ interface Post {
   name: string;
   likes_counter: number;
   has_liked: boolean;
-  // ...
+  slug: string;
 }
 
 export default function Home() {
@@ -47,7 +47,7 @@ export default function Home() {
         {posts.map((post) => (
           <PostTile
             key={post.id}
-            item={post}
+            item={{ ...post, targetType: "post" }}
           />
         ))}
       </div>

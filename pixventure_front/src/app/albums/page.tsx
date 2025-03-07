@@ -62,7 +62,9 @@ export default function AlbumsPage() {
     likes_counter: album.likes_counter,
     has_liked: album.has_liked ?? false,
     // if the user is hidden, you could set to "Anonymous"
-    owner_username: album.show_creator_to_others ? album.owner_username : "Anonymous",
+    owner_username: album.show_creator_to_others
+      ? album.owner_username
+      : "Anonymous",
     // any optional fields
     tile_size: album.tile_size,
   }));
@@ -73,7 +75,10 @@ export default function AlbumsPage() {
       {/* a container that could be .pin_container if you want the masonry layout */}
       <div className="pin_container">
         {tileItems.map((item) => (
-          <Tile key={item.id} item={item} />
+          <Tile
+            key={item.id}
+            item={{ ...item, targetType: "album" }}
+          />
         ))}
       </div>
     </div>

@@ -87,7 +87,7 @@ export default function PostPage() {
         {tileItems.map((tile) => (
           <Tile
             key={tile.id}
-            item={tile}
+            item={{ ...tile, targetType: "media" }}
           />
         ))}
       </div>

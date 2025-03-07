@@ -17,11 +17,12 @@ interface Album {
 }
 
 interface AlbumElement {
-  id: number;
+  id: number; // ID of the album element wrapper
   element_type: number; // 1 = post, 2 = media
   position: number;
+  // The actionable entity data is nested here:
   post_data?: {
-    id: number;
+    id: number;        // Actual post ID to be used for like and navigation
     name: string;
     slug: string;
     thumbnail_url?: string;
@@ -31,7 +32,7 @@ interface AlbumElement {
     tile_size: "small" | "medium" | "large";
   };
   media_data?: {
-    id: number;
+    id: number;        // Actual media item ID to be used for like and navigation
     name: string;
     slug: string;
     thumbnail_url?: string;
@@ -79,33 +80,43 @@ export default function AlbumDetailPage() {
   if (error) return <p>Error: {error}</p>;
   if (!album) return <p>No album found for slug: {slug}</p>;
 
-  // Helper function to transform an album element to TileProps.
+  /**
+   * Transform an album element into TileProps.
+   *
+   * IMPORTANT:
+   * - The outer album element is a wrapper and has its own id.
+   * - The actionable entity (post or media) is nested inside as post_data or media_data.
+   * - We use the inner entity's id for like toggling and navigation.
+   * - To ensure that each rendered tile has a unique React key,
+   *   we create a composite key combining the wrapper's id and the inner entity's id.
+   */
   const transformAlbumElementToTile = (element: AlbumElement): TileProps => {
-    // If the element represents a post:
     if (element.element_type === 1 && element.post_data) {
       const post = element.post_data;
       return {
-        id: element.id, // You might want to use post.id instead
+        // Use the inner post id for actionable purposes...
+        id: post.id,
+        // ...but use a composite key for rendering to ensure uniqueness.
+        renderKey: `${element.id}-${post.id}`,
         name: post.name,
-        slug: post.slug, // URL to the post detail page
+        slug: post.slug,
         thumbnail_url: post.thumbnail_url,
-        // We use item_type = 1 for posts
-        item_type: 1,
+        item_type: 1, // posts
         likes_counter: post.likes_counter,
         has_liked: post.has_liked,
         owner_username: post.owner_username,
         tile_size: post.tile_size,
+        targetType: "post",
       };
     }
-    // If the element represents a media item:
     if (element.element_type === 2 && element.media_data) {
       const media = element.media_data;
       return {
-        id: element.id, // Or media.id if preferred
+        id: media.id,
+        renderKey: `${element.id}-${media.id}`,
         name: media.name,
-        slug: media.slug, // URL to the media detail page
+        slug: media.slug,
         thumbnail_url: media.thumbnail_url,
-        // Use media.item_type (1 = photo, 2 = video)
         item_type: media.item_type as 1 | 2,
         likes_counter: media.likes_counter,
         has_liked: media.has_liked,
@@ -113,11 +124,13 @@ export default function AlbumDetailPage() {
         images_count: media.images_count,
         videos_count: media.videos_count,
         tile_size: media.tile_size,
+        targetType: "media",
       };
     }
-    // Fallback for unknown elements:
+    // Fallback if element data is missing:
     return {
       id: element.id,
+      renderKey: String(element.id),
       name: "Unknown element",
       slug: "",
       item_type: 1,
@@ -125,10 +138,12 @@ export default function AlbumDetailPage() {
       has_liked: false,
       owner_username: "",
       tile_size: "small",
+      targetType: "post",
     };
   };
 
-  // Transform all album elements to TileProps
+  // Transform all album elements into TileProps.
+  // Use the composite key for rendering.
   const tileItems: TileProps[] = elements.map(transformAlbumElementToTile);
 
   return (
@@ -140,10 +155,7 @@ export default function AlbumDetailPage() {
       <h2>Album Elements</h2>
       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
         {tileItems.map((tile) => (
-          <Tile
-            key={tile.id}
-            item={tile}
-          />
+          <Tile key={tile.renderKey || tile.id} item={tile} />
         ))}
       </div>
     </div>

@@ -1,81 +1,88 @@
 # social/utils.py
 from django.db import transaction
+from django.conf import settings
 from .models import Like
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
-def user_has_liked(user, post=None, media_item=None, album=None, user_profile=None):
+def user_has_liked(user, post=None, media_item=None, album=None, liked_user=None):
     """
-    Returns True if the given user has an active (is_active=True) like
-    for the specified target (post, media_item, album, or user_profile).
+    Returns True if the given user (liking_user) has an active like for the specified target.
     """
     if not user or not user.is_authenticated:
         return False
 
-    like_qs = Like.objects.filter(user=user, is_active=True)  # only active likes
+    like_qs = Like.objects.filter(liking_user=user, is_active=True)
     if post:
         like_qs = like_qs.filter(post=post)
     if media_item:
         like_qs = like_qs.filter(media_item=media_item)
     if album:
         like_qs = like_qs.filter(album=album)
-    if user_profile:
-        like_qs = like_qs.filter(user_profile=user_profile)
+    if liked_user:
+        like_qs = like_qs.filter(liked_user=liked_user)
 
     return like_qs.exists()
-
 
 @transaction.atomic
 def toggle_like(user, target_type, target_id, like=True):
     """
-    If like=True, we attempt to make or re-activate a like on the target.
-    If like=False, we set the like to inactive.
+    Toggles a like for the specified target.
     
-    target_type can be "post", "media", "album", "user_profile".
+    If like=True:
+      - Creates a new Like (or re-activates an existing inactive Like) and increments the target's likes_counter.
+    If like=False:
+      - Deactivates an active Like (if one exists) and decrements the target's likes_counter.
+      
+    target_type can be: "post", "media", "album", "user".
+    
+    If the target object does not exist, it raises a ValueError.
+    Detailed error messages are returned only if settings.DEBUG is True.
     """
     if not user.is_authenticated:
         raise ValueError("User must be authenticated")
-    
-    # 1. Identify the target model & object
-    target_obj = None
-    if target_type == 'post':
-        from posts.models import Post
-        target_obj = Post.objects.get(id=target_id)
-    elif target_type == 'media':
-        from media.models import MediaItem
-        target_obj = MediaItem.objects.get(id=target_id)
-    elif target_type == 'album':
-        from albums.models import Album
-        target_obj = Album.objects.get(id=target_id)
-    elif target_type == 'user_profile':
-        from accounts.models import UserProfile
-        target_obj = UserProfile.objects.get(id=target_id)
-    else:
-        raise ValueError("Invalid target_type")
 
-    # 2. Find or create the Like
+    target_obj = None
+    try:
+        if target_type == 'post':
+            from posts.models import Post
+            target_obj = Post.objects.get(id=target_id)
+        elif target_type == 'media':
+            from media.models import MediaItem
+            target_obj = MediaItem.objects.get(id=target_id)
+        elif target_type == 'album':
+            from albums.models import Album
+            target_obj = Album.objects.get(id=target_id)
+        elif target_type == 'user':
+            # Now we use the default User model for liking a user.
+            User = get_user_model()
+            target_obj = User.objects.get(id=target_id)
+        else:
+            raise ValueError("Invalid target_type")
+    except Exception as e:
+        if settings.DEBUG:
+            raise ValueError(f"Target object error: {e}")
+        else:
+            raise ValueError("Target object not found")
+
+    # Find or create the Like object.
     like_obj, created = Like.objects.get_or_create(
-        user=user,
-        post=target_obj if target_type=='post' else None,
-        media_item=target_obj if target_type=='media' else None,
-        album=target_obj if target_type=='album' else None,
-        user_profile=target_obj if target_type=='user_profile' else None,
+        liking_user=user,
+        post=target_obj if target_type == 'post' else None,
+        media_item=target_obj if target_type == 'media' else None,
+        album=target_obj if target_type == 'album' else None,
+        liked_user=target_obj if target_type == 'user' else None,
         defaults={'is_active': True}
     )
 
-    # 3. If we want to "like"
     if like:
-        # If it was previously inactive, re-activate it and increment
-        if not like_obj.is_active:
+        if created or not like_obj.is_active:
             like_obj.is_active = True
             like_obj.save()
-            # increment the target's likes_counter
             increment_likes_counter(target_obj)
     else:
-        # If we want to "unlike"
         if like_obj.is_active:
             like_obj.is_active = False
             like_obj.save()
-            # decrement the target's likes_counter
             decrement_likes_counter(target_obj)
 
 def increment_likes_counter(target_obj):
