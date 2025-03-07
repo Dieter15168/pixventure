@@ -14,7 +14,7 @@ class LikeAdmin(admin.ModelAdmin):
     ordering = ('-created',)
     fieldsets = (
         (None, {
-            'fields': ('liking_user', 'post', 'media_item', 'album')
+            'fields': ('liking_user', 'post', 'media_item', 'album', 'liked_user')
         }),
         ('Metadata', {
             'fields': ('created',),
