@@ -9,14 +9,12 @@ interface AlbumElement {
     name: string;
     thumbnail_url: string;
     has_liked: boolean;
-    // ...
   };
   media_data: null | {
     id: number;
     item_type: number;
     thumbnail_url: string;
     has_liked: boolean;
-    // ...
   };
 }
 

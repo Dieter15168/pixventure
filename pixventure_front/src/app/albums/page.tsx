@@ -15,7 +15,6 @@ interface Album {
   images_count: number;
   videos_count: number;
   owner_username: string;
-  show_creator_to_others: boolean;
   created: string;
   updated: string;
   has_liked?: boolean;
@@ -62,9 +61,7 @@ export default function AlbumsPage() {
     likes_counter: album.likes_counter,
     has_liked: album.has_liked ?? false,
     // if the user is hidden, you could set to "Anonymous"
-    owner_username: album.show_creator_to_others
-      ? album.owner_username
-      : "Anonymous",
+    owner_username: album.owner_username,
     // any optional fields
     tile_size: album.tile_size,
   }));
@@ -77,7 +74,7 @@ export default function AlbumsPage() {
         {tileItems.map((item) => (
           <Tile
             key={item.id}
-            item={{ ...item, targetType: "album" }}
+            item={{ ...item, entity_type: "album" }}
           />
         ))}
       </div>

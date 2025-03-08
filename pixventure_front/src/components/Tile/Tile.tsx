@@ -36,7 +36,7 @@ export interface TileProps {
   canAddToAlbum?: boolean;
   categories?: Array<{ name: string; slug: string }>;
   tags?: Array<{ name: string; slug: string }>;
-  targetType: "post" | "media" | "album";
+  entity_type: "post" | "media" | "album";
 }
 
 const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
@@ -59,7 +59,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     tags,
     canDelete=false,
     canAddToAlbum=true,
-    targetType,
+    entity_type,
   } = item;
 
   const { openMenu } = useElementMenu();
@@ -132,7 +132,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
           {/* The like button & like counter */}
           <div className={styles.like_button}>
             <LikeButton
-              targetType={targetType}
+              entity_type={entity_type}
               targetId={id}
               initialLikesCounter={likes_counter}
               initialHasLiked={has_liked}

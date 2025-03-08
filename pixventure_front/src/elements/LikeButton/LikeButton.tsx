@@ -7,14 +7,14 @@ import { faHeart } from "@fortawesome/free-solid-svg-icons";
 import { useSocialAPI } from "../../utils/api/social";
 
 interface LikeButtonProps {
-  targetType: "post" | "media" | "album" | "user_profile";
+  entity_type: "post" | "media" | "album" | "user_profile";
   targetId: number;
   initialLikesCounter: number;
   initialHasLiked: boolean;
 }
 
 const LikeButton: React.FC<LikeButtonProps> = ({
-  targetType,
+  entity_type,
   targetId,
   initialLikesCounter,
   initialHasLiked,
@@ -45,7 +45,7 @@ const LikeButton: React.FC<LikeButtonProps> = ({
     }
 
     try {
-      const response = await toggleLike(targetType, targetId, action);
+      const response = await toggleLike(entity_type, targetId, action);
       // Use updated values from backend if provided; otherwise, keep our optimistic update.
       if (response.likes_counter !== undefined) {
         setLikesCounter(response.likes_counter);

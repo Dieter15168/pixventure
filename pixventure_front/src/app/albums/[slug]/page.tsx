@@ -14,7 +14,6 @@ interface Album {
   likes_counter: number;
   has_liked: boolean;
   thumbnail_url?: string;
-  // ...other album fields
 }
 
 interface AlbumElement {
@@ -107,7 +106,7 @@ export default function AlbumDetailPage() {
         has_liked: post.has_liked,
         owner_username: post.owner_username,
         tile_size: post.tile_size,
-        targetType: "post",
+        entity_type: "post",
       };
     }
     if (element.element_type === 2 && element.media_data) {
@@ -125,7 +124,7 @@ export default function AlbumDetailPage() {
         images_count: media.images_count,
         videos_count: media.videos_count,
         tile_size: media.tile_size,
-        targetType: "media",
+        entity_type: "media",
       };
     }
     // Fallback if element data is missing:
@@ -139,7 +138,7 @@ export default function AlbumDetailPage() {
       has_liked: false,
       owner_username: "",
       tile_size: "small",
-      targetType: "post",
+      entity_type: "post",
     };
   };
 
@@ -151,7 +150,7 @@ export default function AlbumDetailPage() {
     <div>
       <h1>{album.name}</h1>
       <LikeButton
-        targetType={"album"}
+        entity_type={"album"}
         targetId={album.id}
         initialLikesCounter={album.likes_counter}
         initialHasLiked={album.has_liked}

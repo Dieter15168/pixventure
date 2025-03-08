@@ -30,7 +30,7 @@ interface PostItem {
 
 export default function PostPage() {
   const params = useParams();
-  const slug = params.slug; // corresponds to the [slug] route
+  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 
   const { fetchPostBySlug, fetchPostItems } = usePostsAPI();
 
@@ -77,6 +77,7 @@ export default function PostPage() {
     has_liked: item.has_liked,
     owner_username: post.owner_username,
     tile_size: item.tile_size,
+    entity_type: "media"
   }));
 
   return (
@@ -84,7 +85,7 @@ export default function PostPage() {
       <h1>{post.name}</h1>
       <p>By {post.owner_username}</p>
       <LikeButton
-        targetType={"post"}
+        entity_type={"post"}
         targetId={post.id}
         initialLikesCounter={post.likes_counter}
         initialHasLiked={post.has_liked}
@@ -93,7 +94,7 @@ export default function PostPage() {
         {tileItems.map((tile) => (
           <Tile
             key={tile.id}
-            item={{ ...tile, targetType: "media" }}
+            item={{ ...tile, entity_type: "media" }}
           />
         ))}
       </div>

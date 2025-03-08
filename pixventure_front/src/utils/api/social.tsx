@@ -20,9 +20,9 @@ export function useSocialAPI() {
    * "target_type" can be "post", "media", "album", "user_profile", etc.
    * "target_id" is the entity's ID.
    */
-  const toggleLike = useCallback(async (targetType: string, targetId: number, action: 'like' | 'unlike') => {
+  const toggleLike = useCallback(async (entity_type: string, targetId: number, action: 'like' | 'unlike') => {
     const res = await axios.post('/social/like/', {
-      target_type: targetType,
+      target_type: entity_type,
       target_id: targetId,
       action, // "like" or "unlike"
     });

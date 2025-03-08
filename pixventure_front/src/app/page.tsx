@@ -47,7 +47,7 @@ export default function Home() {
         {posts.map((post) => (
           <PostTile
             key={post.id}
-            item={{ ...post, targetType: "post" }}
+            item={{ ...post, entity_type: "post" }}
           />
         ))}
       </div>
