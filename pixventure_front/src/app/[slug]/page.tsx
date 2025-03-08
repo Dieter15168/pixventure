@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { usePostsAPI } from "../../utils/api/posts";
 import Tile, { TileProps } from "../../components/Tile/Tile";
+import LikeButton from "../../elements/LikeButton/LikeButton";
 
 interface PostDetail {
   id: number;
@@ -82,7 +83,12 @@ export default function PostPage() {
     <div>
       <h1>{post.name}</h1>
       <p>By {post.owner_username}</p>
-      <p>Likes: {post.likes_counter}</p>
+      <LikeButton
+        targetType={"post"}
+        targetId={post.id}
+        initialLikesCounter={post.likes_counter}
+        initialHasLiked={post.has_liked}
+      />
       <div style={{ display: "grid", gap: "10px" }}>
         {tileItems.map((tile) => (
           <Tile

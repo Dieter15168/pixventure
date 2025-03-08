@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAlbumsAPI } from "../../../utils/api/albums";
 import Tile, { TileProps } from "../../../components/Tile/Tile";
+import LikeButton from "../../../elements/LikeButton/LikeButton";
 
 // Example interfaces for album and album element data returned from the API.
 interface Album {
@@ -11,7 +12,7 @@ interface Album {
   name: string;
   slug: string;
   likes_counter: number;
-  has_liked?: boolean;
+  has_liked: boolean;
   thumbnail_url?: string;
   // ...other album fields
 }
@@ -22,7 +23,7 @@ interface AlbumElement {
   position: number;
   // The actionable entity data is nested here:
   post_data?: {
-    id: number;        // Actual post ID to be used for like and navigation
+    id: number; // Actual post ID to be used for like and navigation
     name: string;
     slug: string;
     thumbnail_url?: string;
@@ -32,7 +33,7 @@ interface AlbumElement {
     tile_size: "small" | "medium" | "large";
   };
   media_data?: {
-    id: number;        // Actual media item ID to be used for like and navigation
+    id: number; // Actual media item ID to be used for like and navigation
     name: string;
     slug: string;
     thumbnail_url?: string;
@@ -149,13 +150,20 @@ export default function AlbumDetailPage() {
   return (
     <div>
       <h1>{album.name}</h1>
-      <p>Likes: {album.likes_counter}</p>
-      <p>{album.has_liked ? "You liked this album" : "Not liked yet"}</p>
+      <LikeButton
+        targetType={"album"}
+        targetId={album.id}
+        initialLikesCounter={album.likes_counter}
+        initialHasLiked={album.has_liked}
+      />
       <hr />
       <h2>Album Elements</h2>
       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
         {tileItems.map((tile) => (
-          <Tile key={tile.renderKey || tile.id} item={tile} />
+          <Tile
+            key={tile.renderKey || tile.id}
+            item={tile}
+          />
         ))}
       </div>
     </div>
