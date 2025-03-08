@@ -12,8 +12,13 @@ interface PostMetaData {
   name: string;
   slug: string;
   owner_username: string | null;
-  categories: Array<{ id: number; term_item_type: number; name: string; slug: string }>;
-  tags: Array<{ id: number; term_item_type: number; name: string; slug: string }>;
+  categories: Array<{
+    id: number;
+    term_type: number;
+    name: string;
+    slug: string;
+  }>;
+  tags: Array<{ id: number; term_type: number; name: string; slug: string }>;
 }
 
 export default function ElementMenuOffcanvas() {
@@ -28,7 +33,7 @@ export default function ElementMenuOffcanvas() {
     if (!showMenu || !selectedItem) return;
 
     // if item is a post, fetch meta
-    if (selectedItem.item_type === "post") {
+    if (selectedItem.entity_type === "post") {
       loadPostMeta(selectedItem.id);
     } else {
       // if not post, optionally reset postMeta
@@ -65,14 +70,15 @@ export default function ElementMenuOffcanvas() {
       </Offcanvas.Header>
       <Offcanvas.Body>
         {/* If item is post => show post meta logic */}
-        {selectedItem.item_type === "post" && (
+        {selectedItem.entity_type === "post" && (
           <div>
             {loadingMeta && <p>Loading post meta...</p>}
             {error && <p className="text-danger">{error}</p>}
             {postMeta && (
               <>
                 <p>
-                  <strong>{postMeta.name}</strong> (owner: {postMeta.owner_username})
+                  <strong>{postMeta.name}</strong> (owner:{" "}
+                  {postMeta.owner_username})
                 </p>
                 {/* Use the TermDisplay component for categories/tags */}
                 <TermDisplay
@@ -83,15 +89,16 @@ export default function ElementMenuOffcanvas() {
             )}
           </div>
         )}
-
         {/* If it's a media or album, etc. => handle differently */}
-        {selectedItem.item_type === "album" && (
+        {selectedItem.entity_type === "album" && (
           <p>Show album logic here if needed...</p>
         )}
-        {selectedItem.item_type === "media" && (
+        {selectedItem.entity_type === "media" && (
           <p>Show media logic here if needed...</p>
         )}
-        {/* Additional actions or buttons can go here */}
+        {selectedItem.entity_type === "user" && (
+          <p>Show user logic here if needed...</p>
+        )}
       </Offcanvas.Body>
     </Offcanvas>
   );

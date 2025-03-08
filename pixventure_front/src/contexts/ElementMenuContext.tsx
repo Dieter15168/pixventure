@@ -5,14 +5,13 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 
 // The shape of your item data (post, album, etc.)
 export type ElementMenuItem = {
-  item_type: "post" | "album" | "media" | "user"; // or more
+  entity_type: "post" | "album" | "media" | "user";
   id: number;
   name: string;
   categories?: Array<{ name: string; slug: string }>;
   tags?: Array<{ name: string; slug: string }>;
   canDelete?: boolean;
   canAddToAlbum?: boolean;
-  // ...any other info needed in the menu
 };
 
 // The shape of the context value

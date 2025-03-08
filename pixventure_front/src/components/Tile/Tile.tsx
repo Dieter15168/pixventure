@@ -68,7 +68,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     const item: ElementMenuItem = {
       id,
       name,
-      item_type,
+      entity_type,
       canDelete,
       canAddToAlbum,
       categories,
