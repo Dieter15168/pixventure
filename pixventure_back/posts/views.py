@@ -105,8 +105,8 @@ class PostUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'pk'
 
     def perform_destroy(self, instance):
-        # If you prefer archiving instead of actual delete, do so here.
-        instance.delete()
+        instance.status = Post.DELETED
+        instance.save(update_fields=['status'])
 
 
 # 6. PostMediaListCreateView

@@ -1,22 +1,18 @@
+// src/components/Tile/Tile.tsx
 "use client";
 
 import React from "react";
 import Link from "next/link";
 import styles from "./Tile.module.scss";
-
 import Image from "../../elements/Image/Image";
 import RenderingPlaceholder from "../../elements/PreviewPlaceholder/PreviewPlaceholder";
 import PlayButton from "../../elements/PlayButton/PlayButton";
 import MediaCounter from "../../elements/MediaCounter/MediaCounter";
 import LikeButton from "../../elements/LikeButton/LikeButton";
 import LockLogo from "../../elements/LockLogo/LockLogo";
-import {
-  useElementMenu,
-  ElementMenuItem,
-} from "../../contexts/ElementMenuContext";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisH } from "@fortawesome/free-solid-svg-icons";
+import { useElementMenu, ElementMenuItem } from "../../contexts/ElementMenuContext";
 
 export type TileItemType = 1 | 2 | 3;
 
@@ -35,11 +31,11 @@ export interface TileProps {
   lock_logo?: boolean;
   is_moderation?: boolean;
   tile_size?: "small" | "medium" | "large";
-  canDelete?: boolean;
   canAddToAlbum?: boolean;
   categories?: Array<{ name: string; slug: string }>;
   tags?: Array<{ name: string; slug: string }>;
   entity_type: "post" | "media" | "album";
+  page_type: "posts_list" | "albums_list" | "post" | "album";
 }
 
 const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
@@ -56,31 +52,34 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     has_liked,
     owner_username,
     lock_logo,
-    is_moderation,
     tile_size = "small",
     categories,
     tags,
-    canDelete = false,
     canAddToAlbum = true,
     entity_type,
+    page_type,
   } = item;
 
   const { openMenu } = useElementMenu();
 
   const handleMenuClick = () => {
-    const item: ElementMenuItem = {
+    const menuItem: ElementMenuItem = {
       id,
       name,
       entity_type,
-      canDelete,
       canAddToAlbum,
       categories,
       tags,
+      // Pass pageContext with page_type and entityId.
+      pageContext: {
+        page_type,
+        entityId: id,
+      },
     };
-    openMenu(item);
+    openMenu(menuItem);
   };
 
-  // Sizing logic
+  // Sizing logic (using SCSS classes)
   const containerClass =
     tile_size === "large"
       ? styles.container_large
@@ -96,43 +95,23 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
       : styles.card_small;
 
   const counters = [];
-
-  if (images_count > 0) {
-    counters.push({ type: "photo", count: images_count });
-  }
-  if (videos_count > 0) {
-    counters.push({ type: "video", count: videos_count });
-  }
-  if (videos_count > 0) {
-    counters.push({ type: "post", count: posts_count });
-  }
+  if (images_count > 0) counters.push({ type: "photo", count: images_count });
+  if (videos_count > 0) counters.push({ type: "video", count: videos_count });
+  if (posts_count > 0) counters.push({ type: "post", count: posts_count });
 
   return (
     <div className={styles.pin_container}>
-      <div
-        className={`${styles.item_container} ${containerClass}`}
-        id={`object-${id}-2`}
-      >
+      <div className={`${styles.item_container} ${containerClass}`} id={`object-${id}-2`}>
         <div className={`${styles.inline_card} ${cardClass} mb-2`}>
-          {/* If item_type=1 or there's a thumbnail => show an image. Otherwise, if item_type=2 + no thumbnail => “rendering” */}
           {item_type === 1 || thumbnail_url ? (
             <Link href={`/${slug}`}>
-              <Image
-                name={name}
-                thumbnailUrl={thumbnail_url}
-              />
+              <Image name={name} thumbnailUrl={thumbnail_url} />
             </Link>
           ) : item_type === 2 && !thumbnail_url ? (
             <RenderingPlaceholder />
           ) : null}
-
-          {/* If item_type=2 & we have a thumbnail => show “play” icon */}
           {item_type === 2 && thumbnail_url && <PlayButton slug={slug} />}
-
-          {/* If totalItems > 1 => show a camera icon + count. We do that in the MediaCounter subcomponent. */}
           <MediaCounter counters={counters} />
-
-          {/* The like button & like counter */}
           <div className={styles.like_button}>
             <LikeButton
               entity_type={entity_type}
@@ -141,15 +120,10 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
               initialHasLiked={has_liked}
             />
           </div>
-
-          {/* Lock logo if needed */}
           {lock_logo && <LockLogo />}
         </div>
-
-        {/* The bottom row (name + user + ellipsis) */}
-
         <div className="ps-2 d-flex">
-          {entity_type != "media" ? (
+          {entity_type !== "media" ? (
             <div className="w-100">
               <p className={`${styles.truncate} mb-0`}>
                 <Link href={`/${slug}`}>{name}</Link>

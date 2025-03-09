@@ -5,7 +5,8 @@ import React, { useEffect, useState } from "react";
 import { Offcanvas } from "react-bootstrap";
 import { useElementMenu } from "../contexts/ElementMenuContext";
 import { usePostsAPI } from "../utils/api/posts";
-import TermDisplay from "./TermDisplay"; // the new component from step #1
+import TermDisplay from "./TermDisplay"; // displays categories/tags
+import PostMenuActions from "./PostMenuActions";
 
 interface PostMetaData {
   id: number;
@@ -19,8 +20,13 @@ interface PostMetaData {
     slug: string;
   }>;
   tags: Array<{ id: number; term_type: number; name: string; slug: string }>;
+  can_edit: boolean;
 }
 
+/**
+ * Offcanvas component that displays the item context menu.
+ * It shows meta data for posts and renders entity-specific action components.
+ */
 export default function ElementMenuOffcanvas() {
   const { showMenu, closeMenu, selectedItem } = useElementMenu();
   const { fetchPostMeta } = usePostsAPI();
@@ -32,16 +38,18 @@ export default function ElementMenuOffcanvas() {
   useEffect(() => {
     if (!showMenu || !selectedItem) return;
 
-    // if item is a post, fetch meta
+    // If the item is a post, fetch its metadata (which now includes can_edit)
     if (selectedItem.entity_type === "post") {
       loadPostMeta(selectedItem.id);
     } else {
-      // if not post, optionally reset postMeta
       setPostMeta(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showMenu, selectedItem]);
 
+  /**
+   * Loads metadata for a given post.
+   * @param postId The ID of the post.
+   */
   const loadPostMeta = async (postId: number) => {
     setLoadingMeta(true);
     setError(null);
@@ -59,46 +67,34 @@ export default function ElementMenuOffcanvas() {
   if (!selectedItem) return null;
 
   return (
-    <Offcanvas
-      show={showMenu}
-      onHide={closeMenu}
-      placement="bottom"
-      className="bg-dark text-light"
-    >
+    <Offcanvas show={showMenu} onHide={closeMenu} placement="bottom" className="bg-dark text-light">
       <Offcanvas.Header closeButton>
         <Offcanvas.Title>Options</Offcanvas.Title>
       </Offcanvas.Header>
       <Offcanvas.Body>
-        {/* If item is post => show post meta logic */}
         {selectedItem.entity_type === "post" && (
-          <div>
+          <>
             {loadingMeta && <p>Loading post meta...</p>}
             {error && <p className="text-danger">{error}</p>}
             {postMeta && (
-              <>
+              <div>
                 <p>
-                  <strong>{postMeta.name}</strong> (owner:{" "}
-                  {postMeta.owner_username})
+                  <strong>{postMeta.name}</strong> (owner: {postMeta.owner_username})
                 </p>
-                {/* Use the TermDisplay component for categories/tags */}
-                <TermDisplay
-                  categories={postMeta.categories}
-                  tags={postMeta.tags}
-                />
-              </>
+                <TermDisplay categories={postMeta.categories} tags={postMeta.tags} />
+              </div>
             )}
-          </div>
+            <PostMenuActions
+              postId={selectedItem.id}
+              canEdit={postMeta?.can_edit}
+              // Pass the pageContext received from the tile.
+              albumContext={selectedItem.pageContext}
+            />
+          </>
         )}
-        {/* If it's a media or album, etc. => handle differently */}
-        {selectedItem.entity_type === "album" && (
-          <p>Show album logic here if needed...</p>
-        )}
-        {selectedItem.entity_type === "media" && (
-          <p>Show media logic here if needed...</p>
-        )}
-        {selectedItem.entity_type === "user" && (
-          <p>Show user logic here if needed...</p>
-        )}
+        {selectedItem.entity_type === "album" && <p>Show album logic here if needed...</p>}
+        {selectedItem.entity_type === "media" && <p>Show media logic here if needed...</p>}
+        {selectedItem.entity_type === "user" && <p>Show user logic here if needed...</p>}
       </Offcanvas.Body>
     </Offcanvas>
   );

@@ -12,21 +12,15 @@ export function usePostsAPI() {
     return res.data.results;
   }, [axios]);
 
-  const fetchPostBySlug = useCallback(
-    async (slug: string) => {
-      const res = await axios.get(`/posts/?slug=${slug}`);
-      return res.data.results[0];
-    },
-    [axios]
-  );
+  const fetchPostBySlug = useCallback(async (slug: string) => {
+    const res = await axios.get(`/posts/?slug=${slug}`);
+    return res.data.results[0];
+  }, [axios]);
 
-  const fetchPostItems = useCallback(
-    async (postId: number) => {
-      const res = await axios.get(`/posts/${postId}/items/`);
-      return res.data.results;
-    },
-    [axios]
-  );
+  const fetchPostItems = useCallback(async (postId: number) => {
+    const res = await axios.get(`/posts/${postId}/items/`);
+    return res.data.results;
+  }, [axios]);
 
   const fetchPostItem = useCallback(async (postId: number, itemId: number) => {
     const res = await axios.get(`/posts/${postId}/items/${itemId}/`);
@@ -38,11 +32,17 @@ export function usePostsAPI() {
     return res.data; // { id, name, slug, owner_username, categories, tags }
   }, [axios]);
 
+  const deletePost = useCallback(async (postId: number) => {
+    const res = await axios.delete(`/posts/${postId}/edit/`);
+    return res.data;
+  }, [axios]);
+
   return {
     fetchPosts,
     fetchPostBySlug,
     fetchPostItems,
     fetchPostItem,
     fetchPostMeta,
+    deletePost,
   };
 }

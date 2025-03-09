@@ -1,3 +1,4 @@
+// src/app/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -29,16 +30,11 @@ export default function Home() {
         setLoading(false);
       }
     };
-
     getPosts();
   }, [fetchPosts]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div>
@@ -47,7 +43,11 @@ export default function Home() {
         {posts.map((post) => (
           <PostTile
             key={post.id}
-            item={{ ...post, entity_type: "post" }}
+            item={{
+              ...post,
+              entity_type: "post",
+              page_type: "posts_list",
+            }}
           />
         ))}
       </div>

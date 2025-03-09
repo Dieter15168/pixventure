@@ -207,15 +207,14 @@ class PostMetaSerializer(serializers.ModelSerializer):
     owner_username = serializers.SerializerMethodField()
     categories = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'name', 'slug', 'owner_username', 'categories', 'tags']
+        fields = ['id', 'name', 'slug', 'owner_username', 'categories', 'tags', 'can_edit']
 
     def get_owner_username(self, obj):
-        if obj.owner:
-            return obj.owner.username
-        return None
+        return obj.owner.username if obj.owner else None
 
     def get_categories(self, obj):
         from taxonomy.serializers import TermSerializer
@@ -226,3 +225,10 @@ class PostMetaSerializer(serializers.ModelSerializer):
         from taxonomy.serializers import TermSerializer
         queryset = obj.tags.all()
         return TermSerializer(queryset, many=True).data
+
+    def get_can_edit(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            # Example logic: user can edit if they own the post or have the change permission.
+            return obj.owner == request.user or request.user.has_perm('posts.change_post')
+        return False
