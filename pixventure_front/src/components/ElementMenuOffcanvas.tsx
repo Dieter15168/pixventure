@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Offcanvas } from "react-bootstrap";
 import { useElementMenu } from "../contexts/ElementMenuContext";
 import { usePostsAPI } from "../utils/api/posts";
-import TermDisplay from "./TermDisplay"; // displays categories/tags
+import TermDisplay from "./TermDisplay";
 import PostMenuActions from "./PostMenuActions";
 
 interface PostMetaData {

@@ -13,7 +13,8 @@ from .serializers import (
     AlbumListSerializer,
     AlbumDetailSerializer,
     AlbumCreateSerializer,
-    AlbumElementSerializer
+    AlbumElementSerializer,
+    AlbumElementCreateSerializer
 )
 from .permissions import IsAlbumOwnerOrAdminOrPublicRead
 from .utils import generate_unique_slug
@@ -129,11 +130,8 @@ class AlbumUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAlbumOwnerOrAdminOrPublicRead]
 
     def perform_destroy(self, instance):
-        # If you prefer archiving instead of actual delete:
-        # instance.status = Album.ARCHIVED
-        # instance.save()
-        # Or if you want to fully delete:
-        instance.delete()
+        instance.status = Album.DELETED
+        instance.save()
 
 # --- 5. AlbumElementsListCreateView ---
 
@@ -144,7 +142,6 @@ class AlbumElementsListCreateView(generics.ListCreateAPIView):
     POST /api/albums/<slug>/elements/
       - add a new element (only owner or admin)
     """
-    serializer_class = AlbumElementSerializer
     permission_classes = [IsAlbumOwnerOrAdminOrPublicRead]
     pagination_class = StandardResultsSetPagination
 
@@ -157,16 +154,40 @@ class AlbumElementsListCreateView(generics.ListCreateAPIView):
         album = self.get_album()
         return AlbumElement.objects.filter(album=album).order_by('position')
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return AlbumElementCreateSerializer
+        else:
+            return AlbumElementSerializer
+
+    def get_serializer_context(self):
+        # Ensure that the album is provided in the serializer context.
+        context = super().get_serializer_context()
+        context['album'] = self.get_album()
+        return context
+
     def perform_create(self, serializer):
         album = self.get_album()
-        # The "create" part must be restricted to owner or staff
-        if (album.owner != self.request.user) and not self.request.user.is_staff:
+        if album.owner != self.request.user and not self.request.user.is_staff:
             raise PermissionDenied("Only the owner or admin can add elements.")
 
-        # Decide the next position automatically
-        max_position = album.album_elements.aggregate(Max('position'))['position__max'] or 0
-        serializer.save(album=album, position=max_position + 1)
+        # Retrieve the element_type and element_id from validated data
+        element_type_str = serializer.validated_data.get('element_type').lower()
+        element_id = serializer.validated_data.get('element_id')
+        if element_type_str == 'post':
+            element_type_value = AlbumElement.POST_TYPE
+            filter_kwargs = {'element_post_id': element_id}
+        else:
+            element_type_value = AlbumElement.MEDIA_TYPE
+            filter_kwargs = {'element_media_id': element_id}
+        filter_kwargs.update({'album': album, 'element_type': element_type_value})
 
+        # Prevent duplicate addition
+        if AlbumElement.objects.filter(**filter_kwargs).exists():
+            raise PermissionDenied("This item is already in the album.")
+
+        max_position = album.album_elements.aggregate(Max('position'))['position__max'] or 0
+        serializer.save(position=max_position + 1, album=album)
 # --- 6. AlbumElementRetrieveDestroyView ---
 
 class AlbumElementRetrieveDestroyView(generics.RetrieveDestroyAPIView):

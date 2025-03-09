@@ -177,3 +177,32 @@ class AlbumElementSerializer(serializers.ModelSerializer):
         if obj.element_type == AlbumElement.MEDIA_TYPE and obj.element_media:
             return MediaItemSerializer(obj.element_media, context=self.context).data
         return None
+
+
+class AlbumElementCreateSerializer(serializers.ModelSerializer):
+    # Accept element_type as a string and element_id as the identifier
+    element_type = serializers.CharField()
+    element_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = AlbumElement
+        fields = ['element_type', 'element_id']
+
+    def validate_element_type(self, value):
+        value = value.lower()
+        if value not in ['post', 'media']:
+            raise serializers.ValidationError("element_type must be 'post' or 'media'.")
+        return value
+
+    def create(self, validated_data):
+        album = self.context.get('album')  # Provided by the view
+        element_type_str = validated_data.pop('element_type').lower()
+        element_id = validated_data.pop('element_id')
+        if element_type_str == 'post':
+            validated_data['element_type'] = AlbumElement.POST_TYPE
+            validated_data['element_post_id'] = element_id
+        elif element_type_str == 'media':
+            validated_data['element_type'] = AlbumElement.MEDIA_TYPE
+            validated_data['element_media_id'] = element_id
+        validated_data['album'] = album
+        return AlbumElement.objects.create(**validated_data)

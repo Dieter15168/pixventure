@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { usePostsAPI } from "../utils/api/posts";
 import { useAlbumElementsAPI } from "../utils/api/albumElements";
 import { useElementMenu } from "../contexts/ElementMenuContext";
+import SelectAlbumMenu from "./SelectAlbumMenu";
 
 interface PostMenuActionsProps {
   postId: number;
@@ -23,23 +24,24 @@ interface PostMenuActionsProps {
  * Renders action buttons for a post in the item context menu.
  * It allows adding/removing a post from an album and deleting the post (if the user can edit it).
  */
-export default function PostMenuActions({ postId, canEdit, albumContext }: PostMenuActionsProps) {
+export default function PostMenuActions({
+  postId,
+  canEdit,
+  albumContext,
+}: PostMenuActionsProps) {
   const { closeMenu } = useElementMenu();
   const { deletePost } = usePostsAPI();
-  const { addPostToAlbum, removePostFromAlbum } = useAlbumElementsAPI();
+  const { addEntityToAlbum, removeEntityFromAlbum } = useAlbumElementsAPI();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAlbumModal, setShowAlbumModal] = useState(false);
 
-  /**
-   * Handles deletion of a post.
-   */
   const handleDelete = async () => {
     setLoading(true);
     setError(null);
     try {
       await deletePost(postId);
-      // Optionally refresh the list or notify the user.
       closeMenu();
     } catch (err: any) {
       setError(err.message || "Failed to delete post.");
@@ -48,15 +50,12 @@ export default function PostMenuActions({ postId, canEdit, albumContext }: PostM
     }
   };
 
-  /**
-   * Handles adding a post to an album.
-   */
   const handleAddToAlbum = async () => {
     if (!albumContext || !albumContext.albumSlug) return;
     setLoading(true);
     setError(null);
     try {
-      await addPostToAlbum(albumContext.albumSlug, postId);
+      await addEntityToAlbum(albumContext.albumSlug, "post", postId);
       closeMenu();
     } catch (err: any) {
       setError(err.message || "Failed to add post to album.");
@@ -65,15 +64,12 @@ export default function PostMenuActions({ postId, canEdit, albumContext }: PostM
     }
   };
 
-  /**
-   * Handles removing a post from an album.
-   */
   const handleRemoveFromAlbum = async () => {
     if (!albumContext || !albumContext.albumSlug || !albumContext.albumElementId) return;
     setLoading(true);
     setError(null);
     try {
-      await removePostFromAlbum(albumContext.albumSlug, albumContext.albumElementId);
+      await removeEntityFromAlbum(albumContext.albumSlug, albumContext.albumElementId);
       closeMenu();
     } catch (err: any) {
       setError(err.message || "Failed to remove post from album.");
@@ -84,7 +80,7 @@ export default function PostMenuActions({ postId, canEdit, albumContext }: PostM
 
   return (
     <div className="post-menu-actions">
-      {albumContext && albumContext.albumSlug && (
+      {albumContext && albumContext.albumSlug ? (
         <>
           {albumContext.inAlbum ? (
             <button onClick={handleRemoveFromAlbum} disabled={loading}>
@@ -96,6 +92,10 @@ export default function PostMenuActions({ postId, canEdit, albumContext }: PostM
             </button>
           )}
         </>
+      ) : (
+        <button onClick={() => setShowAlbumModal(true)} disabled={loading}>
+          Save to Album
+        </button>
       )}
       {canEdit && (
         <button onClick={handleDelete} disabled={loading}>
@@ -103,6 +103,14 @@ export default function PostMenuActions({ postId, canEdit, albumContext }: PostM
         </button>
       )}
       {error && <p className="error text-danger">{error}</p>}
+      {showAlbumModal && (
+        <SelectAlbumMenu
+          entityId={postId}
+          entityType="post"
+          onClose={() => setShowAlbumModal(false)}
+          onSuccess={closeMenu}
+        />
+      )}
     </div>
   );
 }
