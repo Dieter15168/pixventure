@@ -16,6 +16,7 @@ class Album(models.Model):
     # - PENDING_MODRATION: waiting for the moderator's action
     # - PUBLIC: visible to all
     # - PRIVATE: only owner or authorized users can view
+    # - DELETED: soft delete, can be restored or archived from this state
     # - ARCHIVED: no longer visible in normal listings
     PENDING_MODERATION = 0
     PUBLIC = 1

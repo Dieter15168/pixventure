@@ -15,25 +15,31 @@ User = get_user_model()
 
 class AlbumCreateSerializer(serializers.ModelSerializer):
     """
-    Creates a new album. If slug is not provided,
-    auto-generate a unique slug from the name.
+    Creates a new album. The user only supplies the album name,
+    a boolean is_public flag, and show_creator_to_others.
+    The slug is auto-generated and status is set based on is_public.
     """
-
+    is_public = serializers.BooleanField(write_only=True)
+    
     class Meta:
         model = Album
+        # Only allow input for name, is_public, and show_creator_to_others.
         fields = [
             'name',
-            'slug',
-            'status',
+            'is_public',
             'show_creator_to_others',
         ]
 
-    def validate(self, data):
-        name = data.get('name')
-        slug = data.get('slug')
-        if not slug:  # auto-derive from name if no slug given
-            data['slug'] = generate_unique_slug(name)
-        return data
+    def create(self, validated_data):
+        is_public = validated_data.pop('is_public', False)
+        name = validated_data.get('name')
+        validated_data['slug'] = generate_unique_slug(name)
+        # Set status based on is_public:
+        if is_public:
+            validated_data['status'] = Album.PENDING_MODERATION
+        else:
+            validated_data['status'] = Album.PRIVATE
+        return super().create(validated_data)
 
 
 class AlbumListSerializer(serializers.ModelSerializer):

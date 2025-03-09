@@ -23,5 +23,18 @@ export function useAlbumsAPI() {
     [axios]
   );
 
-  return { fetchAlbums, fetchAlbumBySlug };
+  // POST /api/albums/new/
+  const createAlbum = useCallback(
+    async (albumData: {
+      name: string;
+      is_public: boolean;
+      show_creator_to_others?: boolean;
+    }) => {
+      const res = await axios.post("/albums/new/", albumData);
+      return res.data;
+    },
+    [axios]
+  );
+
+  return { fetchAlbums, fetchAlbumBySlug, createAlbum };
 }
