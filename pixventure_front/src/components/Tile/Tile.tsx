@@ -10,7 +10,10 @@ import PlayButton from "../../elements/PlayButton/PlayButton";
 import MediaCounter from "../../elements/MediaCounter/MediaCounter";
 import LikeButton from "../../elements/LikeButton/LikeButton";
 import LockLogo from "../../elements/LockLogo/LockLogo";
-import { useElementMenu, ElementMenuItem } from "../../contexts/ElementMenuContext";
+import {
+  useElementMenu,
+  ElementMenuItem,
+} from "../../contexts/ElementMenuContext";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisH } from "@fortawesome/free-solid-svg-icons";
@@ -57,8 +60,8 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     tile_size = "small",
     categories,
     tags,
-    canDelete=false,
-    canAddToAlbum=true,
+    canDelete = false,
+    canAddToAlbum = true,
     entity_type,
   } = item;
 
@@ -144,13 +147,18 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
         </div>
 
         {/* The bottom row (name + user + ellipsis) */}
+
         <div className="ps-2 d-flex">
-          <div className="w-100">
-            <p className={`${styles.truncate} mb-0`}>
-              <Link href={`/${slug}`}>{name}</Link>
-            </p>
-            <p className={`${styles.truncate} mt-0`}>{owner_username}</p>
-          </div>
+          {entity_type != "media" ? (
+            <div className="w-100">
+              <p className={`${styles.truncate} mb-0`}>
+                <Link href={`/${slug}`}>{name}</Link>
+              </p>
+              <p className={`${styles.truncate} mt-0`}>{owner_username}</p>
+            </div>
+          ) : (
+            <div className="w-100"></div>
+          )}
           <div className="flex-shrink-1">
             <FontAwesomeIcon
               icon={faEllipsisH}
