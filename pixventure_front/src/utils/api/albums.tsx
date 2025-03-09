@@ -1,4 +1,4 @@
-// src/utils/albums.ts
+// src/utils/albums.tsx
 "use client";
 
 import useAxios from "../useAxios";
@@ -9,7 +9,7 @@ export function useAlbumsAPI() {
 
   // GET /api/albums/
   const fetchAlbums = useCallback(async () => {
-    const res = await axios.get("/albums/");
+    const res = await axios.get("/albums/mine/");
     return res.data.results;
   }, [axios]);
 

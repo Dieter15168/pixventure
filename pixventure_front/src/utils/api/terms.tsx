@@ -1,4 +1,4 @@
-// src/utils/api/terms.ts
+// src/utils/api/terms.tsx
 "use client";
 
 import { useCallback } from "react";

@@ -1,4 +1,4 @@
-// src/utils/api/social.ts
+// src/utils/api/social.tsx
 'use client';
 
 import { useCallback } from 'react';
