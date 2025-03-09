@@ -7,6 +7,7 @@ import { useElementMenu } from "../contexts/ElementMenuContext";
 import { usePostsAPI } from "../utils/api/posts";
 import TermDisplay from "./TermDisplay";
 import PostMenuActions from "./PostMenuActions";
+import SelectAlbumMenu from "./SelectAlbumMenu";
 
 interface PostMetaData {
   id: number;
@@ -25,7 +26,7 @@ interface PostMetaData {
 
 /**
  * Offcanvas component that displays the item context menu.
- * It shows meta data for posts and renders entity-specific action components.
+ * Shows meta data for items and renders entity-specific action components.
  */
 export default function ElementMenuOffcanvas() {
   const { showMenu, closeMenu, selectedItem } = useElementMenu();
@@ -34,11 +35,11 @@ export default function ElementMenuOffcanvas() {
   const [postMeta, setPostMeta] = useState<PostMetaData | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSelectAlbumModal, setShowSelectAlbumModal] = useState(false);
 
   useEffect(() => {
     if (!showMenu || !selectedItem) return;
 
-    // If the item is a post, fetch its metadata (which now includes can_edit)
     if (selectedItem.entity_type === "post") {
       loadPostMeta(selectedItem.id);
     } else {
@@ -46,10 +47,6 @@ export default function ElementMenuOffcanvas() {
     }
   }, [showMenu, selectedItem]);
 
-  /**
-   * Loads metadata for a given post.
-   * @param postId The ID of the post.
-   */
   const loadPostMeta = async (postId: number) => {
     setLoadingMeta(true);
     setError(null);
@@ -64,38 +61,84 @@ export default function ElementMenuOffcanvas() {
     }
   };
 
+  // Callback to open the universal SelectAlbumMenu modal.
+  const handleOpenSelectAlbum = () => {
+    setShowSelectAlbumModal(true);
+  };
+
+  const handleCloseSelectAlbum = () => {
+    setShowSelectAlbumModal(false);
+  };
+
   if (!selectedItem) return null;
 
   return (
-    <Offcanvas show={showMenu} onHide={closeMenu} placement="bottom" className="bg-dark text-light">
-      <Offcanvas.Header closeButton>
-        <Offcanvas.Title>Options</Offcanvas.Title>
-      </Offcanvas.Header>
-      <Offcanvas.Body>
-        {selectedItem.entity_type === "post" && (
-          <>
-            {loadingMeta && <p>Loading post meta...</p>}
-            {error && <p className="text-danger">{error}</p>}
-            {postMeta && (
-              <div>
-                <p>
-                  <strong>{postMeta.name}</strong> (owner: {postMeta.owner_username})
-                </p>
-                <TermDisplay categories={postMeta.categories} tags={postMeta.tags} />
-              </div>
-            )}
-            <PostMenuActions
-              postId={selectedItem.id}
-              canEdit={postMeta?.can_edit}
-              // Pass the pageContext received from the tile.
-              albumContext={selectedItem.pageContext}
-            />
-          </>
+    <>
+      <Offcanvas
+        show={showMenu}
+        onHide={closeMenu}
+        placement="bottom"
+        className="bg-dark text-light"
+      >
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title>Options</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          {selectedItem.entity_type === "post" && (
+            <>
+              {loadingMeta && <p>Loading post meta...</p>}
+              {error && <p className="text-danger">{error}</p>}
+              {postMeta && (
+                <div>
+                  <p>
+                    <strong>{postMeta.name}</strong> (owner:{" "}
+                    {postMeta.owner_username})
+                  </p>
+                  <TermDisplay
+                    categories={postMeta.categories}
+                    tags={postMeta.tags}
+                  />
+                </div>
+              )}
+              <PostMenuActions
+                postId={selectedItem.id}
+                canEdit={postMeta?.can_edit}
+                // Pass album context if available (for example, when viewing an album)
+                albumContext={selectedItem.pageContext}
+                onSaveToAlbum={handleOpenSelectAlbum}
+              />
+            </>
+          )}
+          {selectedItem.entity_type === "media" && (
+            <>
+              {/* For media items, similar logic would apply */}
+              <p>Media item details go here...</p>
+              <PostMenuActions
+                postId={selectedItem.id}
+                onSaveToAlbum={handleOpenSelectAlbum}
+              />
+            </>
+          )}
+          {selectedItem.entity_type === "album" && (
+            <p>Album actions go here...</p>
+          )}
+          {selectedItem.entity_type === "user" && (
+            <p>User actions go here...</p>
+          )}
+        </Offcanvas.Body>
+      </Offcanvas>
+      {/* Render the universal SelectAlbumMenu modal for posts and media */}
+      {showSelectAlbumModal &&
+        selectedItem &&
+        (selectedItem.entity_type === "post" ||
+          selectedItem.entity_type === "media") && (
+          <SelectAlbumMenu
+            entityId={selectedItem.id}
+            entityType={selectedItem.entity_type as "post" | "media"}
+            onClose={handleCloseSelectAlbum}
+            onSuccess={closeMenu}
+          />
         )}
-        {selectedItem.entity_type === "album" && <p>Show album logic here if needed...</p>}
-        {selectedItem.entity_type === "media" && <p>Show media logic here if needed...</p>}
-        {selectedItem.entity_type === "user" && <p>Show user logic here if needed...</p>}
-      </Offcanvas.Body>
-    </Offcanvas>
+    </>
   );
 }
