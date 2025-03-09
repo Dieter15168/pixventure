@@ -22,7 +22,7 @@ interface SelectAlbumMenuProps {
 }
 
 /**
- * A modal component that displays the user's albums (from /api/albums/mine/)
+ * A modal component that displays the current user's albums (from /api/albums/mine/)
  * and allows the user to select one to add the entity.
  */
 export default function SelectAlbumMenu({
@@ -31,14 +31,15 @@ export default function SelectAlbumMenu({
   onClose,
   onSuccess,
 }: SelectAlbumMenuProps) {
-  const { fetchAlbums } = useAlbumsAPI();
+  // Use fetchMyAlbums instead of fetchAlbums
+  const { fetchMyAlbums } = useAlbumsAPI();
   const { addEntityToAlbum } = useAlbumElementsAPI();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState<number | null>(null);
 
-  // Helper function to extract error message from axios error response
+  // Helper function to extract error messages
   const extractErrorMessage = (err: any) => {
     return err.response?.data?.detail || err.response?.data || err.message || "An unknown error occurred.";
   };
@@ -48,7 +49,7 @@ export default function SelectAlbumMenu({
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchAlbums();
+        const data = await fetchMyAlbums();
         setAlbums(data);
       } catch (err: any) {
         setError(extractErrorMessage(err) || "Failed to load albums");
@@ -57,7 +58,7 @@ export default function SelectAlbumMenu({
       }
     };
     loadAlbums();
-  }, [fetchAlbums]);
+  }, [fetchMyAlbums]);
 
   const handleAlbumClick = async (albumSlug: string, albumId: number) => {
     setAdding(albumId);

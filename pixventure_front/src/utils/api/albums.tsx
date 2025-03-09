@@ -7,8 +7,14 @@ import { useCallback } from "react";
 export function useAlbumsAPI() {
   const axios = useAxios();
 
-  // GET /api/albums/
+  // GET /api/albums/ - Public albums
   const fetchAlbums = useCallback(async () => {
+    const res = await axios.get("/albums/");
+    return res.data.results;
+  }, [axios]);
+
+  // GET /api/albums/mine/ - Albums owned by the current user
+  const fetchMyAlbums = useCallback(async () => {
     const res = await axios.get("/albums/mine/");
     return res.data.results;
   }, [axios]);
@@ -18,7 +24,6 @@ export function useAlbumsAPI() {
     async (slug: string) => {
       const res = await axios.get(`/albums/${slug}/`);
       return res.data;
-      // Format: { album: {...}, album_elements: [...], ...}
     },
     [axios]
   );
@@ -36,5 +41,5 @@ export function useAlbumsAPI() {
     [axios]
   );
 
-  return { fetchAlbums, fetchAlbumBySlug, createAlbum };
+  return { fetchAlbums, fetchMyAlbums, fetchAlbumBySlug, createAlbum };
 }
