@@ -103,7 +103,6 @@ export default function ElementMenuOffcanvas() {
               <PostMenuActions
                 postId={selectedItem.id}
                 canEdit={postMeta?.can_edit}
-                // Pass album context if available (for example, when viewing an album)
                 albumContext={selectedItem.pageContext}
                 onSaveToAlbum={handleOpenSelectAlbum}
               />
@@ -111,11 +110,11 @@ export default function ElementMenuOffcanvas() {
           )}
           {selectedItem.entity_type === "media" && (
             <>
-              {/* For media items, similar logic would apply */}
               <p>Media item details go here...</p>
               <PostMenuActions
                 postId={selectedItem.id}
                 onSaveToAlbum={handleOpenSelectAlbum}
+                albumContext={selectedItem.pageContext}
               />
             </>
           )}

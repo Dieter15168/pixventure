@@ -14,6 +14,7 @@ interface Album {
   likes_counter: number;
   has_liked: boolean;
   thumbnail_url?: string;
+  can_edit: boolean;
 }
 
 interface AlbumElement {
@@ -107,6 +108,12 @@ export default function AlbumDetailPage() {
         owner_username: post.owner_username,
         tile_size: post.tile_size,
         entity_type: "post",
+        albumContext: {
+          albumSlug: album.slug,
+          inAlbum: true,
+          albumElementId: element.id,
+          can_edit: album.can_edit, // passed from album meta
+        },
       };
     }
     if (element.element_type === 2 && element.media_data) {
@@ -125,6 +132,12 @@ export default function AlbumDetailPage() {
         videos_count: media.videos_count,
         tile_size: media.tile_size,
         entity_type: "media",
+        albumContext: {
+          albumSlug: album.slug,
+          inAlbum: true,
+          albumElementId: element.id,
+          can_edit: album.can_edit, // passed from album meta
+        },
       };
     }
     // Fallback if element data is missing:
@@ -139,6 +152,12 @@ export default function AlbumDetailPage() {
       owner_username: "",
       tile_size: "small",
       entity_type: "post",
+      albumContext: {
+        albumSlug: album.slug,
+        inAlbum: true,
+        albumElementId: element.id,
+        can_edit: album.can_edit, // passed from album meta
+      },
     };
   };
 

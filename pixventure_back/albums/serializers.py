@@ -59,15 +59,13 @@ class AlbumListSerializer(serializers.ModelSerializer):
 
 
 class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
-    """
-    Shows detailed info about the album, including post/image/video counts.
-    """
     owner_username = serializers.SerializerMethodField()
     posts_count = serializers.SerializerMethodField()
     images_count = serializers.SerializerMethodField()
     videos_count = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Album
@@ -87,6 +85,7 @@ class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
             'created',
             'updated',
             'tile_size',
+            'can_edit',
         ]
 
     def get_owner_username(self, obj):
@@ -122,10 +121,8 @@ class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user if request else None
         featured = obj.featured_item
-
         if not featured:
             return None
-
         return get_media_file_for_display(
             media_item=featured,
             user=user,
@@ -140,6 +137,13 @@ class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
         if thumbnail and thumbnail.width and thumbnail.height:
             return (thumbnail.width, thumbnail.height)
         return None
+
+    def get_can_edit(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return (obj.owner == request.user) or request.user.is_staff
+        return False
+
 
 
 class AlbumElementSerializer(serializers.ModelSerializer):

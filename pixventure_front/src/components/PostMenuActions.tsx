@@ -13,9 +13,10 @@ interface PostMenuActionsProps {
    * Optional album context data if the item is viewed inside an album.
    */
   albumContext?: {
-    albumSlug: string;
+    albumSlug?: string;
     inAlbum: boolean;
     albumElementId?: number;
+    can_edit?: boolean;
   };
   /**
    * Callback to open the universal "Save to Album" modal.
@@ -25,7 +26,7 @@ interface PostMenuActionsProps {
 
 /**
  * Renders action buttons for an item (post or media) in the item context menu.
- * Allows adding/removing the item from an album and deletion (if permitted).
+ * Allows adding/removing the item from an album and deletion if permitted.
  */
 export default function PostMenuActions({
   postId,
@@ -58,7 +59,6 @@ export default function PostMenuActions({
     setLoading(true);
     setError(null);
     try {
-      // Here, entityType is "post"; for media items, adjust accordingly.
       await addEntityToAlbum(albumContext.albumSlug, "post", postId);
       closeMenu();
     } catch (err: any) {
@@ -84,7 +84,7 @@ export default function PostMenuActions({
 
   return (
     <div className="post-menu-actions">
-      {albumContext && albumContext.albumSlug ? (
+      {albumContext && albumContext.albumSlug && albumContext.can_edit ? (
         <>
           {albumContext.inAlbum ? (
             <button onClick={handleRemoveFromAlbum} disabled={loading}>
@@ -97,7 +97,6 @@ export default function PostMenuActions({
           )}
         </>
       ) : (
-        // When no album context exists, use the callback to open the universal modal.
         <button onClick={onSaveToAlbum} disabled={loading}>
           Save to Album
         </button>

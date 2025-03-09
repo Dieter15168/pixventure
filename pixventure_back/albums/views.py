@@ -188,6 +188,7 @@ class AlbumElementsListCreateView(generics.ListCreateAPIView):
 
         max_position = album.album_elements.aggregate(Max('position'))['position__max'] or 0
         serializer.save(position=max_position + 1, album=album)
+        
 # --- 6. AlbumElementRetrieveDestroyView ---
 
 class AlbumElementRetrieveDestroyView(generics.RetrieveDestroyAPIView):

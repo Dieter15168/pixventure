@@ -14,6 +14,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisH } from "@fortawesome/free-solid-svg-icons";
 import { useElementMenu, ElementMenuItem } from "../../contexts/ElementMenuContext";
 
+export interface AlbumContext {
+  albumSlug: string;
+  inAlbum: boolean;
+  albumElementId?: number;
+  can_edit?: boolean;
+}
+
 export type TileItemType = 1 | 2 | 3;
 
 export interface TileProps {
@@ -36,6 +43,10 @@ export interface TileProps {
   tags?: Array<{ name: string; slug: string }>;
   entity_type: "post" | "media" | "album";
   page_type: "posts_list" | "albums_list" | "post" | "album";
+  /**
+   * Optional album context if this tile is rendered within an album page.
+   */
+  albumContext?: AlbumContext;
 }
 
 const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
@@ -58,6 +69,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     canAddToAlbum = true,
     entity_type,
     page_type,
+    albumContext,
   } = item;
 
   const { openMenu } = useElementMenu();
@@ -70,16 +82,17 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
       canAddToAlbum,
       categories,
       tags,
-      // Pass pageContext with page_type and entityId.
+      // Include basic page context and merge album context if provided.
       pageContext: {
         page_type,
         entityId: id,
+        ...(albumContext || {}),
       },
     };
     openMenu(menuItem);
   };
 
-  // Sizing logic (using SCSS classes)
+  // Determine container and card classes based on tile_size.
   const containerClass =
     tile_size === "large"
       ? styles.container_large
