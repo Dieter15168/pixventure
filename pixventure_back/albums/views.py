@@ -188,6 +188,7 @@ class AlbumElementsListCreateView(generics.ListCreateAPIView):
 
         max_position = album.album_elements.aggregate(Max('position'))['position__max'] or 0
         serializer.save(position=max_position + 1, album=album)
+        album.update_featured_item()
         
 # --- 6. AlbumElementRetrieveDestroyView ---
 
@@ -216,3 +217,4 @@ class AlbumElementRetrieveDestroyView(generics.RetrieveDestroyAPIView):
         if (album.owner != self.request.user) and not self.request.user.is_staff:
             raise PermissionDenied("Only the owner or admin can remove elements.")
         instance.delete()
+        album.update_featured_item()

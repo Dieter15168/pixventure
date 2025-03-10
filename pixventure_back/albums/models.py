@@ -63,6 +63,58 @@ class Album(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def update_featured_item(self):
+        """
+        Update the album's featured item.
+        
+        If a current featured item exists, check:
+         1. If any media element references it.
+         2. If any post element has a post whose featured_item matches it.
+         
+        If either is true, do nothing.
+        Otherwise, update the featured item by selecting the first available media element;
+        if none, then the first post element's featured item; if neither exists, clear it.
+        """
+        if self.featured_item:
+            # Check if a media element in the album still references it.
+            media_ref = self.album_elements.filter(
+                element_type=AlbumElement.MEDIA_TYPE,
+                element_media=self.featured_item
+            ).exists()
+            if media_ref:
+                return  # It is still valid.
+
+            # Check if a post element in the album provides this featured item.
+            post_ref = self.album_elements.filter(
+                element_type=AlbumElement.POST_TYPE,
+                element_post__featured_item=self.featured_item
+            ).exists()
+            if post_ref:
+                return  # Still valid as derived from a post.
+        
+        # Otherwise, try to set a new featured item.
+        new_media = self.album_elements.filter(
+            element_type=AlbumElement.MEDIA_TYPE,
+            element_media__isnull=False
+        ).order_by('position').first()
+        if new_media:
+            self.featured_item = new_media.element_media
+            self.save(update_fields=['featured_item'])
+            return
+
+        post_element = self.album_elements.filter(
+            element_type=AlbumElement.POST_TYPE,
+            element_post__isnull=False
+        ).order_by('position').first()
+        if post_element and post_element.element_post.featured_item:
+            self.featured_item = post_element.element_post.featured_item
+            self.save(update_fields=['featured_item'])
+            return
+
+        # No suitable featured item found.
+        self.featured_item = None
+        self.save(update_fields=['featured_item'])
 
 
 class AlbumElement(models.Model):
