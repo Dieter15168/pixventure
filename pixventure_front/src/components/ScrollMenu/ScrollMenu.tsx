@@ -16,6 +16,9 @@ export default function ScrollMenu() {
       <Link href="/albums" className="p-3 d-inline-block">
         Albums
       </Link>
+      <Link href="/my-page" className="p-3 d-inline-block">
+        My page
+      </Link>
       <Link href="/best-users" className="p-3 d-inline-block">
         Best Users
       </Link>

@@ -29,12 +29,18 @@ export function usePostsAPI() {
 
   const fetchPostMeta = useCallback(async (postId: number) => {
     const res = await axios.get(`/posts/${postId}/meta/`);
-    return res.data; // { id, name, slug, owner_username, categories, tags }
+    return res.data; // { id, name, slug, owner_username, categories, tags, can_edit }
   }, [axios]);
 
   const deletePost = useCallback(async (postId: number) => {
     const res = await axios.delete(`/posts/${postId}/edit/`);
     return res.data;
+  }, [axios]);
+
+  // New method to fetch posts owned by the current user.
+  const fetchMyPosts = useCallback(async () => {
+    const res = await axios.get("/posts/mine/");
+    return res.data.results;
   }, [axios]);
 
   return {
@@ -44,5 +50,6 @@ export function usePostsAPI() {
     fetchPostItem,
     fetchPostMeta,
     deletePost,
+    fetchMyPosts,
   };
 }
