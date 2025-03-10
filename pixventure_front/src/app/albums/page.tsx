@@ -20,6 +20,7 @@ interface Album {
   has_liked?: boolean;
   thumbnail_url?: string;
   tile_size: "small" | "medium" | "large";
+  media_type: string;
 }
 
 export default function AlbumsPage() {
@@ -54,16 +55,16 @@ export default function AlbumsPage() {
     // slug for the album detail route, e.g. "/albums/[slug]"
     slug: `albums/${album.slug}`,
     thumbnail_url: album.thumbnail_url,
-    item_type: 3, // e.g. 3 => album
+    media_type: album.media_type,
     images_count: album.images_count,
     videos_count: album.videos_count,
     posts_count: album.posts_count,
     likes_counter: album.likes_counter,
     has_liked: album.has_liked ?? false,
-    // if the user is hidden, you could set to "Anonymous"
     owner_username: album.owner_username,
-    // any optional fields
     tile_size: album.tile_size,
+    entity_type: "album",
+    page_type: "albums_list",
   }));
 
   return (

@@ -40,7 +40,7 @@ def get_media_file_for_display(media_item, user, post=None, thumbnail=False):
         return ""  # No matching version found, return empty string
 
     # 4. Separate logic if this is a PHOTO or VIDEO
-    if media_item.item_type == MediaItem.PHOTO:
+    if media_item.media_type == MediaItem.PHOTO:
         # --- PHOTO LOGIC (supports blurred files) ---
         if user_is_paying:
             # Paying users see watermarked_file or thumbnail_file

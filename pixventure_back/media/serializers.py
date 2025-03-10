@@ -37,13 +37,14 @@ class TileInfoMixin(serializers.Serializer):
 class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
     """
     Returns core information about a MediaItem:
-    - item id
-    - item type (Photo/Video)
+    - id
+    - media_type (as a verbose string: "photo" or "video")
     - likes_counter
     - whether current user has liked it
-    - a "thumbnail" or "preview" URL
+    - a thumbnail/preview URL
     """
     id = serializers.IntegerField(read_only=True, source='pk')
+    media_type = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
 
@@ -51,12 +52,20 @@ class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
         model = MediaItem
         fields = [
             'id',
-            'item_type',
+            'media_type',
             'likes_counter',
             'has_liked',
             'thumbnail_url',
             'tile_size',
         ]
+
+    def get_media_type(self, obj):
+        # Convert numeric value to verbose string.
+        if obj.media_type == MediaItem.PHOTO:
+            return "photo"
+        elif obj.media_type == MediaItem.VIDEO:
+            return "video"
+        return "unknown"
 
     def get_has_liked(self, obj):
         request = self.context.get('request')
@@ -80,5 +89,4 @@ class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
         thumbnail = obj.versions.filter(version_type=MediaItemVersion.THUMBNAIL).first()
         if thumbnail and thumbnail.width and thumbnail.height:
             return (thumbnail.width, thumbnail.height)
-        
         return None

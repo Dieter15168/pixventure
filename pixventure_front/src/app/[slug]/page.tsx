@@ -21,7 +21,7 @@ interface PostDetail {
 
 interface PostItem {
   id: number;
-  item_type: number; // 1 = photo, 2 = video
+  media_type: number; // 1 = photo, 2 = video
   likes_counter: number;
   has_liked: boolean;
   thumbnail_url: string;
@@ -72,7 +72,7 @@ export default function PostPage() {
     name: post.name,
     slug: `${post.slug}/${item.id}`,
     thumbnail_url: item.thumbnail_url,
-    item_type: item.item_type as 1 | 2, // assuming only photo (1) or video (2)
+    media_type: item.media_type as 1 | 2, // assuming only photo (1) or video (2)
     likes_counter: item.likes_counter,
     has_liked: item.has_liked,
     owner_username: post.owner_username,

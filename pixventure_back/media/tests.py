@@ -26,7 +26,7 @@ class BlurLogicTest(TestCase):
 
         # PHOTO item with all file fields
         self.photo_item = MediaItem.objects.create(
-            item_type=MediaItem.PHOTO,
+            media_type=MediaItem.PHOTO,
             is_blurred=False,
         )
 
@@ -74,7 +74,7 @@ class BlurLogicTest(TestCase):
 
         # VIDEO item with no blurred files
         self.video_item = MediaItem.objects.create(
-            item_type=MediaItem.VIDEO,
+            media_type=MediaItem.VIDEO,
             is_blurred=False,
         )
 

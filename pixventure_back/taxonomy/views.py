@@ -1,4 +1,4 @@
-# item_typeviews.py
+# media_typeviews.py
 
 from rest_framework import generics, status
 from rest_framework.views import APIView
@@ -53,9 +53,9 @@ class TermDetailView(generics.RetrieveAPIView):
 
 class TermUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET /api/item_typeterms/<slug>/edit/
-    PATCH /api/item_typeterms/<slug>/edit/
-    DELETE /api/item_typeterms/<slug>/edit/
+    GET /api/media_typeterms/<slug>/edit/
+    PATCH /api/media_typeterms/<slug>/edit/
+    DELETE /api/media_typeterms/<slug>/edit/
     Only admin can access for now.
     """
     queryset = Term.objects.all()

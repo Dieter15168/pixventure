@@ -29,7 +29,7 @@ class MediaItemAdmin(admin.ModelAdmin):
     """
     list_display = ['id', 'original_filename', 'status', 'created', 'updated']
     search_fields = ['original_filename', 'owner__username']
-    list_filter = ['status', 'item_type', 'created']
+    list_filter = ['status', 'media_type', 'created']
     list_select_related = ('owner',)
     raw_id_fields = ('owner',)  # Use raw id field for User model to improve performance
     inlines = [MediaItemVersionInline]

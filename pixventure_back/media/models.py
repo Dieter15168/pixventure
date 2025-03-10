@@ -40,12 +40,12 @@ class MediaItem(models.Model):
     # Media type (photo or video)
     PHOTO = 1
     VIDEO = 2
-    ITEM_TYPE_CHOICES = [
+    MEDIA_TYPE_CHOICES = [
         (PHOTO, 'Photo'),
         (VIDEO, 'Video'),
     ]
 
-    item_type = models.IntegerField(choices=ITEM_TYPE_CHOICES)
+    media_type = models.IntegerField(choices=MEDIA_TYPE_CHOICES)
 
     # Basic naming / metadata
     original_filename = models.CharField(max_length=256, null=True, blank=True)
@@ -68,7 +68,7 @@ class MediaItem(models.Model):
     is_blurred = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.id} (Type: {self.get_item_type_display()})"
+        return f"{self.id} (Type: {self.get_media_type_display()})"
     
 
 class MediaItemVersion(models.Model):

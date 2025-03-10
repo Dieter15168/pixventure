@@ -43,11 +43,11 @@ class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
 
     def get_images_count(self, obj):
         # Query PostMedia for this post, counting items that are PHOTOS
-        return obj.post_media_links.filter(media_item__item_type=MediaItem.PHOTO).count()
+        return obj.post_media_links.filter(media_item__media_type=MediaItem.PHOTO).count()
 
     def get_videos_count(self, obj):
         # Query PostMedia for this post, counting items that are VIDEOS
-        return obj.post_media_links.filter(media_item__item_type=MediaItem.VIDEO).count()
+        return obj.post_media_links.filter(media_item__media_type=MediaItem.VIDEO).count()
 
     def get_has_liked(self, obj):
         request = self.context.get('request')

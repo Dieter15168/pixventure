@@ -83,7 +83,7 @@ export default function MyPage() {
     name: post.name,
     slug: post.slug,
     thumbnail_url: post.thumbnail_url,
-    item_type: 1, // Set as constant for posts.
+    media_type: post.media_type, // Set as constant for posts.
     likes_counter: post.likes_counter,
     has_liked: post.has_liked ?? false, // Ensure a boolean.
     owner_username: post.owner_username,
@@ -105,7 +105,7 @@ export default function MyPage() {
     owner_username: album.owner_username,
     thumbnail_url: album.thumbnail_url,
     tile_size: album.tile_size,
-    item_type: 3, // Set as constant for albums.
+    media_type: album.media_type, // Set as constant for albums.
     entity_type: "album",
     page_type: "albums_list",
   }));

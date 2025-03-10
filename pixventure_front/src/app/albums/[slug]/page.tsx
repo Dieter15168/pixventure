@@ -37,7 +37,7 @@ interface AlbumElement {
     name: string;
     slug: string;
     thumbnail_url?: string;
-    item_type: number; // e.g. 1 = photo, 2 = video
+    media_type: string; // e.g. 1 = photo, 2 = video
     likes_counter: number;
     has_liked: boolean;
     owner_username: string;
@@ -102,7 +102,7 @@ export default function AlbumDetailPage() {
         name: post.name,
         slug: post.slug,
         thumbnail_url: post.thumbnail_url,
-        item_type: 1, // posts
+        media_type: post.media_type,
         likes_counter: post.likes_counter,
         has_liked: post.has_liked,
         owner_username: post.owner_username,
@@ -124,7 +124,7 @@ export default function AlbumDetailPage() {
         name: media.name,
         slug: media.slug,
         thumbnail_url: media.thumbnail_url,
-        item_type: media.item_type as 1 | 2,
+        media_type: media.media_type,
         likes_counter: media.likes_counter,
         has_liked: media.has_liked,
         owner_username: media.owner_username,
@@ -146,7 +146,7 @@ export default function AlbumDetailPage() {
       renderKey: String(element.id),
       name: "Unknown element",
       slug: "",
-      item_type: 1,
+      media_type: 1,
       likes_counter: 0,
       has_liked: false,
       owner_username: "",

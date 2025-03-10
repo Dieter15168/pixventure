@@ -105,13 +105,13 @@ class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
     def get_images_count(self, obj):
         return obj.album_elements.filter(
             element_type=AlbumElement.MEDIA_TYPE,
-            element_media__item_type=MediaItem.PHOTO
+            element_media__media_type=MediaItem.PHOTO
         ).count()
 
     def get_videos_count(self, obj):
         return obj.album_elements.filter(
             element_type=AlbumElement.MEDIA_TYPE,
-            element_media__item_type=MediaItem.VIDEO
+            element_media__media_type=MediaItem.VIDEO
         ).count()
 
     def get_has_liked(self, obj):

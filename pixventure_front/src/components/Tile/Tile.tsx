@@ -21,14 +21,14 @@ export interface AlbumContext {
   can_edit?: boolean;
 }
 
-export type TileItemType = 1 | 2 | 3;
+export type MediaItemType = "photo" | "video";
 
 export interface TileProps {
   id: number;
   name: string;
   slug: string;
   thumbnail_url?: string;
-  item_type: TileItemType;
+  media_type: MediaItemType;
   images_count?: number;
   videos_count?: number;
   posts_count?: number;
@@ -55,7 +55,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     name,
     slug,
     thumbnail_url,
-    item_type,
+    media_type,
     images_count = 0,
     videos_count = 0,
     posts_count = 0,
@@ -116,14 +116,14 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     <div className={styles.pin_container}>
       <div className={`${styles.item_container} ${containerClass}`} id={`object-${id}-2`}>
         <div className={`${styles.inline_card} ${cardClass} mb-2`}>
-          {item_type === 1 || thumbnail_url ? (
+          {media_type === "photo" || thumbnail_url ? (
             <Link href={`/${slug}`}>
               <Image name={name} thumbnailUrl={thumbnail_url} />
             </Link>
-          ) : item_type === 2 && !thumbnail_url ? (
+          ) : media_type === "video" && !thumbnail_url ? (
             <RenderingPlaceholder />
           ) : null}
-          {item_type === 2 && thumbnail_url && <PlayButton slug={slug} />}
+          {media_type === "video" && thumbnail_url && <PlayButton slug={slug} />}
           <MediaCounter counters={counters} />
           <div className={styles.like_button}>
             <LikeButton
