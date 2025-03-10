@@ -77,7 +77,8 @@ export default function PostPage() {
     has_liked: item.has_liked,
     owner_username: post.owner_username,
     tile_size: item.tile_size,
-    entity_type: "media"
+    page_type: "post",
+    entity_type: "media",
   }));
 
   return (

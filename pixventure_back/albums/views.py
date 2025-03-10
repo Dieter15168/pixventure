@@ -43,7 +43,7 @@ class MyAlbumsView(generics.ListAPIView):
     Returns current user’s albums. If none exist, auto-create
     a private "Quick save" album with a random slug (no username).
     """
-    serializer_class = AlbumListSerializer
+    serializer_class = AlbumDetailSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):

@@ -13,18 +13,26 @@ interface Post {
   slug: string;
   thumbnail_url?: string;
   likes_counter: number;
-  has_liked: boolean;
+  has_liked?: boolean; // might be undefined from backend
   owner_username: string;
-  // other fields as needed
+  tile_size: "small" | "medium" | "large";
 }
 
 interface Album {
   id: number;
   name: string;
   slug: string;
+  status: number;
   likes_counter: number;
-  owner_username: string | null;
-  // You might add additional fields like thumbnail_url if available.
+  posts_count: number;
+  images_count: number;
+  videos_count: number;
+  owner_username: string;
+  created: string;
+  updated: string;
+  has_liked?: boolean; // might be undefined
+  thumbnail_url?: string;
+  tile_size: "small" | "medium" | "large";
 }
 
 export default function MyPage() {
@@ -33,8 +41,8 @@ export default function MyPage() {
 
   const [myPosts, setMyPosts] = useState<Post[]>([]);
   const [myAlbums, setMyAlbums] = useState<Album[]>([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
-  const [loadingAlbums, setLoadingAlbums] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState<boolean>(true);
+  const [loadingAlbums, setLoadingAlbums] = useState<boolean>(true);
   const [errorPosts, setErrorPosts] = useState<string | null>(null);
   const [errorAlbums, setErrorAlbums] = useState<string | null>(null);
 
@@ -75,13 +83,13 @@ export default function MyPage() {
     name: post.name,
     slug: post.slug,
     thumbnail_url: post.thumbnail_url,
-    item_type: 1, // posts
+    item_type: 1, // Set as constant for posts.
     likes_counter: post.likes_counter,
-    has_liked: post.has_liked,
+    has_liked: post.has_liked ?? false, // Ensure a boolean.
     owner_username: post.owner_username,
-    tile_size: "medium",
+    tile_size: post.tile_size,
     entity_type: "post",
-    page_type: "my-page",
+    page_type: "posts_list",
   }));
 
   // Transform albums into TileProps.
@@ -89,13 +97,17 @@ export default function MyPage() {
     id: album.id,
     name: album.name,
     slug: album.slug,
-    // You may provide a thumbnail URL if available
     likes_counter: album.likes_counter,
-    has_liked: false, // Or fetch if available.
-    owner_username: album.owner_username || "",
-    tile_size: "medium",
+    posts_count: album.posts_count,
+    images_count: album.images_count,
+    videos_count: album.videos_count,
+    has_liked: album.has_liked ?? false,
+    owner_username: album.owner_username,
+    thumbnail_url: album.thumbnail_url,
+    tile_size: album.tile_size,
+    item_type: 3, // Set as constant for albums.
     entity_type: "album",
-    page_type: "my-page",
+    page_type: "albums_list",
   }));
 
   return (
@@ -109,10 +121,7 @@ export default function MyPage() {
         {!loadingPosts && myPosts.length === 0 && <p>You have no posts yet.</p>}
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           {postTiles.map((tile) => (
-            <Tile
-              key={tile.id}
-              item={tile}
-            />
+            <Tile key={tile.id} item={tile} />
           ))}
         </div>
       </section>
@@ -121,15 +130,10 @@ export default function MyPage() {
         <h2>My Albums</h2>
         {loadingAlbums && <p>Loading your albums...</p>}
         {errorAlbums && <p style={{ color: "red" }}>Error: {errorAlbums}</p>}
-        {!loadingAlbums && myAlbums.length === 0 && (
-          <p>You have no albums yet.</p>
-        )}
+        {!loadingAlbums && myAlbums.length === 0 && <p>You have no albums yet.</p>}
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           {albumTiles.map((tile) => (
-            <Tile
-              key={tile.id}
-              item={tile}
-            />
+            <Tile key={tile.id} item={tile} />
           ))}
         </div>
         <div style={{ marginTop: "1rem" }}>
