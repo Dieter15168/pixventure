@@ -26,27 +26,25 @@ class MediaItemCreateView(generics.CreateAPIView):
     Creates a new media item from a single file uploaded by the user.
     We move complexity to an external service function: `process_uploaded_file`.
     """
-    serializer_class = MediaItemSerializer
     permission_classes = [IsAuthenticated]
+    serializer_class = MediaItemSerializer
 
     def create(self, request, *args, **kwargs):
-        # Expecting 'file' in request.FILES
-        upload_file = request.FILES.get('file')
+        upload_file = request.FILES.get("file")
         if not upload_file:
-            return Response({"detail": "No file found. Please attach a file under 'file'."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        
-        # We'll handle validations, hashing, dedup, etc. in a separate service function:
+            return Response({"detail": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
+
         result = process_uploaded_file(upload_file, request.user)
-        if result.get("error"):
+        if "error" in result:
             return Response({"detail": result["error"]}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # If success, 'result' includes the created MediaItem object
-        media_item = result["media_item"]
-        
-        # Return the standard serializer output
-        serializer = self.get_serializer(media_item)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # Could do a normal serializer on media_item
+        # Or just return a direct dict
+        resp = {
+            "media_item_id": result["media_item_id"],
+            "thumbnail_url": result.get("thumbnail_url"),
+        }
+        return Response(resp, status=status.HTTP_201_CREATED)
 
 class MediaItemDetailView(generics.RetrieveAPIView):
     """
