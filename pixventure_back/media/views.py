@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from .models import MediaItem
 from .serializers import MediaItemSerializer
 from rest_framework.exceptions import PermissionDenied
-from .services.item_management import process_uploaded_file
+from .services.file_processor import process_uploaded_file
 
 class MediaItemListView(generics.ListAPIView):
     """
@@ -38,13 +38,14 @@ class MediaItemCreateView(generics.CreateAPIView):
         if "error" in result:
             return Response({"detail": result["error"]}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Could do a normal serializer on media_item
-        # Or just return a direct dict
-        resp = {
-            "media_item_id": result["media_item_id"],
-            "thumbnail_url": result.get("thumbnail_url"),
-        }
-        return Response(resp, status=status.HTTP_201_CREATED)
+        # Return success response
+        return Response(
+            {
+                "media_item_id": result["media_item_id"],
+                "thumbnail_url": result.get("thumbnail_url"),
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 class MediaItemDetailView(generics.RetrieveAPIView):
     """
