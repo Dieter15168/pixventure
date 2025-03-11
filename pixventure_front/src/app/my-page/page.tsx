@@ -96,7 +96,7 @@ export default function MyPage() {
   const albumTiles: TileProps[] = myAlbums.map((album) => ({
     id: album.id,
     name: album.name,
-    slug: album.slug,
+    slug: `albums/${album.slug}`,
     likes_counter: album.likes_counter,
     posts_count: album.posts_count,
     images_count: album.images_count,
