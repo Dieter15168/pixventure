@@ -1,4 +1,4 @@
-// src/utils/posts.tsx
+// src/utils/api/posts.tsx
 "use client";
 
 import useAxios from "../useAxios";

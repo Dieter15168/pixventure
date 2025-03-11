@@ -1,4 +1,4 @@
-// src/utils/albumElements.tsx
+// src/utils/api/albumElements.tsx
 "use client";
 
 import useAxios from "../useAxios";

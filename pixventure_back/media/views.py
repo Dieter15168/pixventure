@@ -4,10 +4,10 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-
 from .models import MediaItem
 from .serializers import MediaItemSerializer
 from rest_framework.exceptions import PermissionDenied
+from .services.item_management import process_uploaded_file
 
 class MediaItemListView(generics.ListAPIView):
     """
@@ -23,13 +23,30 @@ class MediaItemListView(generics.ListAPIView):
 class MediaItemCreateView(generics.CreateAPIView):
     """
     POST /api/media/new/
-    Creates a new media item from a file uploaded by the user.
+    Creates a new media item from a single file uploaded by the user.
+    We move complexity to an external service function: `process_uploaded_file`.
     """
     serializer_class = MediaItemSerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+    def create(self, request, *args, **kwargs):
+        # Expecting 'file' in request.FILES
+        upload_file = request.FILES.get('file')
+        if not upload_file:
+            return Response({"detail": "No file found. Please attach a file under 'file'."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        # We'll handle validations, hashing, dedup, etc. in a separate service function:
+        result = process_uploaded_file(upload_file, request.user)
+        if result.get("error"):
+            return Response({"detail": result["error"]}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # If success, 'result' includes the created MediaItem object
+        media_item = result["media_item"]
+        
+        # Return the standard serializer output
+        serializer = self.get_serializer(media_item)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class MediaItemDetailView(generics.RetrieveAPIView):
     """
