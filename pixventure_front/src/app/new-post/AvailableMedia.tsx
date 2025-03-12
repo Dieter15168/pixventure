@@ -30,15 +30,16 @@ function mapDTOtoTileProps(item: MinimalMediaItemDTO): TileProps {
     images_count: 0,
     videos_count: 0,
     posts_count: 0,
+    show_likes: false,
     likes_counter: 0,
     has_liked: false,
     owner_username: "",
     lock_logo: false,
     is_moderation: item.status === "Pending moderation",
-    tile_size: "small",
+    tile_size: "medium",
     canAddToAlbum: false,
     entity_type: "media",
-    page_type: "posts_list",
+    page_type: "posts_creation",
   };
 }
 

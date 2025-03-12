@@ -12,7 +12,10 @@ import LikeButton from "../../elements/LikeButton/LikeButton";
 import LockLogo from "../../elements/LockLogo/LockLogo";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisH } from "@fortawesome/free-solid-svg-icons";
-import { useElementMenu, ElementMenuItem } from "../../contexts/ElementMenuContext";
+import {
+  useElementMenu,
+  ElementMenuItem,
+} from "../../contexts/ElementMenuContext";
 
 export interface AlbumContext {
   albumSlug: string;
@@ -32,6 +35,7 @@ export interface TileProps {
   images_count?: number;
   videos_count?: number;
   posts_count?: number;
+  show_likes?: boolean;
   likes_counter: number;
   has_liked: boolean;
   owner_username: string;
@@ -42,7 +46,7 @@ export interface TileProps {
   categories?: Array<{ name: string; slug: string }>;
   tags?: Array<{ name: string; slug: string }>;
   entity_type: "post" | "media" | "album";
-  page_type: "posts_list" | "albums_list" | "post" | "album";
+  page_type: "posts_list" | "albums_list" | "post" | "album" | "post_creation";
   /**
    * Optional album context if this tile is rendered within an album page.
    */
@@ -59,6 +63,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     images_count = 0,
     videos_count = 0,
     posts_count = 0,
+    show_likes = true,
     likes_counter,
     has_liked,
     owner_username,
@@ -114,25 +119,36 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
 
   return (
     <div className={styles.pin_container}>
-      <div className={`${styles.item_container} ${containerClass}`} id={`object-${id}-2`}>
+      <div
+        className={`${styles.item_container} ${containerClass}`}
+        id={`object-${id}-2`}
+      >
         <div className={`${styles.inline_card} ${cardClass} mb-2`}>
           {media_type === "photo" || thumbnail_url ? (
             <Link href={`/${slug}`}>
-              <Image name={name} thumbnailUrl={thumbnail_url} />
+              <Image
+                name={name}
+                thumbnailUrl={thumbnail_url}
+              />
             </Link>
           ) : media_type === "video" && !thumbnail_url ? (
             <RenderingPlaceholder />
           ) : null}
-          {media_type === "video" && thumbnail_url && <PlayButton slug={slug} />}
+          {media_type === "video" && thumbnail_url && (
+            <PlayButton slug={slug} />
+          )}
           <MediaCounter counters={counters} />
-          <div className={styles.like_button}>
-            <LikeButton
-              entity_type={entity_type}
-              targetId={id}
-              initialLikesCounter={likes_counter}
-              initialHasLiked={has_liked}
-            />
-          </div>
+          {show_likes && (
+            <div className={styles.like_button}>
+              <LikeButton
+                entity_type={entity_type}
+                targetId={id}
+                initialLikesCounter={likes_counter}
+                initialHasLiked={has_liked}
+              />
+            </div>
+          )}
+
           {lock_logo && <LockLogo />}
         </div>
         <div className="ps-2 d-flex">
