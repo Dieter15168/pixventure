@@ -15,6 +15,11 @@ html, body {
   .bg-dark {
     background-color: var(--background_color) !important;
   }
+
+  .modal-content {
+    background-color: var(--background_color) !important;
+    color: white !important;
+}
   
   /* Additional global styling */
   a {
