@@ -4,9 +4,16 @@
 import { useCallback } from "react";
 import useAxios from "../useAxios";
 
-/**
- * Provides a function to upload a single file to "/api/media/new/".
- */
+export interface MinimalMediaItemDTO {
+  id: number;
+  media_type_str: "photo" | "video" | "unknown";
+  status_str: string;
+  thumbnail_url?: string | null;
+  width?: number | null;
+  height?: number | null;
+  file_size?: number | null;
+}
+
 export function useMediaAPI() {
   const axios = useAxios(); // your specialized Axios w/ auth tokens, interceptors, etc.
 
@@ -15,15 +22,20 @@ export function useMediaAPI() {
       const formData = new FormData();
       formData.append("file", file);
 
-      // Adjust if your Django endpoint is different
       const res = await axios.post("/media/new/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      return res.data; // e.g., the newly created MediaItem
+      return res.data;
     },
     [axios]
   );
 
-  return { uploadFile };
+  const fetchAvailableMedia = useCallback(async (): Promise<
+    MinimalMediaItemDTO[]
+  > => {
+    const res = await axios.get("/media/unpublished/");
+    return res.data;
+  }, [axios]);
+
+  return { uploadFile, fetchAvailableMedia };
 }

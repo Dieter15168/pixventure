@@ -34,10 +34,6 @@ class MediaItemAdmin(admin.ModelAdmin):
     raw_id_fields = ('owner',)  # Use raw id field for User model to improve performance
     inlines = [MediaItemVersionInline]
     list_per_page = 20  # Limit the number of records per page to prevent loading too many records
-    
-    # The `versions` field is still included, but with autocomplete and pagination
-    autocomplete_fields = ['versions']  # Allow searching and selecting versions efficiently
-    filter_horizontal = ('versions',)  # Display versions field with horizontal filter for selection
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)

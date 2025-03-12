@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import MediaItem
-from .serializers import MediaItemSerializer
+from .serializers import MediaItemSerializer, UnpublishedMediaItemSerializer
 from rest_framework.exceptions import PermissionDenied
 from .services.file_processor import process_uploaded_file
 
@@ -70,3 +70,23 @@ class MediaItemDeleteView(generics.DestroyAPIView):
         if instance.owner != self.request.user and not self.request.user.is_staff:
             raise PermissionDenied("You do not have permission to delete this media item.")
         instance.delete()
+
+
+class MediaItemAvailableForPostView(generics.ListAPIView):
+    """
+    Returns a list of media items for the authenticated user that
+    are "Pending moderation" or "Published" (i.e. available for new post usage).
+    """
+    serializer_class = UnpublishedMediaItemSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return (
+            MediaItem.objects
+            .filter(
+                owner=self.request.user,
+                status__in=[MediaItem.PENDING_MODERATION, MediaItem.APPROVED, MediaItem.REJECTED]
+            )
+            .prefetch_related("versions").order_by("-created")
+        )

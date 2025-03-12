@@ -90,3 +90,60 @@ class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
         if thumbnail and thumbnail.width and thumbnail.height:
             return (thumbnail.width, thumbnail.height)
         return None
+    
+
+class UnpublishedMediaItemSerializer(serializers.ModelSerializer):
+    """
+    Minimal info for user-owned media items that haven't been published, etc.:
+      - id
+      - a verbose "media_type" ("photo"/"video")
+      - a verbose "status"
+      - the .file.url from the THUMBNAIL version
+      - width, height, file_size from the ORIGINAL version
+    """
+    media_type = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
+    width = serializers.SerializerMethodField()
+    height = serializers.SerializerMethodField()
+    file_size = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MediaItem
+        fields = [
+            "id",
+            "media_type",
+            "status",
+            "thumbnail_url",
+            "width",
+            "height",
+            "file_size",
+        ]
+
+    def get_media_type(self, obj):
+        if obj.media_type == MediaItem.PHOTO:
+            return "photo"
+        elif obj.media_type == MediaItem.VIDEO:
+            return "video"
+        return "unknown"
+
+    def get_status(self, obj):
+        return obj.get_status_display()
+
+    def get_thumbnail_url(self, obj):
+        thumb_version = obj.versions.filter(version_type=MediaItemVersion.THUMBNAIL).first()
+        if thumb_version and thumb_version.file:
+            return thumb_version.file.url
+        return ""
+
+    def get_width(self, obj):
+        orig_version = obj.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
+        return orig_version.width if orig_version else None
+
+    def get_height(self, obj):
+        orig_version = obj.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
+        return orig_version.height if orig_version else None
+
+    def get_file_size(self, obj):
+        orig_version = obj.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
+        return orig_version.file_size if orig_version else None

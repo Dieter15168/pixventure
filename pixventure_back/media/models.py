@@ -14,15 +14,17 @@ class MediaItem(models.Model):
     # Lifecycle statuses
     DRAFT = 0
     PENDING_MODERATION = 1
-    PUBLISHED = 2
-    PRIVATE = 3
-    REJECTED = 4
-    DELETED = 5
-    ARCHIVED = 6
+    APPROVED = 2
+    PUBLISHED = 3
+    PRIVATE = 4
+    REJECTED = 5
+    DELETED = 6
+    ARCHIVED = 7
 
     STATUS_CHOICES = [
         (DRAFT, 'Draft'),
         (PENDING_MODERATION, 'Pending moderation'),
+        (APPROVED, 'Approved'),
         (PUBLISHED, 'Published'),
         (PRIVATE, 'Private'),
         (REJECTED, 'Rejected by moderation'),
@@ -57,9 +59,6 @@ class MediaItem(models.Model):
         on_delete=models.PROTECT,
         related_name='media_items'
     )
-
-    # File references: ideally stored on object storage (e.g., S3).
-    versions = models.ManyToManyField('MediaItemVersion', related_name='media_items_versions', blank=True)
 
     # Simple likes counter
     likes_counter = models.IntegerField(default=0)
@@ -98,7 +97,7 @@ class MediaItemVersion(models.Model):
     ]
 
     version_type = models.IntegerField(choices=VERSION_CHOICES)
-    media_item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='media_item_versions')
+    media_item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='versions')
 
     # File reference for this version
     file = models.FileField(upload_to='media_versions/', null=True, blank=True)

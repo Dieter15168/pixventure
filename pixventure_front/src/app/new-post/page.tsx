@@ -3,9 +3,10 @@
 
 import React, { useState } from "react";
 import { useMediaAPI } from "../../utils/api/media";
+import AvailableMedia from "./AvailableMedia";
 
 /**
- * A minimal /new-post page with a file input for multiple files. 
+ * A minimal /new-post page with a file input for multiple files.
  * Each file is uploaded to /api/media/new/ using our custom Axios logic.
  */
 export default function NewPostPage() {
@@ -33,7 +34,10 @@ export default function NewPostPage() {
         setUploadedCount((prev) => prev + 1);
       } catch (err: any) {
         console.error("Upload failed:", err);
-        setErrors((prev) => [...prev, `Error uploading ${file.name}: ${err.message || err}`]);
+        setErrors((prev) => [
+          ...prev,
+          `Error uploading ${file.name}: ${err.message || err}`,
+        ]);
       }
     }
 
@@ -47,7 +51,11 @@ export default function NewPostPage() {
       <p>Select multiple files to upload.</p>
 
       {/* The file input. We allow multiple selection. */}
-      <input type="file" multiple onChange={handleFileChange} />
+      <input
+        type="file"
+        multiple
+        onChange={handleFileChange}
+      />
 
       {/* Show upload progress */}
       {uploading && (
@@ -69,11 +77,13 @@ export default function NewPostPage() {
       )}
 
       {/* If everything was successful */}
-      {!uploading && totalFiles > 0 && uploadedCount === totalFiles && errors.length === 0 && (
-        <p style={{ color: "green" }}>
-          All files uploaded successfully!
-        </p>
-      )}
+      {!uploading &&
+        totalFiles > 0 &&
+        uploadedCount === totalFiles &&
+        errors.length === 0 && (
+          <p style={{ color: "green" }}>All files uploaded successfully!</p>
+        )}
+      <AvailableMedia />
     </div>
   );
 }
