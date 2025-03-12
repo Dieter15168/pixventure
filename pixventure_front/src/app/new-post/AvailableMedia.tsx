@@ -1,24 +1,30 @@
 // src/app/new-post/AvailableMedia.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useMediaAPI, MinimalMediaItemDTO } from "../../utils/api/media";
+import React from "react";
 import Tile from "../../components/Tile/Tile";
 import { TileProps } from "../../components/Tile/Tile";
 
-/**
- * Maps the data from MinimalMediaItemDTO into the shape Tile expects.
- * We only fill the props we care about for this scenario.
- */
+// This is the same shape you returned from the backend
+export interface MinimalMediaItemDTO {
+  id: number;
+  media_type: "photo" | "video" | "unknown";
+  status: string; // e.g. "Pending moderation"
+  thumbnail_url: string;
+  width: number | null;
+  height: number | null;
+  file_size: number | null;
+}
+
+// Convert the DTO to the `TileProps` shape
 function mapDTOtoTileProps(item: MinimalMediaItemDTO): TileProps {
   return {
     id: item.id,
-    // For "name" & "slug", you can adapt to your business logic.
-    // If your MediaItem has no name/slug, you can just do placeholders or pass item.id.
+    // If you need a user-friendly name:
     name: `Media #${item.id}`,
     slug: `media-${item.id}`,
-    thumbnail_url: item.thumbnail_url ?? undefined,
-    media_type: item.media_type_str === "unknown" ? "photo" : item.media_type_str,
+    thumbnail_url: item.thumbnail_url || undefined,
+    media_type: item.media_type === "unknown" ? "photo" : item.media_type,
 
     // Hard-coded or zero for fields we don't use here
     images_count: 0,
@@ -28,7 +34,7 @@ function mapDTOtoTileProps(item: MinimalMediaItemDTO): TileProps {
     has_liked: false,
     owner_username: "",
     lock_logo: false,
-    is_moderation: item.status_str === "Pending moderation",
+    is_moderation: item.status === "Pending moderation",
     tile_size: "small",
     canAddToAlbum: false,
     entity_type: "media",
@@ -36,30 +42,20 @@ function mapDTOtoTileProps(item: MinimalMediaItemDTO): TileProps {
   };
 }
 
-export default function AvailableMedia() {
-  const { fetchAvailableMedia } = useMediaAPI();
-  const [mediaItems, setMediaItems] = useState<MinimalMediaItemDTO[]>([]);
-  const [loading, setLoading] = useState(true);
+interface AvailableMediaProps {
+  loading: boolean;
+  mediaItems: MinimalMediaItemDTO[];
+}
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await fetchAvailableMedia();
-        setMediaItems(data);
-      } catch (err) {
-        console.error("Failed to fetch available media:", err);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [fetchAvailableMedia]);
-
+export default function AvailableMedia({
+  loading,
+  mediaItems,
+}: AvailableMediaProps) {
   if (loading) {
     return <div>Loading available media...</div>;
   }
 
-  if (mediaItems.length === 0) {
+  if (!mediaItems || mediaItems.length === 0) {
     return <div>No media items available.</div>;
   }
 
