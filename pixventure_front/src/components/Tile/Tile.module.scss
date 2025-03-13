@@ -1,153 +1,162 @@
-/* components/Tile/Tile.module.scss */
+/* src/components/Tile/Tile.module.scss */
 
-/* Your existing breakpoints, card sizes, etc. */
+/* 
+  Breakpoints, card sizes, your existing layout from original snippet
+  Adjust as needed
+*/
 
 @media (max-width: 405px) {
-    :root {
-      --card_width: 50%;
-      --row_increment: 10px;
-      --card_border_radius: 15px;
-      --card_small: 19;
-      --card_medium: 26;
-      --card_large: 33;
-      --caption_height: 11;
-      --image_caption_height: 6;
-    }
+  :root {
+    --card_width: 50%;
+    --row_increment: 10px;
+    --card_border_radius: 15px;
+    --card_small: 19;
+    --card_medium: 26;
+    --card_large: 33;
+    --caption_height: 11;
+    --image_caption_height: 6;
   }
-  
-  @media (min-width: 406px) {
-    :root {
-      --card_width: 200px;
-      --row_increment: 10px;
-      --card_border_radius: 15px;
-      --card_small: 19;
-      --card_medium: 26;
-      --card_large: 33;
-      --caption_height: 11;
-      --image_caption_height: 6;
-    }
+}
+
+@media (min-width: 406px) {
+  :root {
+    --card_width: 200px;
+    --row_increment: 10px;
+    --card_border_radius: 15px;
+    --card_small: 19;
+    --card_medium: 26;
+    --card_large: 33;
+    --caption_height: 11;
+    --image_caption_height: 6;
   }
-  
-  /* The container for the masonry-like layout */
-  .pin_container {
-    margin: 0;
-    padding: 0;
-    width: 98vw;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, var(--card_width));
-    grid-auto-rows: var(--row_increment);
-    justify-content: center;
-  }
-  
-  /* The tile container, e.g. "item_container" */
-  .item_container {
-    position: relative;
-    margin: 15px 10px;
-  }
-  
-  /* 
-     container_small / container_medium / container_large 
-     define the vertical span in the grid 
-  */
-  .container_small {
-    grid-row-end: span calc(var(--card_small) + var(--caption_height));
-  }
-  .container_medium {
-    grid-row-end: span calc(var(--card_medium) + var(--caption_height));
-  }
-  .container_large {
-    grid-row-end: span calc(var(--card_large) + var(--caption_height));
-  }
-  
-  /* The actual tile content (old .inline_card) */
-  .inline_card {
-    overflow: hidden;
-    position: relative;
-    padding: 0;
-    border-radius: var(--card_border_radius, 10px);
-    background-color: var(--main_dominant_color, hotpink);
-    margin-bottom: 2px;
-  }
-  
-  /* optional: small/medium/large variants for the inline card */
-  .card_small {
-    height: 195px;
-  }
-  .card_medium {
-    height: 265px;
-  }
-  .card_large {
-    height: 330px;
-  }
-  
-  /* For text truncation (old .truncate) */
-  .truncate {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;  
-    overflow: hidden;
-  }
-  
-  /* Overlays and icons from your snippet */
-  .items_count {
-    position: absolute;
-    top: 10px;
-    left: 17px;
-    font-size: 20px;
-  }
-  
-  .like_button {
-    position: absolute;
-    bottom: 7px;
-    left: 17px;
-    font-size: 25px;
-    color: white;
-  }
-  
-  /* For a “no-preview-text” scenario */
-  .no_preview_text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-  
-  .player_button {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 60px;
-    color: white;
-    text-decoration: none;
-  }
-  
-  .lock_logo {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    .lock-logo-on-preview {
-      font-size: 70px;
-    }
-  }
-  
-  /* Example hover effect */
-  .inline_card:hover {
-    /* box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); */
-  }
-  
-  .item_info {
-    padding: 8px;
-  }
-  
-  /* if you use “text_over_image_tile” or “rejected_symbol” from snippet */
-  .text_over_image_tile {
-    font-size: 25px;
-    color: white; /* or your color variable */
-  }
-  .rejected_symbol {
-    color: red;
-  }
-  /* etc... */
-  
+}
+
+.item_container {
+  position: relative;
+  padding: 0;
+  margin: 15px 10px;
+}
+
+/* container_small / container_medium / container_large define vertical span in the grid */
+.container_small {
+  grid-row-end: span calc(var(--card_small) + var(--caption_height));
+}
+.container_medium {
+  grid-row-end: span calc(var(--card_medium) + var(--caption_height));
+}
+.container_large {
+  grid-row-end: span calc(var(--card_large) + var(--caption_height));
+}
+
+/* The tile content block */
+.inline_card {
+  overflow: hidden;
+  position: relative;
+  padding: 0;
+  border-radius: var(--card_border_radius, 10px);
+  background-color: var(--main_dominant_color, hotpink);
+  margin-bottom: 2px;
+}
+
+.card_small {
+  height: 195px;
+}
+.card_medium {
+  height: 265px;
+}
+.card_large {
+  height: 330px;
+}
+
+/* text truncation */
+.truncate {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.items_count {
+  position: absolute;
+  top: 10px;
+  left: 17px;
+  font-size: 20px;
+}
+
+.like_button {
+  position: absolute;
+  bottom: 7px;
+  left: 17px;
+  font-size: 25px;
+  color: white;
+}
+
+.text_over_image_tile {
+  font-size: 25px;
+  color: white; /* or your color var */
+}
+
+/* Example no-preview text placeholder */
+.no_preview_text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* The big check in the bottom-left corner */
+:global(.pick-item-checkbox[type="checkbox"]) {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 40px;
+  height: 40px;
+  border-style: solid;
+  border-width: 3px;
+  border-radius: 5px;
+  border-color: var(--main_dominant_color);
+  background: none;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 5;     /* above the image */
+  cursor: pointer;
+}
+
+/* If not checked, just a hollow square. If checked, fill with color + checkmark */
+:global(.pick-item-checkbox[type="checkbox"]:checked) {
+  background: var(--main_dominant_color);
+  border-color: var(--main_dominant_color);
+}
+:global(.pick-item-checkbox[type="checkbox"]:checked:after) {
+  content: "\2713";
+  color: var(--secondary_menu_color, white);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 30px;
+}
+
+/* If you want an outline or color change on label when checked */
+:global(.pick-item-checkbox[type="checkbox"]:checked + .term-check) {
+  outline: 4px solid var(--main_dominant_color);
+  color: var(--main_dominant_color);
+}
+
+/* The moderation icon container and color classes, same as before */
+.moderation_icon_container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 24px;
+}
+
+.moderation_symbol {
+  color: var(--moderation_color, goldenrod);
+}
+.approved_symbol {
+  color: var(--approved_color, green);
+}
+.rejected_symbol {
+  color: var(--rejected_color, red);
+}

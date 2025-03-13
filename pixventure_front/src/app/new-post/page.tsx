@@ -9,14 +9,17 @@ import ErrorModal from "../../components/ErrorModal";
 export default function NewPostPage() {
   const { fetchAvailableMedia, uploadFile } = useMediaAPI();
 
-  // Existing states
+  // 1) State for the media items from backend
   const [mediaItems, setMediaItems] = useState<MinimalMediaItemDTO[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(true);
+
+  // 2) State for which items are selected
+  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
+
+  // --- (unchanged) error handling, uploading states, etc. ---
   const [uploadedCount, setUploadedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [uploading, setUploading] = useState(false);
-
-  // Error-related states
   const [errors, setErrors] = useState<string[]>([]);
   const [showErrorModal, setShowErrorModal] = useState(false);
 
@@ -24,7 +27,6 @@ export default function NewPostPage() {
     fetchAllMedia();
   }, []);
 
-  // Reusable fetch
   async function fetchAllMedia() {
     setLoadingMedia(true);
     try {
@@ -37,20 +39,33 @@ export default function NewPostPage() {
     }
   }
 
-  // Upload handling
+  // 3) Helper to toggle an item in selectedMediaIds
+  function handleTileSelectChange(tileId: number, isSelected: boolean) {
+    setSelectedMediaIds((prev) => {
+      if (isSelected) {
+        // add this ID if not present
+        return [...prev, tileId];
+      } else {
+        // remove this ID
+        return prev.filter((id) => id !== tileId);
+      }
+    });
+  }
+
+  // 4) The existing upload logic is unchanged
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
     const filesArray = Array.from(e.target.files);
     setTotalFiles(filesArray.length);
     setUploadedCount(0);
-    setErrors([]); // clear old errors
+    setErrors([]);
     setUploading(true);
 
     for (let i = 0; i < filesArray.length; i++) {
       const file = filesArray[i];
       try {
-        const uploadResponse = await uploadFile(file);
+        await uploadFile(file);
         setUploadedCount((prev) => prev + 1);
       } catch (err: any) {
         console.error("Upload failed:", err);
@@ -68,28 +83,29 @@ export default function NewPostPage() {
     }
 
     setUploading(false);
-
-    // If we got new errors, open the modal
     if (errors.length > 0) {
       setShowErrorModal(true);
     }
 
-    // Refresh items
     fetchAllMedia();
   };
 
-  // Closes the modal
   function handleCloseModal() {
     setShowErrorModal(false);
   }
 
+  // 5) We pass selectedMediaIds and handleTileSelectChange down to AvailableMedia
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: "1rem" }}>
+    <div>
       <h1>Create a New Post</h1>
       <p>Select multiple files to upload.</p>
 
       {/* The file input. We allow multiple selection. */}
-      <input type="file" multiple onChange={handleFileChange} />
+      <input
+        type="file"
+        multiple
+        onChange={handleFileChange}
+      />
 
       {/* Show upload progress */}
       {uploading && (
@@ -102,9 +118,7 @@ export default function NewPostPage() {
       {!uploading &&
         totalFiles > 0 &&
         uploadedCount === totalFiles &&
-        errors.length === 0 && (
-          <p style={{ color: "green" }}>All files uploaded successfully!</p>
-        )}
+        errors.length === 0 && <p>All files uploaded successfully!</p>}
 
       {/* Show or hide the error modal */}
       <ErrorModal
@@ -113,8 +127,13 @@ export default function NewPostPage() {
         onClose={handleCloseModal}
       />
 
-      {/* Display existing or newly uploaded media */}
-      <AvailableMedia mediaItems={mediaItems} loading={loadingMedia} />
+      {/* Pass selectedMediaIds + callback */}
+      <AvailableMedia
+        mediaItems={mediaItems}
+        loading={loadingMedia}
+        selectedMediaIds={selectedMediaIds}
+        onSelectChange={handleTileSelectChange}
+      />
     </div>
   );
 }

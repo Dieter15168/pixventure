@@ -91,7 +91,7 @@ export default function PostPage() {
         initialLikesCounter={post.likes_counter}
         initialHasLiked={post.has_liked}
       />
-      <div style={{ display: "grid", gap: "10px" }}>
+      <div className="pin_container">
         {tileItems.map((tile) => (
           <Tile
             key={tile.id}

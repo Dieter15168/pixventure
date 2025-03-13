@@ -2,31 +2,29 @@
 "use client";
 
 import React from "react";
-import Tile from "../../components/Tile/Tile";
-import { TileProps } from "../../components/Tile/Tile";
+import Tile, { TileProps } from "../../components/Tile/Tile";
 
-// This is the same shape you returned from the backend
 export interface MinimalMediaItemDTO {
   id: number;
   media_type: "photo" | "video" | "unknown";
-  status: string; // e.g. "Pending moderation"
+  status: string; // "Pending moderation", "Approved", etc.
   thumbnail_url: string;
   width: number | null;
   height: number | null;
   file_size: number | null;
 }
 
-// Convert the DTO to the `TileProps` shape
-function mapDTOtoTileProps(item: MinimalMediaItemDTO): TileProps {
+// Map your backend DTO to the tile shape
+function mapDTOtoTileProps(
+  item: MinimalMediaItemDTO
+): Omit<TileProps, "selected" | "onSelectChange"> {
   return {
     id: item.id,
-    // If you need a user-friendly name:
     name: `Media #${item.id}`,
     slug: `media-${item.id}`,
     thumbnail_url: item.thumbnail_url || undefined,
     media_type: item.media_type === "unknown" ? "photo" : item.media_type,
 
-    // Hard-coded or zero for fields we don't use here
     images_count: 0,
     videos_count: 0,
     posts_count: 0,
@@ -35,22 +33,29 @@ function mapDTOtoTileProps(item: MinimalMediaItemDTO): TileProps {
     has_liked: false,
     owner_username: "",
     lock_logo: false,
-    is_moderation: item.status === "Pending moderation",
+
+    status: item.status,
     tile_size: "medium",
     canAddToAlbum: false,
     entity_type: "media",
-    page_type: "posts_creation",
+    page_type: "post_creation",
   };
 }
 
 interface AvailableMediaProps {
   loading: boolean;
   mediaItems: MinimalMediaItemDTO[];
+
+  // 1) new props from the parent
+  selectedMediaIds: number[];
+  onSelectChange: (id: number, newVal: boolean) => void;
 }
 
 export default function AvailableMedia({
   loading,
   mediaItems,
+  selectedMediaIds,
+  onSelectChange,
 }: AvailableMediaProps) {
   if (loading) {
     return <div>Loading available media...</div>;
@@ -61,14 +66,24 @@ export default function AvailableMedia({
   }
 
   return (
-    <div>
-      <h2>Available Media Items</h2>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-        {mediaItems.map((item) => {
-          const tileProps = mapDTOtoTileProps(item);
-          return <Tile key={item.id} item={tileProps} />;
-        })}
-      </div>
+    <div className="pin_container">
+      {mediaItems.map((item) => {
+        const baseProps = mapDTOtoTileProps(item);
+
+        // 2) Now we apply "selected" + "onSelectChange" to complete the TileProps
+        const tileProps: TileProps = {
+          ...baseProps,
+          selected: selectedMediaIds.includes(item.id),
+          onSelectChange: (id, isSelected) => onSelectChange(id, isSelected),
+        };
+
+        return (
+          <Tile
+            key={item.id}
+            item={tileProps}
+          />
+        );
+      })}
     </div>
   );
 }

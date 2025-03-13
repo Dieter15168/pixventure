@@ -37,20 +37,17 @@ export default function Home() {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div>
-      <h1>Best Posts</h1>
-      <div>
-        {posts.map((post) => (
-          <PostTile
-            key={post.id}
-            item={{
-              ...post,
-              entity_type: "post",
-              page_type: "posts_list",
-            }}
-          />
-        ))}
-      </div>
+    <div className="pin_container">
+      {posts.map((post) => (
+        <PostTile
+          key={post.id}
+          item={{
+            ...post,
+            entity_type: "post",
+            page_type: "posts_list",
+          }}
+        />
+      ))}
     </div>
   );
 }

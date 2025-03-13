@@ -18,10 +18,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <head />
 
-      <body>
+      <body className="bg-dark">
         <AuthProvider>
           <Header />
-          <main style={{ margin: "1rem" }}>
+          <main className="container-fluid">
             <ElementMenuClientSetup>{children}</ElementMenuClientSetup>
           </main>
         </AuthProvider>

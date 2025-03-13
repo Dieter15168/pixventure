@@ -111,17 +111,20 @@ export default function MyPage() {
   }));
 
   return (
-    <div style={{ padding: "1rem" }}>
+    <div>
       <h1>My Page</h1>
 
-      <section style={{ marginBottom: "2rem" }}>
+      <section>
         <h2>My Posts</h2>
         {loadingPosts && <p>Loading your posts...</p>}
-        {errorPosts && <p style={{ color: "red" }}>Error: {errorPosts}</p>}
+        {errorPosts && <p>Error: {errorPosts}</p>}
         {!loadingPosts && myPosts.length === 0 && <p>You have no posts yet.</p>}
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <div className="pin_container">
           {postTiles.map((tile) => (
-            <Tile key={tile.id} item={tile} />
+            <Tile
+              key={tile.id}
+              item={tile}
+            />
           ))}
         </div>
       </section>
@@ -129,20 +132,20 @@ export default function MyPage() {
       <section>
         <h2>My Albums</h2>
         {loadingAlbums && <p>Loading your albums...</p>}
-        {errorAlbums && <p style={{ color: "red" }}>Error: {errorAlbums}</p>}
-        {!loadingAlbums && myAlbums.length === 0 && <p>You have no albums yet.</p>}
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        {errorAlbums && <p>Error: {errorAlbums}</p>}
+        {!loadingAlbums && myAlbums.length === 0 && (
+          <p>You have no albums yet.</p>
+        )}
+        <div className="pin_container">
           {albumTiles.map((tile) => (
-            <Tile key={tile.id} item={tile} />
+            <Tile
+              key={tile.id}
+              item={tile}
+            />
           ))}
         </div>
         <div style={{ marginTop: "1rem" }}>
-          <Link
-            href="/albums/new"
-            style={{ color: "blue", textDecoration: "underline" }}
-          >
-            Create a New Album
-          </Link>
+          <Link href="/albums/new">Create a New Album</Link>
         </div>
       </section>
     </div>

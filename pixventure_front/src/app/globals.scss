@@ -5,7 +5,7 @@
 html, body {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    width: 100%;
     background-color: var(--background_color) !important;
     color: white !important;
     font-family: sans-serif; /* example */
@@ -28,4 +28,15 @@ html, body {
     &:hover {
       color: var(--secondary_color);
     }
+  }
+
+
+.pin_container {
+    margin: 0;
+    padding: 0;
+    width: 98vw;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, var(--card_width));
+    grid-auto-rows: auto;
+    justify-content: center;
   }
