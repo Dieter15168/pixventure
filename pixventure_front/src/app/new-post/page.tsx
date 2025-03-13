@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { useMediaAPI } from "../../utils/api/media";
 import AvailableMedia, { MinimalMediaItemDTO } from "./AvailableMedia";
 import ErrorModal from "../../components/ErrorModal";
+import DragDropZone from "./DragDropZone";
 
 export default function NewPostPage() {
   const { fetchAvailableMedia, uploadFile } = useMediaAPI();
@@ -15,13 +16,20 @@ export default function NewPostPage() {
 
   // 2) State for which items are selected
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
-
-  // --- (unchanged) error handling, uploading states, etc. ---
   const [uploadedCount, setUploadedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [showErrorModal, setShowErrorModal] = useState(false);
+
+  function handleFiles(files: FileList) {
+    // Create a synthetic event-like object for handleFileChange
+    const syntheticEvent = {
+      target: { files } as Partial<HTMLInputElement>,
+    } as React.ChangeEvent<HTMLInputElement>;
+
+    handleFileChange(syntheticEvent);
+  }
 
   useEffect(() => {
     fetchAllMedia();
@@ -59,7 +67,8 @@ export default function NewPostPage() {
     const filesArray = Array.from(e.target.files);
     setTotalFiles(filesArray.length);
     setUploadedCount(0);
-    setErrors([]);
+
+    let newErrors: string[] = [];
     setUploading(true);
 
     for (let i = 0; i < filesArray.length; i++) {
@@ -78,15 +87,17 @@ export default function NewPostPage() {
         } else {
           errorMsg += String(err);
         }
-        setErrors((prev) => [...prev, errorMsg]);
+        newErrors.push(errorMsg);
       }
     }
 
     setUploading(false);
-    if (errors.length > 0) {
+    
+    setErrors(newErrors);
+
+    if (newErrors.length > 0) {
       setShowErrorModal(true);
     }
-
     fetchAllMedia();
   };
 
@@ -98,13 +109,11 @@ export default function NewPostPage() {
   return (
     <div>
       <h1>Create a New Post</h1>
-      <p>Select multiple files to upload.</p>
 
       {/* The file input. We allow multiple selection. */}
-      <input
-        type="file"
-        multiple
-        onChange={handleFileChange}
+      <DragDropZone
+        onFilesSelected={handleFiles}
+        uploading={uploading}
       />
 
       {/* Show upload progress */}
