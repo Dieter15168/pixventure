@@ -176,7 +176,7 @@ export default function AlbumDetailPage() {
       />
       <hr />
       <h2>Album Elements</h2>
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+      <div className="pin_container">
         {tileItems.map((tile) => (
           <Tile
             key={tile.renderKey || tile.id}
