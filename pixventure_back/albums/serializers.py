@@ -3,7 +3,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Album, AlbumElement
-from .utils import generate_unique_slug
+from main.utils import generate_unique_slug
 from media.models import MediaItem, MediaItemVersion
 from social.utils import user_has_liked
 from media.utils.media_file import get_media_file_for_display
@@ -33,7 +33,7 @@ class AlbumCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         is_public = validated_data.pop('is_public', False)
         name = validated_data.get('name')
-        validated_data['slug'] = generate_unique_slug(name)
+        validated_data['slug'] = generate_unique_slug(Album, name, max_length=255)
         # Set status based on is_public:
         if is_public:
             validated_data['status'] = Album.PENDING_MODERATION

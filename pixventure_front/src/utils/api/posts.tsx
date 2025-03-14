@@ -6,10 +6,9 @@ import { useCallback } from "react";
 
 interface CreatePostPayload {
   name: string;
-  items: number[];
+  items: number[];        // array of media IDs
   featured_item: number;
-  category_ids: number[];
-  tag_ids: number[];
+  terms: number[];        // array of term IDs
 }
 
 export function usePostsAPI() {

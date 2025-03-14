@@ -1,75 +1,76 @@
-// src/app/new-post/Step2PostFinalization.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Tile, { TileProps } from "../../components/Tile/Tile";
-// This is hypothetical. We'll define or mock it.
+import { MinimalMediaItemDTO } from "./AvailableMedia";
 import { usePostsAPI } from "../../utils/api/posts";
+import { useTermsAPI, Term } from "../../utils/api/terms";
 
 interface Step2Props {
-  selectedMediaIds: number[];
+  selectedItems: MinimalMediaItemDTO[]; // from Step 1
   onBack: () => void;
 }
 
-/**
- * Step 2: Finalize & Publish
- */
-export default function Step2PostFinalization({ selectedMediaIds, onBack }: Step2Props) {
+export default function Step2PostFinalization({
+  selectedItems,
+  onBack,
+}: Step2Props) {
   const router = useRouter();
   const { createPost } = usePostsAPI();
+  const { fetchAllTerms } = useTermsAPI();
 
-  // The fetched media items for the selected IDs
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  // Basic post info
+  const [postName, setPostName] = useState("");
   const [featuredId, setFeaturedId] = useState<number | null>(null);
 
-  // The post name
-  const [postName, setPostName] = useState("");
+  // We store categories & tags separately
+  const [allCategories, setAllCategories] = useState<Term[]>([]);
+  const [allTags, setAllTags] = useState<Term[]>([]);
 
-  // For categories/tags (just placeholders):
-  const [allCategories, setAllCategories] = useState<any[]>([]);
-  const [allTags, setAllTags] = useState<any[]>([]);
-  const [selectedCatIds, setSelectedCatIds] = useState<number[]>([]);
+  // The user’s chosen categories/tags
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
 
   useEffect(() => {
-    // 1. If no items, maybe user came here by mistake
-    if (selectedMediaIds.length === 0) {
+    if (selectedItems.length === 0) {
       alert("No items selected. Going back.");
       onBack();
       return;
     }
+    setFeaturedId(selectedItems[0].id);
 
-    // 2. fetch or mock the item details for these IDs
-    fetchSelectedMediaDetails(selectedMediaIds).then((data) => {
-      setSelectedItems(data);
-      if (data.length > 0) {
-        setFeaturedId(data[0].id); // default to first
-      }
-    });
+    loadTermsFromBackend();
+  }, [selectedItems, onBack]);
 
-    // 3. fetch or mock categories and tags
-    fetchAllTerms().then(({ categories, tags }) => {
-      setAllCategories(categories);
-      setAllTags(tags);
-    });
-  }, [selectedMediaIds, onBack]);
+  // Suppose the backend returns an object with { categories: Term[], tags: Term[] }
+  async function loadTermsFromBackend() {
+    try {
+      const data = await fetchAllTerms(); // e.g. { categories: [Term], tags: [Term] }
+      setAllCategories(data.categories);
+      setAllTags(data.tags);
+    } catch (err) {
+      console.error("Failed to load terms:", err);
+    }
+  }
 
+  // Toggle a category in selectedCategoryIds
   function toggleCategory(catId: number) {
-    setSelectedCatIds((prev) =>
+    setSelectedCategoryIds((prev) =>
       prev.includes(catId) ? prev.filter((x) => x !== catId) : [...prev, catId]
     );
   }
+
+  // Toggle a tag in selectedTagIds
   function toggleTag(tagId: number) {
     setSelectedTagIds((prev) =>
       prev.includes(tagId) ? prev.filter((x) => x !== tagId) : [...prev, tagId]
     );
   }
 
-  // The final step: publish
-  async function handlePublishPost() {
+  async function handlePublish() {
     if (!postName) {
-      alert("Please enter a post name.");
+      alert("Please provide a post name.");
       return;
     }
     if (!featuredId) {
@@ -77,50 +78,57 @@ export default function Step2PostFinalization({ selectedMediaIds, onBack }: Step
       return;
     }
 
-    // We send the data to createPost
     try {
+      // Combine selectedCategoryIds + selectedTagIds into one array
+      const combinedTermIds = [...selectedCategoryIds, ...selectedTagIds];
+
       const payload = {
         name: postName,
-        items: selectedMediaIds,   // array of media IDs
+        // The IDs of the selected items from Step 1
+        items: selectedItems.map((it) => it.id),
         featured_item: featuredId,
-        category_ids: selectedCatIds,
-        tag_ids: selectedTagIds,
+        // Single "terms" field containing both categories & tags
+        terms: combinedTermIds,
       };
-      const result = await createPost(payload);
-      console.log("Post created successfully:", result);
-      // redirect to /my-page or wherever
+
+      const newPost = await createPost(payload);
+      console.log("Created post:", newPost);
       router.push("/my-page");
     } catch (err: any) {
       console.error("Failed to create post:", err);
-      alert(`Error: ${err.message || err}`);
+      alert(`Error creating post: ${err.message || err}`);
     }
   }
 
   return (
     <div>
-      <h2>Create a New Post (Step 2)</h2>
-      <p>Selected items: {selectedMediaIds.join(", ")}</p>
+      <h2>Finalize Your Post (Step 2)</h2>
+      <button
+        onClick={onBack}
+        className="btn btn-secondary mb-3"
+      >
+        &laquo; Back
+      </button>
 
-      <label className="d-block mb-2">
-        <strong>Post Name:</strong>
-        <input
-          type="text"
-          className="form-control"
-          value={postName}
-          onChange={(e) => setPostName(e.target.value)}
-        />
-      </label>
+      <div className="mb-3">
+        <label>
+          <strong>Post Name</strong>
+          <input
+            type="text"
+            className="form-control"
+            value={postName}
+            onChange={(e) => setPostName(e.target.value)}
+          />
+        </label>
+      </div>
 
-      <hr />
-
-      <h5>Selected Items:</h5>
-      <div style={{ display: "flex", gap: 8 }}>
+      <h4>Chosen Media Items</h4>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {selectedItems.map((item) => {
           const isFeatured = item.id === featuredId;
           const tileProps: TileProps = {
             id: item.id,
             name: `Media #${item.id}`,
-            slug: `media-${item.id}`,
             thumbnail_url: item.thumbnail_url,
             media_type: item.media_type,
             show_likes: false,
@@ -132,17 +140,22 @@ export default function Step2PostFinalization({ selectedMediaIds, onBack }: Step
             tile_size: "small",
             canAddToAlbum: false,
             entity_type: "media",
-            page_type: "posts_list", // or "post_creation"
+            page_type: "post_creation",
           };
 
           return (
-            <div key={item.id} style={{ border: isFeatured ? "3px solid green" : "1px solid #ccc" }}>
+            <div
+              key={item.id}
+              style={{
+                border: isFeatured ? "3px solid green" : "1px solid #ddd",
+              }}
+            >
               <Tile item={tileProps} />
               <button
-                className="btn btn-sm btn-outline-primary"
+                className="btn btn-sm btn-link"
                 onClick={() => setFeaturedId(item.id)}
               >
-                {isFeatured ? "Featured" : "Set as Featured"}
+                {isFeatured ? "Featured (Selected)" : "Set as Featured"}
               </button>
             </div>
           );
@@ -151,17 +164,18 @@ export default function Step2PostFinalization({ selectedMediaIds, onBack }: Step
 
       <hr />
 
-      <h5>Pick Categories</h5>
+      <h4>Select Categories</h4>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {allCategories.map((cat) => {
-          const isSelected = selectedCatIds.includes(cat.id);
+          const isSelected = selectedCategoryIds.includes(cat.id);
           return (
             <label
               key={cat.id}
               style={{
                 border: isSelected ? "2px solid blue" : "1px solid #ccc",
-                padding: "4px 6px",
                 borderRadius: 4,
+                padding: "4px 8px",
+                backgroundColor: isSelected ? "#ccf" : "white",
                 cursor: "pointer",
               }}
             >
@@ -177,17 +191,18 @@ export default function Step2PostFinalization({ selectedMediaIds, onBack }: Step
         })}
       </div>
 
-      <h5>Pick Tags</h5>
+      <h4 className="mt-3">Select Tags</h4>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {allTags.map((tag) => {
-          const isSelected = selectedTagIds.includes(tag.id);
+        {allTags.map((tg) => {
+          const isSelected = selectedTagIds.includes(tg.id);
           return (
             <label
-              key={tag.id}
+              key={tg.id}
               style={{
                 border: isSelected ? "2px solid green" : "1px solid #ccc",
-                padding: "4px 6px",
                 borderRadius: 4,
+                padding: "4px 8px",
+                backgroundColor: isSelected ? "#cfc" : "white",
                 cursor: "pointer",
               }}
             >
@@ -195,9 +210,9 @@ export default function Step2PostFinalization({ selectedMediaIds, onBack }: Step
                 type="checkbox"
                 style={{ display: "none" }}
                 checked={isSelected}
-                onChange={() => toggleTag(tag.id)}
+                onChange={() => toggleTag(tg.id)}
               />
-              {tag.name}
+              {tg.name}
             </label>
           );
         })}
@@ -205,37 +220,12 @@ export default function Step2PostFinalization({ selectedMediaIds, onBack }: Step
 
       <hr />
 
-      <button className="btn btn-secondary me-2" onClick={onBack}>
-        Back
-      </button>
-      <button className="btn btn-success" onClick={handlePublishPost}>
+      <button
+        onClick={handlePublish}
+        className="btn btn-success"
+      >
         Publish Post
       </button>
     </div>
   );
-}
-
-// Some mocked fetch calls. Replace with real ones in your code:
-async function fetchSelectedMediaDetails(ids: number[]) {
-  // pretend we fetch details for each item ID
-  return ids.map((id) => ({
-    id,
-    media_type: "photo",
-    status: "Pending moderation",
-    thumbnail_url: `https://fakecdn.com/thumbs/${id}.jpg`,
-  }));
-}
-
-async function fetchAllTerms() {
-  return {
-    categories: [
-      { id: 101, name: "Animals" },
-      { id: 102, name: "Landscape" },
-    ],
-    tags: [
-      { id: 201, name: "Nature" },
-      { id: 202, name: "HDR" },
-      { id: 203, name: "Night" },
-    ],
-  };
 }

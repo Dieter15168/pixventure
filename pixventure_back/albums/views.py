@@ -17,7 +17,6 @@ from .serializers import (
     AlbumElementCreateSerializer
 )
 from .permissions import IsAlbumOwnerOrAdminOrPublicRead
-from .utils import generate_unique_slug
 from main.pagination import StandardResultsSetPagination
 
 

@@ -6,6 +6,9 @@ from social.utils import user_has_liked
 from media.utils.media_file import get_media_file_for_display
 from media.serializers import TileInfoMixin
 from taxonomy.models import Term
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from main.utils import generate_unique_slug
 
 class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
     """
@@ -180,27 +183,111 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
         )
 
 
-class PostCreateSerializer(serializers.ModelSerializer):
+class PostCreateSerializer(serializers.Serializer):
     """
-    For creating a new post. 
-    The user can provide name, slug, etc.
-    The `owner` will be set automatically from request.user.
+    For creating a new post with a payload like:
+    {
+      "name": "Some new test post",
+      "featured_item": 28,
+      "items": [29, 28],
+      "terms": [3, 2],    // Optional: may be an empty list
+      "text": "Some optional text..."
+    }
     """
-    class Meta:
-        model = Post
-        fields = [
-            'name',
-            'slug',
-            'text',
-            'status',
-            'main_category',
-            'tags',
-            'featured_item',
-            'is_featured_post',
-            'is_blurred',
-        ]
-        extra_kwargs = {
-            'slug': {'required': True},
+    name = serializers.CharField(max_length=1024)
+    text = serializers.CharField(required=False, allow_blank=True)
+    featured_item = serializers.IntegerField(required=False, allow_null=True)
+    items = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False
+    )
+    terms = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=True
+    )
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            request_user = self.context['request'].user
+
+            name = validated_data.get('name')
+            text = validated_data.get('text', "")
+            featured_item_id = validated_data.get('featured_item')
+            item_ids = validated_data.get('items', [])
+            term_ids = validated_data.get('terms', [])
+
+            # 1) Validate and load media items that belong to the user
+            media_items = MediaItem.objects.filter(id__in=item_ids, owner=request_user)
+            if media_items.count() != len(item_ids):
+                raise ValidationError("One or more media items do not exist or do not belong to you.")
+
+            # 2) Validate and load featured item (if provided)
+            featured_item_obj = None
+            if featured_item_id is not None:
+                try:
+                    featured_item_obj = MediaItem.objects.get(id=featured_item_id, owner=request_user)
+                except MediaItem.DoesNotExist:
+                    raise ValidationError("Featured item does not exist or does not belong to you.")
+
+            # 3) Validate and load terms (if provided)
+            terms_qs = Term.objects.filter(id__in=term_ids)
+            if term_ids and terms_qs.count() != len(term_ids):
+                raise ValidationError("One or more terms do not exist.")
+
+            # 4) Determine main_category:
+            # If user provided terms, try to use one of type 'category'
+            # Otherwise, or if none of the provided terms is a category,
+            # default to the first available category in the system.
+            if term_ids:
+                main_cat = terms_qs.filter(term_type=Term.CATEGORY).first()
+                if not main_cat:
+                    main_cat = Term.objects.filter(term_type=Term.CATEGORY).first()
+            else:
+                # No terms provided – default to a category, if one exists.
+                main_cat = Term.objects.filter(term_type=Term.CATEGORY).first()
+
+            if not main_cat:
+                # If no category exists at all, raise error.
+                raise ValidationError("No valid category found. Please contact support.")
+
+            # 5) Generate a unique slug for the post
+            slug = generate_unique_slug(Post, name, max_length=50)
+
+            # 6) Create the Post object
+            post = Post.objects.create(
+                owner=request_user,
+                name=name,
+                slug=slug,
+                text=text,
+                featured_item=featured_item_obj,
+                main_category=main_cat,
+                status=Post.PENDING_MODERATION  # or use your default status
+            )
+
+            # 7) Add the terms (if any) to the post
+            if term_ids:
+                post.terms.add(*terms_qs)
+
+            # 8) Create PostMedia links for each media item in the order provided
+            for pos, m_id in enumerate(item_ids):
+                media_obj = media_items.get(id=m_id)
+                PostMedia.objects.create(
+                    post=post,
+                    media_item=media_obj,
+                    position=pos
+                )
+
+            return post
+
+    def to_representation(self, instance):
+        return {
+            "id": instance.id,
+            "name": instance.name,
+            "slug": instance.slug,
+            "featured_item_id": instance.featured_item.id if instance.featured_item else None,
+            "terms": list(instance.terms.values_list('id', flat=True)),
+            "items": list(instance.post_media_links.values_list('media_item_id', flat=True)),
+            "owner_id": instance.owner_id
         }
         
 
