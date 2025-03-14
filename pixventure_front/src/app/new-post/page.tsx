@@ -3,34 +3,39 @@
 
 import React, { useEffect, useState } from "react";
 import { useMediaAPI } from "../../utils/api/media";
-import AvailableMedia, { MinimalMediaItemDTO } from "./AvailableMedia";
 import ErrorModal from "../../components/ErrorModal";
 import DragDropZone from "./DragDropZone";
+import AvailableMedia, { MinimalMediaItemDTO } from "./AvailableMedia";
+import Step2PostFinalization from "./Step2PostFinalization";
 
+/**
+ * The main multi-step page for creating a new post.
+ * Step 1: pick media items
+ * Step 2: finalize & publish
+ */
 export default function NewPostPage() {
-  const { fetchAvailableMedia, uploadFile } = useMediaAPI();
+  // Which step are we on? 1 or 2
+  const [step, setStep] = useState(1);
 
-  // 1) State for the media items from backend
+  // Global states needed for step 1
+  const { fetchAvailableMedia, uploadFile } = useMediaAPI();
   const [mediaItems, setMediaItems] = useState<MinimalMediaItemDTO[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(true);
 
-  // 2) State for which items are selected
-  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
   const [uploadedCount, setUploadedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [uploading, setUploading] = useState(false);
+
+  // Errors & modal
   const [errors, setErrors] = useState<string[]>([]);
   const [showErrorModal, setShowErrorModal] = useState(false);
 
-  function handleFiles(files: FileList) {
-    // Create a synthetic event-like object for handleFileChange
-    const syntheticEvent = {
-      target: { files } as Partial<HTMLInputElement>,
-    } as React.ChangeEvent<HTMLInputElement>;
+  // The set of IDs the user selected in step 1
+  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
 
-    handleFileChange(syntheticEvent);
-  }
-
+  // ----------------------------------------
+  // Step 1 logic
+  // ----------------------------------------
   useEffect(() => {
     fetchAllMedia();
   }, []);
@@ -47,20 +52,17 @@ export default function NewPostPage() {
     }
   }
 
-  // 3) Helper to toggle an item in selectedMediaIds
-  function handleTileSelectChange(tileId: number, isSelected: boolean) {
-    setSelectedMediaIds((prev) => {
-      if (isSelected) {
-        // add this ID if not present
-        return [...prev, tileId];
-      } else {
-        // remove this ID
-        return prev.filter((id) => id !== tileId);
-      }
-    });
+  // Called by the DragDropZone to handle user selecting or dropping new files
+  function handleFiles(files: FileList) {
+    // We reuse handleFileChange logic by constructing a synthetic event
+    const syntheticEvent = {
+      target: { files } as Partial<HTMLInputElement>,
+    } as React.ChangeEvent<HTMLInputElement>;
+
+    handleFileChange(syntheticEvent);
   }
 
-  // 4) The existing upload logic is unchanged
+  // The existing upload logic
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
@@ -71,8 +73,7 @@ export default function NewPostPage() {
     let newErrors: string[] = [];
     setUploading(true);
 
-    for (let i = 0; i < filesArray.length; i++) {
-      const file = filesArray[i];
+    for (const file of filesArray) {
       try {
         await uploadFile(file);
         setUploadedCount((prev) => prev + 1);
@@ -92,12 +93,12 @@ export default function NewPostPage() {
     }
 
     setUploading(false);
-    
     setErrors(newErrors);
-
     if (newErrors.length > 0) {
       setShowErrorModal(true);
     }
+
+    // Refresh after uploading
     fetchAllMedia();
   };
 
@@ -105,44 +106,83 @@ export default function NewPostPage() {
     setShowErrorModal(false);
   }
 
-  // 5) We pass selectedMediaIds and handleTileSelectChange down to AvailableMedia
+  // Toggling selection of an item in Step 1
+  function handleTileSelectChange(tileId: number, isSelected: boolean) {
+    setSelectedMediaIds((prev) => {
+      if (isSelected) return [...prev, tileId];
+      return prev.filter((id) => id !== tileId);
+    });
+  }
+
+  // Step 1 "Next" click
+  function goToStep2() {
+    if (selectedMediaIds.length === 0) {
+      alert("Please select at least one media item before proceeding.");
+      return;
+    }
+    setStep(2);
+  }
+
+  // ----------------------------------------
+  // Render: if step=1, we show Step1 UI
+  // if step=2, we show Step2PostFinalization
+  // ----------------------------------------
   return (
     <div>
-      <h1>Create a New Post</h1>
+      {step === 1 && (
+        <>
+          <h1>Create a New Post (Step 1)</h1>
+          <p>
+            Upload new files or select from existing media. Then press "Next".
+          </p>
 
-      {/* The file input. We allow multiple selection. */}
-      <DragDropZone
-        onFilesSelected={handleFiles}
-        uploading={uploading}
-      />
+          <DragDropZone
+            onFilesSelected={handleFiles}
+            uploading={uploading}
+          />
 
-      {/* Show upload progress */}
-      {uploading && (
-        <p>
-          Uploading... {uploadedCount}/{totalFiles}
-        </p>
+          {uploading && (
+            <p>
+              Uploading... {uploadedCount}/{totalFiles}
+            </p>
+          )}
+
+          {!uploading &&
+            totalFiles > 0 &&
+            uploadedCount === totalFiles &&
+            errors.length === 0 && (
+              <p style={{ color: "green" }}>All files uploaded successfully!</p>
+            )}
+
+          <ErrorModal
+            show={showErrorModal && errors.length > 0}
+            errors={errors}
+            onClose={handleCloseModal}
+          />
+
+          <AvailableMedia
+            mediaItems={mediaItems}
+            loading={loadingMedia}
+            selectedMediaIds={selectedMediaIds}
+            onSelectChange={handleTileSelectChange}
+          />
+
+          <button
+            type="button"
+            className="btn btn-primary mt-3"
+            onClick={goToStep2}
+          >
+            Next
+          </button>
+        </>
       )}
 
-      {/* If everything was successful */}
-      {!uploading &&
-        totalFiles > 0 &&
-        uploadedCount === totalFiles &&
-        errors.length === 0 && <p>All files uploaded successfully!</p>}
-
-      {/* Show or hide the error modal */}
-      <ErrorModal
-        show={showErrorModal && errors.length > 0}
-        errors={errors}
-        onClose={handleCloseModal}
-      />
-
-      {/* Pass selectedMediaIds + callback */}
-      <AvailableMedia
-        mediaItems={mediaItems}
-        loading={loadingMedia}
-        selectedMediaIds={selectedMediaIds}
-        onSelectChange={handleTileSelectChange}
-      />
+      {step === 2 && (
+        <Step2PostFinalization
+          selectedMediaIds={selectedMediaIds}
+          onBack={() => setStep(1)}
+        />
+      )}
     </div>
   );
 }

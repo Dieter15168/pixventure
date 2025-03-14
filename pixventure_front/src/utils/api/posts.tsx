@@ -4,6 +4,14 @@
 import useAxios from "../useAxios";
 import { useCallback } from "react";
 
+interface CreatePostPayload {
+  name: string;
+  items: number[];
+  featured_item: number;
+  category_ids: number[];
+  tag_ids: number[];
+}
+
 export function usePostsAPI() {
   const axios = useAxios();
 
@@ -37,10 +45,14 @@ export function usePostsAPI() {
     return res.data;
   }, [axios]);
 
-  // New method to fetch posts owned by the current user.
   const fetchMyPosts = useCallback(async () => {
     const res = await axios.get("/posts/mine/");
     return res.data.results;
+  }, [axios]);
+
+  const createPost = useCallback(async (payload: CreatePostPayload) => {
+    const res = await axios.post("/posts/new/", payload);
+    return res.data;
   }, [axios]);
 
   return {
@@ -51,5 +63,6 @@ export function usePostsAPI() {
     fetchPostMeta,
     deletePost,
     fetchMyPosts,
+    createPost,
   };
 }
