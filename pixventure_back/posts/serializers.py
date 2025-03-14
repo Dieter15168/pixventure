@@ -5,6 +5,7 @@ from media.models import MediaItem, MediaItemVersion
 from social.utils import user_has_liked
 from media.utils.media_file import get_media_file_for_display
 from media.serializers import TileInfoMixin
+from taxonomy.models import Term
 
 class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
     """
@@ -218,12 +219,12 @@ class PostMetaSerializer(serializers.ModelSerializer):
 
     def get_categories(self, obj):
         from taxonomy.serializers import TermSerializer
-        queryset = obj.categories.all()
+        queryset = obj.terms.filter(term_type=Term.CATEGORY)
         return TermSerializer(queryset, many=True).data
 
     def get_tags(self, obj):
         from taxonomy.serializers import TermSerializer
-        queryset = obj.tags.all()
+        queryset = obj.terms.filter(term_type=Term.TAG)
         return TermSerializer(queryset, many=True).data
 
     def get_can_edit(self, obj):

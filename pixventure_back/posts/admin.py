@@ -8,22 +8,45 @@ from media.models import MediaItemVersion
 from taxonomy.models import Term
 
 class PostAdminForm(forms.ModelForm):
+    categories = forms.ModelMultipleChoiceField(
+        queryset=Term.objects.filter(term_type=Term.CATEGORY),
+        required=False,
+        widget=admin.widgets.FilteredSelectMultiple('Categories', is_stacked=False)
+    )
+    tags = forms.ModelMultipleChoiceField(
+        queryset=Term.objects.filter(term_type=Term.TAG),
+        required=False,
+        widget=admin.widgets.FilteredSelectMultiple('Tags', is_stacked=False)
+    )
+
     class Meta:
         model = Post
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
-        """
-        Restrict the main_category queryset to only categories,
-        and the tags queryset to only tags.
-        """
+        """ Populate categories and tags from terms when editing an existing post """
         super().__init__(*args, **kwargs)
-        # 2 => CATEGORY
-        self.fields['main_category'].queryset = Term.objects.filter(term_type=2)
-        # 2 => CATEGORY
-        self.fields['categories'].queryset = Term.objects.filter(term_type=2)
-        # 1 => TAG
-        self.fields['tags'].queryset = Term.objects.filter(term_type=1)
+
+        if self.instance.pk:  # Only populate for existing posts
+            self.fields['categories'].initial = self.instance.terms.filter(term_type=Term.CATEGORY)
+            self.fields['tags'].initial = self.instance.terms.filter(term_type=Term.TAG)
+
+    def save(self, commit=True):
+        """ Override save method to properly handle ManyToMany relationships """
+        instance = super().save(commit=False)  # Save the instance without committing yet
+
+        if commit:
+            instance.save()  # Save instance before modifying M2M fields
+
+        # Clear and update terms properly
+        selected_categories = set(self.cleaned_data.get('categories', []))
+        selected_tags = set(self.cleaned_data.get('tags', []))
+
+        instance.terms.clear()  # Remove all previous terms
+        instance.terms.add(*selected_categories, *selected_tags)  # Add back selected ones
+
+        return instance
+
 
 class PostMediaInline(admin.TabularInline):
     """
@@ -47,10 +70,7 @@ class PostMediaInline(admin.TabularInline):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    """
-    Admin interface for the Post model.
-    """
-    form = PostAdminForm  # Use the custom form
+    form = PostAdminForm
 
     def featured_item_preview(self, obj):
         if obj.featured_item:
@@ -70,6 +90,7 @@ class PostAdmin(admin.ModelAdmin):
     search_fields = ('name', 'slug', 'owner__username', 'main_category__name')
     readonly_fields = ('created', 'updated', 'likes_counter')
     ordering = ('-created',)
+
     fieldsets = (
         (None, {
             'fields': (
@@ -81,7 +102,7 @@ class PostAdmin(admin.ModelAdmin):
             'fields': ('likes_counter', 'created', 'updated'),
         }),
     )
-    filter_horizontal = ('categories', 'tags',)
+
     inlines = [PostMediaInline]
 
 

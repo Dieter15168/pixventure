@@ -47,20 +47,11 @@ class Post(models.Model):
         limit_choices_to={'term_type': 2},  # 2 => CATEGORY
     )
     
-    # Categories:
-    categories = models.ManyToManyField(
+    # Terms (categories and tags):
+    terms = models.ManyToManyField(
         Term,
         blank=True,
-        related_name='posts_with_category',
-        limit_choices_to={'term_type': 2},  # 2 => CATEGORY
-    )
-    
-    # Tags:
-    tags = models.ManyToManyField(
-        Term,
-        blank=True,
-        related_name='posts_with_tag',
-        limit_choices_to={'term_type': 1},  # 1 => TAG
+        related_name='posts_with_term',
     )
     
     # The featured item is used as a thumbnail or cover image
