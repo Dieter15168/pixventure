@@ -9,16 +9,16 @@ logger = logging.getLogger(__name__)
 class MediaVersionManager:
     """
     Manager class to orchestrate the asynchronous creation of additional
-    media item versions. Versions include:
-      - Watermarked preview
-      - Full watermarked version
-      - Blurred thumbnail
-      - Blurred preview
-
-    If 'regenerate' is False, versions will only be created if they do not exist.
-    If 'regenerate' is True, existing versions will be deleted and new ones will be created.
+    media item versions. The versions include:
+      - PREVIEW (watermarked preview)
+      - WATERMARKED (full watermarked version)
+      - BLURRED_THUMBNAIL (blurred thumbnail)
+      - BLURRED_PREVIEW (blurred preview)
+    
+    This manager now accepts an 'allowed_versions' list. Only versions included in this list
+    will be processed. If 'regenerate' is True, existing versions will be deleted and recreated.
     """
-
+    
     def __init__(self, media_item_id: int):
         self.media_item_id = media_item_id
         try:
@@ -43,18 +43,27 @@ class MediaVersionManager:
         else:
             return not existing_versions.exists()
 
-    def process_versions(self, regenerate: bool = False):
+    def process_versions(self, regenerate: bool = False, allowed_versions: list = None):
         """
-        Process and generate all additional versions for the given media item.
-        Only create a version if it doesn't exist unless 'regenerate' is True.
+        Process and generate only the allowed versions for the given media item.
+        If 'regenerate' is False, only create versions that don't already exist.
         """
-        # Watermarked preview version
-        if self._should_create(MediaItemVersion.PREVIEW, regenerate):
+        # If allowed_versions is not provided, default to processing all versions.
+        if allowed_versions is None:
+            allowed_versions = [
+                MediaItemVersion.PREVIEW,
+                MediaItemVersion.WATERMARKED,
+                MediaItemVersion.BLURRED_THUMBNAIL,
+                MediaItemVersion.BLURRED_PREVIEW,
+            ]
+
+        # Process PREVIEW (watermarked preview) - always generated.
+        if MediaItemVersion.PREVIEW in allowed_versions and self._should_create(MediaItemVersion.PREVIEW, regenerate):
             try:
                 preview_file = watermark.create_watermarked_preview(
                     self.media_item,
                     quality=self.config["watermarked_preview_quality"],
-                    preview_size=self.config["preview_size"]
+                    preview_size=self.config["preview_size"]  # Use the preview size setting.
                 )
                 media_version_creator.create_media_item_version(
                     media_item=self.media_item,
@@ -67,8 +76,8 @@ class MediaVersionManager:
         else:
             logger.info("Watermarked preview version already exists for MediaItem %s", self.media_item.id)
 
-        # Full watermarked version (for paid users)
-        if self._should_create(MediaItemVersion.WATERMARKED, regenerate):
+        # Process FULL WATERMARKED version - always generated.
+        if MediaItemVersion.WATERMARKED in allowed_versions and self._should_create(MediaItemVersion.WATERMARKED, regenerate):
             try:
                 full_watermarked_file = watermark.create_full_watermarked_version(
                     self.media_item,
@@ -85,15 +94,15 @@ class MediaVersionManager:
         else:
             logger.info("Full watermarked version already exists for MediaItem %s", self.media_item.id)
 
-        # Blurred thumbnail version
-        if self._should_create(MediaItemVersion.BLURRED_THUMBNAIL, regenerate):
+        # Process BLURRED THUMBNAIL version (if allowed)
+        if MediaItemVersion.BLURRED_THUMBNAIL in allowed_versions and self._should_create(MediaItemVersion.BLURRED_THUMBNAIL, regenerate):
             try:
-                # Retrieve existing thumbnail version (assumed to exist)
+                # Retrieve the existing thumbnail version (assumed to exist)
                 thumbnail_version = self.media_item.versions.get(version_type=MediaItemVersion.THUMBNAIL)
                 blurred_thumbnail = watermark.create_blurred_thumbnail(
                     thumbnail_version.file,
                     quality=self.config["blurred_thumbnail_quality"],
-                    thumbnail_size=self.config["thumbnail_size"]
+                    thumbnail_size=self.config["thumbnail_size"]  # Use the thumbnail size setting.
                 )
                 media_version_creator.create_media_item_version(
                     media_item=self.media_item,
@@ -106,13 +115,13 @@ class MediaVersionManager:
         else:
             logger.info("Blurred thumbnail version already exists for MediaItem %s", self.media_item.id)
 
-        # Blurred preview version
-        if self._should_create(MediaItemVersion.BLURRED_PREVIEW, regenerate):
+        # Process BLURRED PREVIEW version (if allowed)
+        if MediaItemVersion.BLURRED_PREVIEW in allowed_versions and self._should_create(MediaItemVersion.BLURRED_PREVIEW, regenerate):
             try:
                 blurred_preview = watermark.create_blurred_preview(
                     self.media_item,
                     quality=self.config["blurred_preview_quality"],
-                    preview_size=self.config["preview_size"]  # Using preview size setting
+                    preview_size=self.config["preview_size"]
                 )
                 media_version_creator.create_media_item_version(
                     media_item=self.media_item,
