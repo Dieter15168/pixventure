@@ -1,6 +1,7 @@
 # media/tasks.py
 from celery import shared_task
 from media.managers.media_version_manager import MediaVersionManager
+from media.managers.hashing_manager import HashingManager
 
 @shared_task  # Removed the explicit name
 def process_media_item_versions(media_item_id: int, regenerate: bool = False, allowed_versions: list = None):
@@ -11,3 +12,13 @@ def process_media_item_versions(media_item_id: int, regenerate: bool = False, al
     """
     manager = MediaVersionManager(media_item_id)
     manager.process_versions(regenerate=regenerate, allowed_versions=allowed_versions)
+
+@shared_task(name="media.tasks.compute_fuzzy_hash")
+def compute_fuzzy_hash_task(media_item_version_id, hash_type="phash"):
+    """
+    Asynchronous task to compute and store the fuzzy hash for a media item version.
+    
+    :param media_item_version_id: ID of the MediaItemVersion.
+    :param hash_type: Type of fuzzy hash to compute.
+    """
+    return HashingManager.process_fuzzy_hash(media_item_version_id, hash_type=hash_type)

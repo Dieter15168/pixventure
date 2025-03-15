@@ -1,6 +1,5 @@
 # media/managers/media_item_creation_manager.py
 import random
-from django.db import transaction
 from media.models import MediaItem, MediaItemVersion
 from media.services.file_processor import process_uploaded_file
 from media.jobs.dispatcher import TaskDispatcher
@@ -15,9 +14,8 @@ class MediaItemCreationManager:
       2. Flip a coin to determine the `is_blurred` property.
       3. Create the media item using the file processor.
       4. Update the media item's `is_blurred` flag.
-      5. Enqueue creation of media versions:
-            - If not blurred: only preview and full watermarked versions.
-            - If blurred: also enqueue blurred thumbnail and blurred preview.
+      5. Enqueue creation of media versions based on the blur flag.
+      6. Enqueue a task to compute the phash for the original version.
     """
     
     @staticmethod
@@ -44,6 +42,8 @@ class MediaItemCreationManager:
         # 5. Enqueue media version creation.
         if is_blurred:
             allowed_versions = [
+                # Create preview and full watermarked versions plus blurred versions.
+                # (Assume constants like MediaItemVersion.PREVIEW, etc.)
                 MediaItemVersion.PREVIEW,
                 MediaItemVersion.WATERMARKED,
                 MediaItemVersion.BLURRED_THUMBNAIL,
@@ -59,4 +59,16 @@ class MediaItemCreationManager:
             regenerate=False,
             allowed_versions=allowed_versions
         )
+        
+        # 6. Enqueue phash computation for the original version.
+        # Assumes that the original version was created in process_uploaded_file.
+        # Retrieve the original version and dispatch the fuzzy hash task.
+        try:
+            media_item = MediaItem.objects.get(id=media_item_id)
+            original_version = media_item.versions.get(version_type=MediaItemVersion.ORIGINAL)
+            TaskDispatcher.dispatch_fuzzy_hash(media_item_version_id=original_version.id, hash_type="phash")
+        except Exception as e:
+            # Log error if necessary; phash computation failure shouldn't block item creation.
+            pass
+
         return result
