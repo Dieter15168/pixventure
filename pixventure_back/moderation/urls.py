@@ -1,6 +1,8 @@
+# moderation/urls.py
 from django.urls import path
-from .views import ModerationActionView
+from .views import ModerationDashboardView, ModerationActionCreateView
 
 urlpatterns = [
-    path('', ModerationActionView.as_view(), name='album-list'),
+    path('dashboard/', ModerationDashboardView.as_view(), name='moderation-dashboard'),
+    path('action/', ModerationActionCreateView.as_view(), name='moderation-action'),
 ]
