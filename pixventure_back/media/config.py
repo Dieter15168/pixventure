@@ -9,7 +9,6 @@ DEFAULT_MEDIA_SETTINGS = {
     "full_watermarked_version_quality": 90,
     "blurred_thumbnail_quality": 70,
     "blurred_preview_quality": 70,
-    # New separate size settings:
     "thumbnail_size": 300,   # Maximum dimension (width/height) for thumbnails
     "preview_size": 800,     # Maximum dimension for previews
 }

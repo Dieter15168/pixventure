@@ -2,11 +2,12 @@ from django.core.management.base import BaseCommand
 from main.models import Setting
 
 DEFAULT_SETTINGS = {
-    "watermarked_preview_quality": "85",
-    "full_watermarked_version_quality": "90",
-    "blurred_thumbnail_quality": "75",
-    "blurred_preview_quality": "75",
-    "max_version_size": "1024",
+    "watermarked_preview_quality": 80,
+    "full_watermarked_version_quality": 90,
+    "blurred_thumbnail_quality": 70,
+    "blurred_preview_quality": 70,
+    "thumbnail_size": 300,   # Maximum dimension (width/height) for thumbnails
+    "preview_size": 800,     # Maximum dimension for previews
 }
 
 class Command(BaseCommand):
