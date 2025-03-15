@@ -52,16 +52,6 @@ class MyPostsView(generics.ListAPIView):
         user = self.request.user
         user_posts = Post.objects.filter(owner=user)
 
-        # Optional: auto-create a "Quick save" post if none exist
-        if not user_posts.exists():
-            Post.objects.create(
-                owner=user,
-                name="Quick save",
-                slug=f"quick-save-{uuid.uuid4().hex[:8]}",
-                status=Post.PRIVATE,
-            )
-            user_posts = Post.objects.filter(owner=user)
-
         return user_posts.order_by('-created')
 
 
