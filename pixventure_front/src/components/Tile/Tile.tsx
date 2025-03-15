@@ -18,7 +18,7 @@ import {
   useElementMenu,
   ElementMenuItem,
 } from "../../contexts/ElementMenuContext";
-import { ModerationBadge } from "./TileSubcomponents";
+import { ModerationBadge, SelectCheckbox } from "./TileSubcomponents";
 
 export interface AlbumContext {
   albumSlug: string;
@@ -35,11 +35,9 @@ export interface TileProps {
   slug: string;
   thumbnail_url?: string;
   media_type: MediaItemType;
-
   images_count?: number;
   videos_count?: number;
   posts_count?: number;
-
   show_likes?: boolean;
   likes_counter: number;
   has_liked: boolean;
@@ -51,17 +49,21 @@ export interface TileProps {
   tags?: Array<{ name: string; slug: string }>;
   entity_type: "post" | "media" | "album";
   page_type: "posts_list" | "albums_list" | "post" | "album" | "post_creation";
-
   /**
    * e.g. "Approved", "Pending moderation", "Rejected"
    */
   status?: string;
   /**
-   * If in post_creation, we can allow user to select the tile with a big checkmark
+   * When in a selectable mode, this indicates whether the tile is selected.
+   * In checkbox mode, multiple may be selected.
+   * In radio mode, only one is selected (the featured item).
    */
   selected?: boolean;
   onSelectChange?: (id: number, newVal: boolean) => void;
-
+  /**
+   * New prop: "checkbox" for multi-select; "radio" for a featured (single) selection.
+   */
+  selectMode?: "checkbox" | "radio";
   albumContext?: AlbumContext;
 }
 
@@ -89,16 +91,16 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     status,
     selected,
     onSelectChange,
+    selectMode,
     albumContext,
   } = item;
 
   const { openMenu } = useElementMenu();
 
   const handleMenuClick = (e: React.MouseEvent) => {
-    // If in post_creation, we don't want clicking "..." to toggle the checkbox.
+    // Prevent selection toggling when clicking the menu icon.
     e.preventDefault();
     e.stopPropagation();
-
     const menuItem: ElementMenuItem = {
       id,
       name,
@@ -115,7 +117,6 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     openMenu(menuItem);
   };
 
-  // Container classes
   const containerClass =
     tile_size === "large"
       ? styles.container_large
@@ -123,7 +124,6 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
       ? styles.container_medium
       : styles.container_small;
 
-  // Card classes
   const cardClass =
     tile_size === "large"
       ? styles.card_large
@@ -131,28 +131,39 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
       ? styles.card_medium
       : styles.card_small;
 
-  // Counters
   const counters = [];
   if (images_count > 0) counters.push({ type: "photo", count: images_count });
   if (videos_count > 0) counters.push({ type: "video", count: videos_count });
   if (posts_count > 0) counters.push({ type: "post", count: posts_count });
 
-  // Only show like button if not in post_creation
   const showLikeButton = show_likes && page_type !== "post_creation";
 
-  // The ID for the checkbox. If you want each tile to have a unique label, do `id + '-checkbox'`
   const checkboxId = `select-item-${id}`;
 
-  // --------------- POST CREATION MODE ---------------
+  // In post_creation mode, we adjust the selection UI.
   if (page_type === "post_creation") {
     return (
+      // Use a label as the container so the entire tile is clickable.
       <label
-        htmlFor={checkboxId}
+        htmlFor={selectMode === "checkbox" ? checkboxId : undefined}
         className={`${styles.item_container} ${containerClass}`}
+        style={{
+          cursor: "pointer",
+          display: "block",
+          position: "relative",
+        }}
+        // In radio mode, clicking the tile selects it (and unselects others in parent)
+        onClick={() => {
+          if (selectMode === "radio" && onSelectChange) {
+            onSelectChange(id, true);
+          }
+        }}
       >
-        {/* The main tile UI */}
-        <div className={`${styles.inline_card} ${cardClass} mb-2`}>
-          {/* Image not a link, so we don't navigate away */}
+        <div
+          className={`${styles.inline_card} ${cardClass} ${
+            selectMode === "radio" && selected ? styles.featured_tile : ""
+          } mb-2`}
+        >
           {media_type === "photo" || thumbnail_url ? (
             <Image
               name={name}
@@ -161,27 +172,22 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
           ) : media_type === "video" && !thumbnail_url ? (
             <RenderingPlaceholder />
           ) : null}
-
           {media_type === "video" && thumbnail_url && (
             <PlayButton slug={slug} />
           )}
           <MediaCounter counters={counters} />
           {lock_logo && <LockLogo />}
-
-          {/* If we have a moderation status, show the badge */}
           {status && <ModerationBadge statusStr={status} />}
-
-          {/* The checkbox, absolutely positioned in bottom-left. */}
-          <input
-            type="checkbox"
-            id={checkboxId}
-            className="pick-item-checkbox"
-            checked={!!selected}
-            onChange={(e) => onSelectChange?.(id, e.target.checked)}
-          />
+          {selectMode === "checkbox" && (
+            <input
+              type="checkbox"
+              id={checkboxId}
+              className="pick-item-checkbox"
+              checked={!!selected}
+              onChange={(e) => onSelectChange?.(id, e.target.checked)}
+            />
+          )}
         </div>
-
-        {/* Title, owner, etc. */}
         <div className="ps-2 d-flex">
           {entity_type !== "media" ? (
             <div className="w-100">
@@ -207,9 +213,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
 
   // --------------- NORMAL MODE (all other page types) ---------------
   return (
-    <div
-      className={`${styles.item_container} ${containerClass}`}
-    >
+    <div className={styles.item_container}>
       <div className={`${styles.inline_card} ${cardClass} mb-2`}>
         {/* Normal link or anchor for non-post_creation */}
         {media_type === "photo" || thumbnail_url ? (
@@ -222,10 +226,8 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
         ) : media_type === "video" && !thumbnail_url ? (
           <RenderingPlaceholder />
         ) : null}
-
         {media_type === "video" && thumbnail_url && <PlayButton slug={slug} />}
         <MediaCounter counters={counters} />
-
         {showLikeButton && (
           <div className={styles.like_button}>
             <LikeButton
@@ -236,10 +238,8 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
             />
           </div>
         )}
-
         {lock_logo && <LockLogo />}
       </div>
-
       <div className="ps-2 d-flex">
         {entity_type !== "media" ? (
           <div className="w-100">

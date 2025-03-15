@@ -39,6 +39,7 @@ function mapDTOtoTileProps(
     canAddToAlbum: false,
     entity_type: "media",
     page_type: "post_creation",
+    selectMode: "checkbox",
   };
 }
 

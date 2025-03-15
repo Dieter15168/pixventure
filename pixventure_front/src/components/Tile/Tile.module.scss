@@ -160,3 +160,7 @@
 .rejected_symbol {
   color: var(--rejected_color, red);
 }
+
+.featured_tile {
+  border: 2px solid var(--approved_color, green);
+}
