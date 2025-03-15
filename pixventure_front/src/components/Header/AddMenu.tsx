@@ -14,7 +14,7 @@ export default function AddMenu() {
         <FontAwesomeIcon icon={faPlus} />
       </Dropdown.Toggle>
       <Dropdown.Menu align="end">
-        <Dropdown.Item as={Link} href="/new-post">
+        <Dropdown.Item as={Link} href="/posts/new">
           <FontAwesomeIcon icon={faCamera} className="me-2" />
           New Post
         </Dropdown.Item>

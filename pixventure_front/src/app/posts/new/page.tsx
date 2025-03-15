@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import ErrorModal from "../../components/ErrorModal";
+import ErrorModal from "../../../components/ErrorModal";
 import Step1MediaSelection from "./Step1MediaSelection";
 import Step2PostFinalization from "./Step2PostFinalization";
 import { MinimalMediaItemDTO } from "./AvailableMedia";

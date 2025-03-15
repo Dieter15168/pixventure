@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import Tile, { TileProps } from "../../components/Tile/Tile";
+import Tile, { TileProps } from "../../../components/Tile/Tile";
 
 export interface MinimalMediaItemDTO {
   id: number;

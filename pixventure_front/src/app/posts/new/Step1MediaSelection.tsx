@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useMediaAPI } from "../../utils/api/media";
+import { useMediaAPI } from "../../../utils/api/media";
 import DragDropZone from "./DragDropZone";
 import AvailableMedia, { MinimalMediaItemDTO } from "./AvailableMedia";
 

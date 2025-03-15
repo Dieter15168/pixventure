@@ -3,10 +3,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Tile, { TileProps } from "../../components/Tile/Tile";
+import Tile, { TileProps } from "../../../components/Tile/Tile";
 import { MinimalMediaItemDTO } from "./AvailableMedia";
-import { usePostsAPI } from "../../utils/api/posts";
-import { useTermsAPI, Term } from "../../utils/api/terms";
+import { usePostsAPI } from "../../../utils/api/posts";
+import { useTermsAPI, Term } from "../../../utils/api/terms";
 
 interface Step2Props {
   selectedItems: MinimalMediaItemDTO[];
