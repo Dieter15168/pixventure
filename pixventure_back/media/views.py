@@ -75,7 +75,8 @@ class MediaItemDeleteView(generics.DestroyAPIView):
 class MediaItemAvailableForPostView(generics.ListAPIView):
     """
     Returns a list of media items for the authenticated user that
-    are "Pending moderation" or "Published" (i.e. available for new post usage).
+    are "Pending moderation", "Approved", or "Rejected" (i.e. available for new post usage)
+    and that are not already used in any post.
     """
     serializer_class = UnpublishedMediaItemSerializer
     permission_classes = [IsAuthenticated]
@@ -86,7 +87,9 @@ class MediaItemAvailableForPostView(generics.ListAPIView):
             MediaItem.objects
             .filter(
                 owner=self.request.user,
-                status__in=[MediaItem.PENDING_MODERATION, MediaItem.APPROVED, MediaItem.REJECTED]
+                status__in=[MediaItem.PENDING_MODERATION, MediaItem.APPROVED, MediaItem.REJECTED],
+                post_links__isnull=True  # Only items that are not associated with any PostMedia
             )
-            .prefetch_related("versions").order_by("-created")
+            .prefetch_related("versions")
+            .order_by("-created")
         )
