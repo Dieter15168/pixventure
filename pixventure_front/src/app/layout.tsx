@@ -6,6 +6,7 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import Header from "../components/Header/Header";
 import { ReactNode } from "react";
 import { AuthProvider } from "../contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import ElementMenuClientSetup from "./ElementMenuClientSetup";
 
 export const metadata = {
@@ -20,10 +21,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
       <body className="bg-dark">
         <AuthProvider>
-          <Header />
-          <main className="container-fluid">
-            <ElementMenuClientSetup>{children}</ElementMenuClientSetup>
-          </main>
+          <NotificationProvider>
+            <Header />
+            <main className="container-fluid">
+              <ElementMenuClientSetup>{children}</ElementMenuClientSetup>
+            </main>
+          </NotificationProvider>
         </AuthProvider>
       </body>
     </html>
