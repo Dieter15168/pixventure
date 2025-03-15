@@ -20,7 +20,6 @@ class RejectionReason(models.Model):
     class Meta:
         ordering = ['order']
 
-
 class ModerationAction(models.Model):
     """
     Stores a record of moderation actions performed on either a Post or a MediaItem.
@@ -39,10 +38,6 @@ class ModerationAction(models.Model):
         on_delete=models.CASCADE,
         related_name='moderation_actions'
     )
-    # This approach means exactly one of post or media_item is set, the other is null.
-
-    # If you want to unify the statuses, define them similarly to how your Post/MediaItem define them:
-    # e.g., DRAFT=0, PENDING=1, PUBLISHED=2, REJECTED=3, etc.
     old_status = models.IntegerField(null=True, blank=True)
     new_status = models.IntegerField(null=True, blank=True)
 
@@ -62,15 +57,9 @@ class ModerationAction(models.Model):
         related_name='moderation_actions_performed'
     )
 
-    rejection_reason = models.ForeignKey(
-        'RejectionReason',
-        null=True, blank=True,
-        on_delete=models.SET_NULL
-    )
-    # If the item was rejected, store a reason or keep it null if not applicable.
-
+    # Replace single FK with a ManyToManyField for multiple reasons:
+    rejection_reasons = models.ManyToManyField(RejectionReason, blank=True, related_name='moderation_actions')
     comment = models.TextField(null=True, blank=True, help_text="Optional moderator comment")
-    # e.g. "Contains personal info"
 
     performed_at = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
