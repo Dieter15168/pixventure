@@ -102,7 +102,8 @@ class MediaVersionManager:
                 blurred_thumbnail = watermark.create_blurred_thumbnail(
                     thumbnail_version.file,
                     quality=self.config["blurred_thumbnail_quality"],
-                    thumbnail_size=self.config["thumbnail_size"]  # Use the thumbnail size setting.
+                    thumbnail_size=self.config["thumbnail_size"],
+                    blur_radius=self.config["thumbnail_blur_radius"]
                 )
                 media_version_creator.create_media_item_version(
                     media_item=self.media_item,
@@ -121,7 +122,8 @@ class MediaVersionManager:
                 blurred_preview = watermark.create_blurred_preview(
                     self.media_item,
                     quality=self.config["blurred_preview_quality"],
-                    preview_size=self.config["preview_size"]
+                    preview_size=self.config["preview_size"],
+                    blur_radius=self.config["preview_blur_radius"]
                 )
                 media_version_creator.create_media_item_version(
                     media_item=self.media_item,
