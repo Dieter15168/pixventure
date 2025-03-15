@@ -36,9 +36,9 @@ def create_watermarked_preview(media_item, quality=85, preview_size=800) -> InMe
     Creates a watermarked preview version from the original media.
     
     :param media_item: MediaItem instance.
-    :param quality: JPEG quality for the preview image.
+    :param quality: Quality for the preview image.
     :param preview_size: Maximum dimension (width/height) for the preview.
-    :return: InMemoryUploadedFile containing the watermarked preview image.
+    :return: InMemoryUploadedFile containing the watermarked preview image in WEBP format.
     """
     quality = int(quality)
     preview_size = int(preview_size)
@@ -58,11 +58,11 @@ def create_watermarked_preview(media_item, quality=85, preview_size=800) -> InMe
     )
     
     temp_io = io.BytesIO()
-    watermarked_image.save(temp_io, format='JPEG', quality=quality, optimize=True, progressive=True)
+    watermarked_image.save(temp_io, format='WEBP', quality=quality, optimize=True)
     temp_io.seek(0)
     
     return InMemoryUploadedFile(
-        temp_io, None, 'watermarked_preview.jpg', 'image/jpeg', temp_io.getbuffer().nbytes, None
+        temp_io, None, 'watermarked_preview.webp', 'image/webp', temp_io.getbuffer().nbytes, None
     )
 
 def create_full_watermarked_version(media_item, quality=90) -> InMemoryUploadedFile:
@@ -70,8 +70,8 @@ def create_full_watermarked_version(media_item, quality=90) -> InMemoryUploadedF
     Creates a full watermarked version suitable for paid users.
     
     :param media_item: MediaItem instance.
-    :param quality: JPEG quality for the full watermarked image.
-    :return: InMemoryUploadedFile containing the full watermarked image.
+    :param quality: Quality for the full watermarked image.
+    :return: InMemoryUploadedFile containing the full watermarked image in WEBP format.
     """
     quality = int(quality)
     
@@ -87,11 +87,11 @@ def create_full_watermarked_version(media_item, quality=90) -> InMemoryUploadedF
     )
     
     temp_io = io.BytesIO()
-    watermarked_image.save(temp_io, format='JPEG', quality=quality, optimize=True, progressive=True)
+    watermarked_image.save(temp_io, format='WEBP', quality=quality, optimize=True)
     temp_io.seek(0)
     
     return InMemoryUploadedFile(
-        temp_io, None, 'full_watermarked.jpg', 'image/jpeg', temp_io.getbuffer().nbytes, None
+        temp_io, None, 'full_watermarked.webp', 'image/webp', temp_io.getbuffer().nbytes, None
     )
 
 def create_blurred_thumbnail(file_obj, quality=75, thumbnail_size=300, blur_radius=None) -> InMemoryUploadedFile:
@@ -99,16 +99,15 @@ def create_blurred_thumbnail(file_obj, quality=75, thumbnail_size=300, blur_radi
     Creates a blurred thumbnail version from an existing thumbnail.
     
     :param file_obj: File object for the thumbnail image.
-    :param quality: JPEG quality for the blurred thumbnail.
+    :param quality: Quality for the blurred thumbnail.
     :param thumbnail_size: Maximum dimension (width/height) for the thumbnail.
     :param blur_radius: Blur radius for Gaussian blur; if not provided, defaults to 5.
-    :return: InMemoryUploadedFile containing the blurred thumbnail.
+    :return: InMemoryUploadedFile containing the blurred thumbnail in WEBP format.
     """
     quality = int(quality)
     thumbnail_size = int(thumbnail_size)
     
     image = Image.open(file_obj)
-    # Use provided blur_radius or default to 5
     if blur_radius is None:
         blur_radius = 5
     else:
@@ -118,11 +117,11 @@ def create_blurred_thumbnail(file_obj, quality=75, thumbnail_size=300, blur_radi
     blurred_image.thumbnail((thumbnail_size, thumbnail_size), Image.Resampling.LANCZOS)
     
     temp_io = io.BytesIO()
-    blurred_image.save(temp_io, format='JPEG', quality=quality, optimize=True, progressive=True)
+    blurred_image.save(temp_io, format='WEBP', quality=quality, optimize=True)
     temp_io.seek(0)
     
     return InMemoryUploadedFile(
-        temp_io, None, 'blurred_thumbnail.jpg', 'image/jpeg', temp_io.getbuffer().nbytes, None
+        temp_io, None, 'blurred_thumbnail.webp', 'image/webp', temp_io.getbuffer().nbytes, None
     )
 
 def create_blurred_preview(media_item, quality=75, preview_size=800, blur_radius=None) -> InMemoryUploadedFile:
@@ -130,10 +129,10 @@ def create_blurred_preview(media_item, quality=75, preview_size=800, blur_radius
     Creates a blurred preview version.
     
     :param media_item: MediaItem instance.
-    :param quality: JPEG quality for the blurred preview.
+    :param quality: Quality for the blurred preview.
     :param preview_size: Maximum dimension (width/height) for the preview.
     :param blur_radius: Blur radius for Gaussian blur; if not provided, defaults to 5.
-    :return: InMemoryUploadedFile containing the blurred preview.
+    :return: InMemoryUploadedFile containing the blurred preview in WEBP format.
     """
     quality = int(quality)
     preview_size = int(preview_size)
@@ -141,7 +140,6 @@ def create_blurred_preview(media_item, quality=75, preview_size=800, blur_radius
     original_file = media_item.versions.get(version_type=MediaItemVersion.ORIGINAL).file
     image = Image.open(original_file).convert("RGB")
     
-    # Use provided blur_radius or default to 5
     if blur_radius is None:
         blur_radius = 5
     else:
@@ -159,9 +157,9 @@ def create_blurred_preview(media_item, quality=75, preview_size=800, blur_radius
     )
     
     temp_io = io.BytesIO()
-    blurred_image.save(temp_io, format='JPEG', quality=quality, optimize=True, progressive=True)
+    blurred_image.save(temp_io, format='WEBP', quality=quality, optimize=True)
     temp_io.seek(0)
     
     return InMemoryUploadedFile(
-        temp_io, None, 'blurred_preview.jpg', 'image/jpeg', temp_io.getbuffer().nbytes, None
+        temp_io, None, 'blurred_preview.webp', 'image/webp', temp_io.getbuffer().nbytes, None
     )
