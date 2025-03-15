@@ -38,24 +38,29 @@ class ModerationActionCreateSerializer(serializers.Serializer):
     entity_type = serializers.ChoiceField(choices=ENTITY_TYPE_CHOICES)
     entity_id = serializers.IntegerField()
     action = serializers.ChoiceField(choices=ACTION_CHOICES)
-    rejection_reason = serializers.IntegerField(required=False, allow_null=True)
+    # Renamed field to match the frontend payload:
+    rejection_reason = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        allow_empty=True
+    )
     comment = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, data):
         if data['action'] == 'reject' and not data.get('rejection_reason'):
-            raise serializers.ValidationError("Rejection reason is required for rejection.")
+            raise serializers.ValidationError("At least one rejection reason is required for rejection.")
         return data
 
     def create(self, validated_data):
         with transaction.atomic():
             request = self.context['request']
-            moderator = request.user  # must be admin (enforced by permission)
+            moderator = request.user
+
             entity_type = validated_data['entity_type']
             entity_id = validated_data['entity_id']
             action = validated_data['action']
             comment = validated_data.get('comment', "")
-            
-            # Retrieve the entity based on type.
+
             if entity_type == 'post':
                 try:
                     entity = Post.objects.get(id=entity_id)
@@ -70,23 +75,18 @@ class ModerationActionCreateSerializer(serializers.Serializer):
             old_status = entity.status
 
             if action == 'approve':
-                # For both posts and media, we'll set approved status as 2.
-                new_status = 2  
-                rejection_reason_obj = None
+                new_status = 2
+                reasons = []
             else:
                 new_status = 4  # REJECTED
-                try:
-                    rejection_reason_obj = RejectionReason.objects.get(
-                        id=validated_data['rejection_reason'], is_active=True
-                    )
-                except RejectionReason.DoesNotExist:
-                    raise ValidationError("Invalid or inactive rejection reason.")
+                reason_ids = validated_data.get('rejection_reason', [])
+                reasons = list(RejectionReason.objects.filter(id__in=reason_ids, is_active=True))
+                if len(reasons) != len(reason_ids):
+                    raise ValidationError("One or more rejection reasons are invalid or inactive.")
 
-            # Update the entity status.
             entity.status = new_status
             entity.save()
 
-            # Create a ModerationAction record.
             mod_action = ModerationAction.objects.create(
                 post=entity if entity_type == 'post' else None,
                 media_item=entity if entity_type == 'media' else None,
@@ -94,9 +94,11 @@ class ModerationActionCreateSerializer(serializers.Serializer):
                 new_status=new_status,
                 owner=entity.owner,
                 moderator=moderator,
-                rejection_reason=rejection_reason_obj,
                 comment=comment,
             )
+            if reasons:
+                mod_action.rejection_reasons.add(*reasons)
+
             return mod_action
 
     def to_representation(self, instance):
@@ -108,3 +110,10 @@ class ModerationActionCreateSerializer(serializers.Serializer):
             "moderator": instance.moderator.username if instance.moderator else None,
             "performed_at": instance.performed_at,
         }
+
+
+        
+class RejectionReasonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RejectionReason
+        fields = ['id', 'name', 'description', 'order']

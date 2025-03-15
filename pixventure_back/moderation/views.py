@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from posts.models import Post
 from media.models import MediaItem
-from .serializers import PostModerationSerializer, ModerationActionCreateSerializer
+from .models import RejectionReason
+from .serializers import PostModerationSerializer, ModerationActionCreateSerializer, RejectionReasonSerializer
 from media.serializers import UnpublishedMediaItemSerializer
 
 class ModerationDashboardView(generics.ListAPIView):
@@ -52,3 +53,14 @@ class ModerationActionCreateView(generics.CreateAPIView):
     """
     serializer_class = ModerationActionCreateSerializer
     permission_classes = [IsAdminUser]
+
+
+class ActiveRejectionReasonListView(generics.ListAPIView):
+    """
+    Returns a list of active rejection reasons.
+    Only available to admin users.
+    """
+    serializer_class = RejectionReasonSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = None
+    queryset = RejectionReason.objects.filter(is_active=True).order_by('order')

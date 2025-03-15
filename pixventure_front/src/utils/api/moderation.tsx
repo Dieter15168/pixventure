@@ -5,22 +5,44 @@ import { useCallback } from "react";
 import useAxios from "../useAxios";
 
 export interface ModerationDashboardData {
-  posts: any[];         // Adjust with your PostModerationSerializer output type
-  orphan_media: any[];  // Adjust with your MediaItemModerationSerializer output type
+  posts: any[];
+  orphan_media: any[];
+}
+
+export interface RejectionReason {
+  id: number;
+  name: string;
+  description?: string;
+  order: number;
 }
 
 export function useModerationAPI() {
   const axios = useAxios();
 
-  const fetchDashboard = useCallback(async (): Promise<ModerationDashboardData> => {
-    const res = await axios.get("/moderation/dashboard/");
-    return res.data;
+  const fetchDashboard =
+    useCallback(async (): Promise<ModerationDashboardData> => {
+      const res = await axios.get("/moderation/dashboard/");
+      return res.data;
+    }, [axios]);
+
+  const performModerationAction = useCallback(
+    async (payload: any) => {
+      const res = await axios.post("/moderation/action/", payload);
+      return res.data;
+    },
+    [axios]
+  );
+
+  const fetchActiveRejectionReasons = useCallback(async (): Promise<
+    RejectionReason[]
+  > => {
+    const res = await axios.get("/moderation/rejection-reasons/");
+    return res.data as RejectionReason[];
   }, [axios]);
 
-  const performModerationAction = useCallback(async (payload: any) => {
-    const res = await axios.post("/moderation/action/", payload);
-    return res.data;
-  }, [axios]);
-
-  return { fetchDashboard, performModerationAction };
+  return {
+    fetchDashboard,
+    performModerationAction,
+    fetchActiveRejectionReasons,
+  };
 }

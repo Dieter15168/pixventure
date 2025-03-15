@@ -1,59 +1,78 @@
 // src/components/ModerationRejectModal.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
-import { useTermsAPI, Term } from "../utils/api/terms";
+import { useModerationAPI, RejectionReason } from "../utils/api/moderation";
 
 interface ModerationRejectModalProps {
   show: boolean;
   onClose: () => void;
-  onSubmit: (reasonId: number, comment: string) => void;
+  onSubmit: (reasonIds: number[], comment: string) => void;
 }
 
-export default function ModerationRejectModal({ show, onClose, onSubmit }: ModerationRejectModalProps) {
-  const [reasons, setReasons] = useState<Term[]>([]);
-  const [selectedReason, setSelectedReason] = useState<number | null>(null);
+export default function ModerationRejectModal({
+  show,
+  onClose,
+  onSubmit,
+}: ModerationRejectModalProps) {
+  const { fetchActiveRejectionReasons } = useModerationAPI();
+  const [reasons, setReasons] = useState<RejectionReason[]>([]);
+  const [selectedReasonIds, setSelectedReasonIds] = useState<number[]>([]);
   const [comment, setComment] = useState("");
 
   useEffect(() => {
     async function loadReasons() {
-      // Suppose active rejection reasons are available from a dedicated endpoint.
-      // Here, we'll simulate with hardcoded data.
-      setReasons([
-        { id: 1, term_type: 2, name: "Inappropriate content", slug: "inappropriate" },
-        { id: 2, term_type: 2, name: "Spam", slug: "spam" },
-      ]);
+      try {
+        const data = await fetchActiveRejectionReasons();
+        setReasons(data);
+      } catch (err) {
+        console.error("Failed to load rejection reasons", err);
+      }
     }
     loadReasons();
-  }, []);
+  }, [fetchActiveRejectionReasons]);
+
+  function toggleReason(reasonId: number) {
+    setSelectedReasonIds((prev) =>
+      prev.includes(reasonId)
+        ? prev.filter((id) => id !== reasonId)
+        : [...prev, reasonId]
+    );
+  }
 
   function handleSubmit() {
-    if (!selectedReason) {
-      alert("Please select a rejection reason.");
+    if (selectedReasonIds.length === 0) {
+      alert("Please select at least one rejection reason.");
       return;
     }
-    onSubmit(selectedReason, comment);
+    onSubmit(selectedReasonIds, comment);
   }
 
   return (
-    <Modal show={show} onHide={onClose} backdrop="static">
+    <Modal
+      show={show}
+      onHide={onClose}
+      backdrop="static"
+    >
       <Modal.Header closeButton>
         <Modal.Title>Reject Content</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form>
           <Form.Group>
-            <Form.Label>Select a reason:</Form.Label>
+            <Form.Label>
+              Select rejection reasons (choose one or more):
+            </Form.Label>
             {reasons.map((reason) => (
               <Form.Check
                 key={reason.id}
-                type="radio"
+                type="checkbox"
                 label={reason.name}
-                name="rejectionReason"
                 id={`reason-${reason.id}`}
                 value={reason.id}
-                onChange={() => setSelectedReason(reason.id)}
+                checked={selectedReasonIds.includes(reason.id)}
+                onChange={() => toggleReason(reason.id)}
               />
             ))}
           </Form.Group>
@@ -69,10 +88,16 @@ export default function ModerationRejectModal({ show, onClose, onSubmit }: Moder
         </Form>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>
+        <Button
+          variant="secondary"
+          onClick={onClose}
+        >
           Cancel
         </Button>
-        <Button variant="danger" onClick={handleSubmit}>
+        <Button
+          variant="danger"
+          onClick={handleSubmit}
+        >
           Reject
         </Button>
       </Modal.Footer>
