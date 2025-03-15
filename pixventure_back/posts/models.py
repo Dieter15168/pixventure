@@ -14,15 +14,17 @@ class Post(models.Model):
     
     DRAFT = 0
     PENDING_MODERATION = 1
-    PUBLISHED = 2
-    PRIVATE = 3
-    REJECTED = 4
-    DELETED = 5
-    ARCHIVED = 6
+    APPROVED = 2
+    PUBLISHED = 3
+    PRIVATE = 4
+    REJECTED = 5
+    DELETED = 6
+    ARCHIVED = 7
 
     ITEM_STATUS_CHOICES = [
         (DRAFT, 'Draft'),
         (PENDING_MODERATION, 'Pending moderation'),
+        (APPROVED, 'Approved'),
         (PUBLISHED, 'Published'),
         (PRIVATE, 'Private'),
         (REJECTED, 'Rejected by moderation'),
