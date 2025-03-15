@@ -1,7 +1,7 @@
 from main.models import Setting
-from media.config import DEFAULT_MEDIA_SETTINGS
+from main.default_settings_config import DEFAULT_SETTINGS
 
-class MediaSettingsProvider:
+class SettingsProvider:
     """
     Fetches media settings from the main app's Setting model if available,
     otherwise returns default configuration values.
@@ -16,7 +16,7 @@ class MediaSettingsProvider:
             setting = Setting.objects.get(key=key)
             return setting.value
         except Setting.DoesNotExist:
-            return DEFAULT_MEDIA_SETTINGS.get(key)
+            return DEFAULT_SETTINGS.get(key)
 
     @staticmethod
     def get_all_settings():
@@ -24,6 +24,6 @@ class MediaSettingsProvider:
         Returns a dictionary of all media settings.
         """
         settings = {}
-        for key, default in DEFAULT_MEDIA_SETTINGS.items():
-            settings[key] = MediaSettingsProvider.get_setting(key)
+        for key, default in DEFAULT_SETTINGS.items():
+            settings[key] = SettingsProvider.get_setting(key)
         return settings

@@ -2,7 +2,7 @@
 import logging
 from media.models import MediaItem, MediaItemVersion
 from media.services import media_version_creator, watermark
-from media.services.settings_provider import MediaSettingsProvider
+from main.providers.settings_provider import SettingsProvider
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class MediaVersionManager:
             raise ValueError(f"MediaItem with ID {media_item_id} does not exist.")
 
         # Fetch configuration settings for this media item
-        self.config = MediaSettingsProvider.get_all_settings()
+        self.config = SettingsProvider.get_all_settings()
 
     def _should_create(self, version_type: int, regenerate: bool) -> bool:
         """
