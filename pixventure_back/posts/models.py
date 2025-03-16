@@ -11,6 +11,7 @@ class Post(models.Model):
     """
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+    published = models.DateTimeField(null=True, blank=True)
     
     DRAFT = 0
     PENDING_MODERATION = 1
