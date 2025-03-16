@@ -18,4 +18,8 @@ DEFAULT_SETTINGS = {
     "item_blur_probability": 0.1,
     "post_blur_probability": 0.1,
     "full_watermark_transparency": 50,
+    "max_video_bitrate": 50000,  # Maximum bitrate for full watermarked video; original videos wight higher bitrate will have their bitrate reduced
+    "preview_video_duration": 5,          # Duration of the short preview video in seconds
+    "full_watermarked_version_quality": 80,
+    "preview_video_quality": 80,
 }

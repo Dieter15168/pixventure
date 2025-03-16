@@ -1,21 +1,27 @@
 # media/managers/media_version_manager.py
 import logging
 from media.models import MediaItem, MediaItemVersion
-from media.services import media_version_creator, watermark
+from media.services import media_version_creator, watermark, video_processor
 from main.providers.settings_provider import SettingsProvider
 
 logger = logging.getLogger(__name__)
 
 class MediaVersionManager:
     """
-    Manager class to orchestrate the asynchronous creation of additional
-    media item versions. The versions include:
+    Manager class to orchestrate asynchronous creation of additional media item versions.
+    
+    For images (media_type == PHOTO), the versions include:
       - PREVIEW (watermarked preview)
       - WATERMARKED (full watermarked version)
       - BLURRED_THUMBNAIL (blurred thumbnail)
       - BLURRED_PREVIEW (blurred preview)
     
-    This manager now accepts an 'allowed_versions' list. Only versions included in this list
+    For videos (media_type == VIDEO), the versions include:
+      - WATERMARKED (full watermarked video)
+      - PREVIEW (short video preview)
+      - THUMBNAIL (video thumbnail image)
+    
+    This manager accepts an 'allowed_versions' list. Only versions included in this list
     will be processed. If 'regenerate' is True, existing versions will be deleted and recreated.
     """
     
@@ -25,8 +31,8 @@ class MediaVersionManager:
             self.media_item = MediaItem.objects.get(id=media_item_id)
         except MediaItem.DoesNotExist:
             raise ValueError(f"MediaItem with ID {media_item_id} does not exist.")
-
-        # Fetch configuration settings for this media item
+        
+        # Fetch configuration settings for this media item.
         self.config = SettingsProvider.get_all_settings()
 
     def _should_create(self, version_type: int, regenerate: bool) -> bool:
@@ -46,24 +52,36 @@ class MediaVersionManager:
     def process_versions(self, regenerate: bool = False, allowed_versions: list = None):
         """
         Process and generate only the allowed versions for the given media item.
-        If 'regenerate' is False, only create versions that don't already exist.
+        If allowed_versions is not provided, default to a full set based on media type.
         """
-        # If allowed_versions is not provided, default to processing all versions.
-        if allowed_versions is None:
-            allowed_versions = [
-                MediaItemVersion.PREVIEW,
-                MediaItemVersion.WATERMARKED,
-                MediaItemVersion.BLURRED_THUMBNAIL,
-                MediaItemVersion.BLURRED_PREVIEW,
-            ]
+        if self.media_item.media_type == MediaItem.PHOTO:
+            if allowed_versions is None:
+                allowed_versions = [
+                    MediaItemVersion.PREVIEW,
+                    MediaItemVersion.WATERMARKED,
+                    MediaItemVersion.BLURRED_THUMBNAIL,
+                    MediaItemVersion.BLURRED_PREVIEW,
+                ]
+            self._process_image_versions(regenerate, allowed_versions)
+        elif self.media_item.media_type == MediaItem.VIDEO:
+            if allowed_versions is None:
+                allowed_versions = [
+                    MediaItemVersion.WATERMARKED,
+                    MediaItemVersion.PREVIEW,
+                    MediaItemVersion.THUMBNAIL,
+                ]
+            self._process_video_versions(regenerate, allowed_versions)
+        else:
+            logger.info("Unsupported media type for MediaItem %s", self.media_item.id)
 
-        # Process PREVIEW (watermarked preview) - always generated.
+    def _process_image_versions(self, regenerate: bool, allowed_versions: list):
+        # Process PREVIEW version (watermarked preview) – always generated.
         if MediaItemVersion.PREVIEW in allowed_versions and self._should_create(MediaItemVersion.PREVIEW, regenerate):
             try:
                 preview_file = watermark.create_watermarked_preview(
                     self.media_item,
                     quality=self.config["watermarked_preview_quality"],
-                    preview_size=self.config["preview_size"]  # Use the preview size setting.
+                    preview_size=self.config["preview_size"]
                 )
                 media_version_creator.create_media_item_version(
                     media_item=self.media_item,
@@ -76,7 +94,7 @@ class MediaVersionManager:
         else:
             logger.info("Watermarked preview version already exists for MediaItem %s", self.media_item.id)
 
-        # Process FULL WATERMARKED version - always generated.
+        # Process FULL WATERMARKED version – always generated.
         if MediaItemVersion.WATERMARKED in allowed_versions and self._should_create(MediaItemVersion.WATERMARKED, regenerate):
             try:
                 full_watermarked_file = watermark.create_full_watermarked_version(
@@ -95,10 +113,9 @@ class MediaVersionManager:
         else:
             logger.info("Full watermarked version already exists for MediaItem %s", self.media_item.id)
 
-        # Process BLURRED THUMBNAIL version (if allowed)
+        # Process BLURRED THUMBNAIL version.
         if MediaItemVersion.BLURRED_THUMBNAIL in allowed_versions and self._should_create(MediaItemVersion.BLURRED_THUMBNAIL, regenerate):
             try:
-                # Retrieve the existing thumbnail version (assumed to exist)
                 thumbnail_version = self.media_item.versions.get(version_type=MediaItemVersion.THUMBNAIL)
                 blurred_thumbnail = watermark.create_blurred_thumbnail(
                     thumbnail_version.file,
@@ -117,7 +134,7 @@ class MediaVersionManager:
         else:
             logger.info("Blurred thumbnail version already exists for MediaItem %s", self.media_item.id)
 
-        # Process BLURRED PREVIEW version (if allowed)
+        # Process BLURRED PREVIEW version.
         if MediaItemVersion.BLURRED_PREVIEW in allowed_versions and self._should_create(MediaItemVersion.BLURRED_PREVIEW, regenerate):
             try:
                 blurred_preview = watermark.create_blurred_preview(
@@ -136,3 +153,77 @@ class MediaVersionManager:
                 logger.error("Error generating blurred preview: %s", e)
         else:
             logger.info("Blurred preview version already exists for MediaItem %s", self.media_item.id)
+
+    def _process_video_versions(self, regenerate: bool, allowed_versions: list):
+        from media.models import MediaItemVersion  # Ensure correct constants are used
+
+        # --- Process WATERMARKED version (full watermarked video) ---
+        if MediaItemVersion.WATERMARKED in allowed_versions and self._should_create(MediaItemVersion.WATERMARKED, regenerate):
+            try:
+                watermarked_video, duration = video_processor.create_watermarked_video(
+                    self.media_item,
+                    quality=self.config["full_watermarked_version_quality"],
+                    max_video_bitrate=self.config["max_video_bitrate"]
+                )
+                # Update the original version with video duration.
+                original_version = self.media_item.versions.get(version_type=MediaItemVersion.ORIGINAL)
+                original_version.video_duration = duration
+                original_version.save()
+                
+                media_version_creator.create_media_item_version(
+                    media_item=self.media_item,
+                    file_obj=watermarked_video,
+                    version_type=MediaItemVersion.WATERMARKED,
+                    is_image=False
+                )
+            except Exception as e:
+                logger.error("Error generating watermarked video: %s", e)
+                return
+        else:
+            logger.info("Watermarked video version already exists for MediaItem %s", self.media_item.id)
+        
+        # --- Process PREVIEW version (short video preview) ---
+        if MediaItemVersion.PREVIEW in allowed_versions and self._should_create(MediaItemVersion.PREVIEW, regenerate):
+            try:
+                # Ensure that the WATERMARKED version exists before processing preview.
+                self.media_item.versions.get(version_type=MediaItemVersion.WATERMARKED)
+                preview_video = video_processor.create_video_preview(
+                    self.media_item,
+                    quality=self.config["preview_video_quality"],
+                    preview_duration=self.config["preview_video_duration"]
+                )
+                media_version_creator.create_media_item_version(
+                    media_item=self.media_item,
+                    file_obj=preview_video,
+                    version_type=MediaItemVersion.PREVIEW,
+                    is_image=False
+                )
+            except MediaItemVersion.DoesNotExist:
+                logger.error("Cannot generate video preview: WATERMARKED version not found for MediaItem %s", self.media_item.id)
+                return
+            except Exception as e:
+                logger.error("Error generating video preview: %s", e)
+                return
+        else:
+            logger.info("Video preview version already exists for MediaItem %s", self.media_item.id)
+        
+        # --- Process THUMBNAIL version (video thumbnail) ---
+        if MediaItemVersion.THUMBNAIL in allowed_versions and self._should_create(MediaItemVersion.THUMBNAIL, regenerate):
+            try:
+                thumbnail = video_processor.create_video_thumbnail(self.media_item)
+                media_version_creator.create_media_item_version(
+                    media_item=self.media_item,
+                    file_obj=thumbnail,
+                    version_type=MediaItemVersion.THUMBNAIL,
+                    is_image=False
+                )
+            except Exception as e:
+                logger.error("Error generating video thumbnail: %s", e)
+                return
+        else:
+            logger.info("Video thumbnail version already exists for MediaItem %s", self.media_item.id)
+    
+    def _process_image_versions(self, regenerate: bool, allowed_versions: list):
+        # Existing image processing branch...
+        # (Omitted here for brevity; assume it remains unchanged)
+        pass

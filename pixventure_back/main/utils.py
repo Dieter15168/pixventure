@@ -1,6 +1,8 @@
 # core/utils/slug_utils.py
 
 from django.utils.text import slugify
+import random
+import string
 
 def generate_unique_slug(model_class, name, max_length=50):
     """
@@ -16,3 +18,19 @@ def generate_unique_slug(model_class, name, max_length=50):
         counter += 1
 
     return slug
+
+def random_alphanumeric_string(length=10):
+    """
+    Generate a random alphanumeric string of the specified length.
+
+    Parameters:
+        length (int): The length of the generated string.
+
+    Returns:
+        str: A random alphanumeric string.
+    """
+    if length <= 0:
+        raise ValueError("Length must be a positive integer.")
+
+    chars = string.ascii_letters + string.digits
+    return ''.join(random.choices(chars, k=length))

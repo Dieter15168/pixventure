@@ -139,6 +139,9 @@ class MediaItemVersion(models.Model):
     height = models.IntegerField(null=True, blank=True)
     file_size = models.BigIntegerField(null=True, blank=True)
     
+    # For videos only – store duration in seconds.
+    video_duration = models.FloatField(null=True, blank=True)
+    
     # Whether the file has been renamed for SEO or other reasons
     is_renamed = models.BooleanField(default=False)
 
