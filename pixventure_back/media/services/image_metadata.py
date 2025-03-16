@@ -1,7 +1,8 @@
 # media/services/image_metadata.py
 
 import io
-from PIL import Image, UnidentifiedImageError
+from PIL import UnidentifiedImageError
+from media.utils.image_loader import open_image
 
 def extract_image_metadata(file_obj) -> dict:
     """
@@ -21,10 +22,10 @@ def extract_image_metadata(file_obj) -> dict:
     content.seek(0)
 
     try:
-        im = Image.open(content)
+        im = open_image(content)
         im.verify()  # validate
         content.seek(0)
-        im = Image.open(content)
+        im = open_image(content)
         im = im.convert("RGB")
 
         return {

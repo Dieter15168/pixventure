@@ -1,8 +1,8 @@
 # media/services/hasher.py
 
 import blake3
-from PIL import Image
 import imagehash
+from media.utils.image_loader import open_image
 
 def compute_file_hash(file_obj, hash_type="blake3"):
     """
@@ -30,7 +30,7 @@ def compute_fuzzy_hash(file_obj, hash_type="phash"):
     :return: String representation of the computed hash.
     """
     try:
-        image = Image.open(file_obj).convert("RGB")
+        image = open_image(file_obj).convert("RGB")
     except Exception as e:
         raise ValueError(f"Cannot open image for fuzzy hash: {e}")
     

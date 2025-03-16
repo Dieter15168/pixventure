@@ -1,8 +1,8 @@
 import os
 from django.core.management.base import BaseCommand
 from django.db.models import Q
-from PIL import Image
 from media.models import MediaItemVersion
+from media.utils.image_loader import open_image
 
 class Command(BaseCommand):
     help = 'Populates missing width, height, and file_size metadata for MediaItemVersion instances.'
@@ -36,7 +36,7 @@ class Command(BaseCommand):
             # Populate width and height (assuming image files)
             if version.width is None or version.height is None:
                 try:
-                    with Image.open(file_path) as img:
+                    with open_image(file_path) as img:
                         width, height = img.size
                         version.width = width
                         version.height = height

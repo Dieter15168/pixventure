@@ -4,6 +4,7 @@ import io
 import uuid
 from PIL import Image, UnidentifiedImageError
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from media.utils.image_loader import open_image
 
 def generate_resized_image(
     file_obj,
@@ -25,10 +26,10 @@ def generate_resized_image(
     """
     try:
         # Verify and re-open the image
-        image = Image.open(file_obj)
+        image = open_image(file_obj)
         image.verify()
         file_obj.seek(0)
-        image = Image.open(file_obj)
+        image = open_image(file_obj)
 
         # Convert to desired color mode, e.g. RGB
         image = image.convert(image_mode)

@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from media.models import MediaItemVersion
+from media.utils.image_loader import open_image
 
 def set_watermark_in_corner(image: Image.Image, text: str, font_size: int, w_offset: int, h_offset: int) -> Image.Image:
     """
@@ -122,7 +123,7 @@ def create_watermarked_preview(media_item, quality=85, preview_size=800) -> InMe
     preview_size = int(preview_size)
     
     original_file = media_item.versions.get(version_type=MediaItemVersion.ORIGINAL).file
-    image = Image.open(original_file).convert("RGB")
+    image = open_image(original_file).convert("RGB")
     
     # Resize image to preview size
     image.thumbnail((preview_size, preview_size), Image.Resampling.LANCZOS)
@@ -155,7 +156,7 @@ def create_full_watermarked_version(media_item, quality=90, watermark_transparen
 
     # Get the original file (assume version_type ORIGINAL exists)
     original_file = media_item.versions.get(version_type=MediaItemVersion.ORIGINAL).file
-    image = Image.open(original_file).convert("RGB")
+    image = open_image(original_file).convert("RGB")
     
     # Determine image resolution and choose watermark parameters accordingly.
     width, height = image.size
@@ -194,7 +195,7 @@ def create_blurred_thumbnail(file_obj, quality=75, thumbnail_size=300, blur_radi
     quality = int(quality)
     thumbnail_size = int(thumbnail_size)
     
-    image = Image.open(file_obj)
+    image = open_image(file_obj)
     if blur_radius is None:
         blur_radius = 5
     else:
@@ -225,7 +226,7 @@ def create_blurred_preview(media_item, quality=75, preview_size=800, blur_radius
     preview_size = int(preview_size)
     
     original_file = media_item.versions.get(version_type=MediaItemVersion.ORIGINAL).file
-    image = Image.open(original_file).convert("RGB")
+    image = open_image(original_file).convert("RGB")
     
     if blur_radius is None:
         blur_radius = 5
