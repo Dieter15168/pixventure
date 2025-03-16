@@ -2,6 +2,7 @@
 import logging
 from media.models import MediaItem, MediaItemVersion
 from media.services import media_version_creator, watermark, video_processor
+from media.services.image_resizer import generate_resized_image
 
 logger = logging.getLogger(__name__)
 
@@ -143,12 +144,25 @@ def handle_video_preview(media_item_id, config, regenerate=False):
 def handle_video_thumbnail(media_item_id, config, regenerate=False):
     try:
         media_item = MediaItem.objects.get(id=media_item_id)
-        thumbnail_file = video_processor.create_video_thumbnail(media_item)
+        # Generate a raw thumbnail from the video.
+        raw_thumbnail = video_processor.create_video_thumbnail(media_item)
+        
+        # Now resize the raw thumbnail to the desired dimensions.
+        # config["thumbnail_size"] should be a tuple, e.g. (300, 300)
+        max_thumbnail_dimension = int(config["thumbnail_size"])
+        resized_thumbnail = generate_resized_image(
+            file_obj=raw_thumbnail,
+            max_size=(max_thumbnail_dimension,max_thumbnail_dimension),
+            output_format="WEBP",   # You can change this if needed.
+            image_mode="RGB",
+            quality=85
+        )
+        
         media_version_creator.create_media_item_version(
             media_item=media_item,
-            file_obj=thumbnail_file,
+            file_obj=resized_thumbnail,
             version_type=MediaItemVersion.THUMBNAIL,
-            is_image=False
+            is_image=True
         )
         logger.info("Video thumbnail created for MediaItem %s", media_item.id)
         return True
