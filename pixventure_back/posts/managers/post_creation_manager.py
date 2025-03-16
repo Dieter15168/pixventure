@@ -4,9 +4,9 @@ from django.db import transaction
 from posts.models import Post, PostMedia
 from taxonomy.models import Term
 from media.models import MediaItem, MediaItemVersion
-from media.jobs.dispatcher import TaskDispatcher
 from main.providers.settings_provider import SettingsProvider
 from main.utils import generate_unique_slug
+from media.managers.media_versions.media_version_manager import MediaVersionManager
 
 class PostCreationManager:
     """
@@ -17,42 +17,35 @@ class PostCreationManager:
       2. Flip a coin to decide if the post is blurred.
       3. Create the Post with the determined `is_blurred` value.
       4. Create PostMedia links for associated MediaItems.
-      5. For each MediaItem in the post:
-            - If the post is blurred, enqueue creation of blurred versions.
-            - Else, enqueue only standard versions.
+      5. For each media item in the post, call the MediaVersionManager
+         to process the required versions.
     """
     
     @staticmethod
     def create_post(data, user):
-        """
-        Creates a Post with associated media items.
-        
-        Expected data keys:
-          - name, text, featured_item, items (list of media item IDs), terms (list of term IDs)
-        """
-        # 1. Fetch the post blur probability.
+        # 1. Fetch post blur probability.
         prob_str = SettingsProvider.get_setting("post_blur_probability")
         try:
             post_blur_probability = float(prob_str)
         except (TypeError, ValueError):
-            post_blur_probability = 0.0  # Default to 0 if not set
+            post_blur_probability = 0.0  # Default
         
-        # 2. Flip a coin to determine if the post is blurred.
+        # 2. Decide if the post should be blurred.
         is_blurred = random.random() < post_blur_probability
 
         with transaction.atomic():
-            name = data.get("name")
-            text = data.get("text", "")
-            featured_item_id = data.get("featured_item")
-            item_ids = data.get("items", [])
-            term_ids = data.get("terms", [])
+            name = data.get('name')
+            text = data.get('text', "")
+            featured_item_id = data.get('featured_item')
+            item_ids = data.get('items', [])
+            term_ids = data.get('terms', [])
             
-            # Validate and load media items belonging to the user.
+            # Validate media items.
             media_items = MediaItem.objects.filter(id__in=item_ids, owner=user)
             if media_items.count() != len(item_ids):
                 raise ValueError("One or more media items do not exist or do not belong to you.")
             
-            # Validate and load featured item if provided.
+            # Validate featured item.
             featured_item_obj = None
             if featured_item_id is not None:
                 try:
@@ -60,12 +53,12 @@ class PostCreationManager:
                 except MediaItem.DoesNotExist:
                     raise ValueError("Featured item does not exist or does not belong to you.")
             
-            # Validate and load terms.
+            # Validate terms.
             terms_qs = Term.objects.filter(id__in=term_ids)
             if term_ids and terms_qs.count() != len(term_ids):
                 raise ValueError("One or more terms do not exist.")
             
-            # Determine main_category.
+            # Determine main category.
             if term_ids:
                 main_cat = terms_qs.filter(term_type=Term.CATEGORY).first()
                 if not main_cat:
@@ -75,10 +68,10 @@ class PostCreationManager:
             if not main_cat:
                 raise ValueError("No valid category found.")
             
-            # Generate a unique slug for the post.
+            # Generate unique slug.
             slug = generate_unique_slug(Post, name, max_length=50)
             
-            # 3. Create the Post with is_blurred property.
+            # 3. Create the Post.
             post = Post.objects.create(
                 owner=user,
                 name=name,
@@ -90,11 +83,7 @@ class PostCreationManager:
                 is_blurred=is_blurred
             )
             
-            # 4. Add terms to the post.
-            if term_ids:
-                post.terms.add(*terms_qs)
-            
-            # 5. Create PostMedia links for each media item.
+            # 4. Create PostMedia links.
             for pos, m_id in enumerate(item_ids):
                 media_obj = media_items.get(id=m_id)
                 PostMedia.objects.create(
@@ -103,8 +92,7 @@ class PostCreationManager:
                     position=pos
                 )
         
-        # 6. Enqueue media version creation for each media item.
-        # If the post is blurred, include blurred versions; otherwise, only standard versions.
+        # 5. For each media item, delegate version creation to MediaVersionManager.
         for media_item in media_items:
             if is_blurred:
                 allowed_versions = [
@@ -118,10 +106,7 @@ class PostCreationManager:
                     MediaItemVersion.PREVIEW,
                     MediaItemVersion.WATERMARKED,
                 ]
-            TaskDispatcher.dispatch_media_item_versions(
-                media_item.id,
-                regenerate=False,
-                allowed_versions=allowed_versions
-            )
+            mvm = MediaVersionManager(media_item.id)
+            mvm.process_versions(regenerate=False, allowed_versions=allowed_versions)
         
         return post

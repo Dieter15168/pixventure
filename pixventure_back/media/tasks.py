@@ -1,24 +1,38 @@
 # media/tasks.py
+"""
+This module exists for Celery autodiscovery.
+It defines a single generic task that delegates to the appropriate handler.
+"""
 from celery import shared_task
-from media.managers.media_version_manager import MediaVersionManager
-from media.managers.hashing_manager import HashingManager
+import logging
+from media.managers.media_versions import media_version_handlers
+from media.managers.hashing import media_hash_handlers
 
-@shared_task  # Removed the explicit name
-def process_media_item_versions(media_item_id: int, regenerate: bool = False, allowed_versions: list = None):
-    """
-    Asynchronously processes and generates additional versions
-    for the media item with the given ID.
-    Only the versions specified in 'allowed_versions' will be processed.
-    """
-    manager = MediaVersionManager(media_item_id)
-    manager.process_versions(regenerate=regenerate, allowed_versions=allowed_versions)
+logger = logging.getLogger(__name__)
 
-@shared_task(name="media.tasks.compute_fuzzy_hash")
-def compute_fuzzy_hash_task(media_item_version_id, hash_type="phash"):
+# Mapping handler names to functions.
+HANDLER_MAPPING = {
+    "image_preview": media_version_handlers.handle_image_preview,
+    "image_full_watermarked": media_version_handlers.handle_image_full_watermarked,
+    "image_blurred_thumbnail": media_version_handlers.handle_image_blurred_thumbnail,
+    "image_blurred_preview": media_version_handlers.handle_image_blurred_preview,
+    "video_watermarked": media_version_handlers.handle_video_watermarked,
+    "video_preview": media_version_handlers.handle_video_preview,
+    "video_thumbnail": media_version_handlers.handle_video_thumbnail,
+    "fuzzy_hash": media_hash_handlers.handle_fuzzy_hash,
+}
+
+@shared_task(name="media.tasks.run_version_task")
+def run_version_task(task_name, media_item_id, config, regenerate=False):
     """
-    Asynchronous task to compute and store the fuzzy hash for a media item version.
-    
-    :param media_item_version_id: ID of the MediaItemVersion.
-    :param hash_type: Type of fuzzy hash to compute.
+    Generic task that looks up the appropriate handler based on task_name.
     """
-    return HashingManager.process_fuzzy_hash(media_item_version_id, hash_type=hash_type)
+    try:
+        handler = HANDLER_MAPPING.get(task_name)
+        if not handler:
+            raise ValueError(f"Handler for task '{task_name}' not found.")
+        result = handler(media_item_id, config, regenerate)
+        return result
+    except Exception as e:
+        logger.error("Error in task %s for MediaItem %s: %s", task_name, media_item_id, e)
+        raise e

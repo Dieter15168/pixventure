@@ -145,6 +145,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'cache+memory://'
+CELERY_IGNORE_RESULT = True
+CELERY_RESULT_EXPIRES = 3600
 
 FONT_LOCATION = '/home/daniel/Documents/Synched/Projects/pixventure/pixventure_back/fonts/OpenSans-Bold.ttf'
 WATERMARK_TEXT_FOR_PREVIEWS = 'sample.com'
