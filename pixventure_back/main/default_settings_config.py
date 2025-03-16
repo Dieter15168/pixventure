@@ -15,11 +15,17 @@ DEFAULT_SETTINGS = {
     # Blur radius settings:
     "thumbnail_blur_radius": 20,
     "preview_blur_radius": 20,
+    # Probability of newly created item to get is_blurred=True
     "item_blur_probability": 0.1,
+    # Probability of newly created post to get is_blurred=True
     "post_blur_probability": 0.1,
     "full_watermark_transparency": 50,
-    "max_video_bitrate": 50000,  # Maximum bitrate for full watermarked video; original videos wight higher bitrate will have their bitrate reduced
-    "preview_video_duration": 5,          # Duration of the short preview video in seconds
-    "full_watermarked_version_quality": 8000,
-    "preview_video_quality": 8000,
+    # Maximum bitrate for full watermarked video; original videos wight higher bitrate will have their bitrate reduced
+    "max_video_bitrate": 5000000,
+    # Duration of the short preview video in seconds
+    "preview_video_duration": 5,
+    # In current implementation - CRF value between 0 and 51, where 18 is considered good quality; -1 for using defaults (currently 18)
+    "full_watermarked_version_quality": -1, 
+    # Same
+    "preview_video_quality": -1,
 }
