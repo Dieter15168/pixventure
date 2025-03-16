@@ -1,6 +1,38 @@
+import os
+import uuid
 from django.db import models
 from django.contrib.auth.models import User
-from django.conf import settings
+
+
+def media_version_upload_to(instance, filename):
+    """
+    Generates a dynamic upload path for MediaItemVersion files.
+    
+    For the ORIGINAL version, a generic filename is generated (e.g. original_<uuid>.<ext>).
+    For other versions, files are stored in version-specific folders.
+    """
+    # Mapping from version type to folder name.
+    folder_map = {
+        MediaItemVersion.ORIGINAL: 'original',
+        MediaItemVersion.THUMBNAIL: 'thumbnail',
+        MediaItemVersion.PREVIEW: 'preview',
+        MediaItemVersion.BLURRED_THUMBNAIL: 'blurred_thumbnail',
+        MediaItemVersion.BLURRED_PREVIEW: 'blurred_preview',
+        MediaItemVersion.WATERMARKED: 'watermarked',
+    }
+    folder = folder_map.get(instance.version_type, 'media_versions')
+    
+    # Extract the extension from the original filename.
+    ext = os.path.splitext(filename)[1].lower()  # e.g. ".jpg"
+    
+    # For the ORIGINAL version, use a generic filename.
+    if instance.version_type == MediaItemVersion.ORIGINAL:
+        new_filename = f"original_{uuid.uuid4().hex}{ext}"
+    else:
+        new_filename = f"{folder}_{uuid.uuid4().hex}{ext}"
+    
+    return os.path.join(folder, new_filename)
+
 
 class MediaItem(models.Model):
     """
@@ -97,10 +129,10 @@ class MediaItemVersion(models.Model):
     ]
 
     version_type = models.IntegerField(choices=VERSION_CHOICES)
-    media_item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='versions')
+    media_item = models.ForeignKey('MediaItem', on_delete=models.CASCADE, related_name='versions')
 
-    # File reference for this version
-    file = models.FileField(upload_to='media_versions/', null=True, blank=True)
+    # File reference for this version using the custom upload_to callable.
+    file = models.FileField(upload_to=media_version_upload_to, null=True, blank=True)
 
     # Metadata specific to this version
     width = models.IntegerField(null=True, blank=True)
