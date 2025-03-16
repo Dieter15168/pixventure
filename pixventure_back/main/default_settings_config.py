@@ -17,4 +17,5 @@ DEFAULT_SETTINGS = {
     "preview_blur_radius": 20,
     "item_blur_probability": 0.1,
     "post_blur_probability": 0.1,
+    "full_watermark_transparency": 50,
 }

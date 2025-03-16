@@ -81,7 +81,8 @@ class MediaVersionManager:
             try:
                 full_watermarked_file = watermark.create_full_watermarked_version(
                     self.media_item,
-                    quality=self.config["full_watermarked_version_quality"]
+                    quality=self.config["full_watermarked_version_quality"],
+                    watermark_transparency=self.config["full_watermark_transparency"]
                 )
                 media_version_creator.create_media_item_version(
                     media_item=self.media_item,
