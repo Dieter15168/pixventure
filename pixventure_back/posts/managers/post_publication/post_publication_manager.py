@@ -1,3 +1,4 @@
+# posts/managers/post_publication/post_publication_manager.py
 import logging
 from posts.jobs.dispatcher import dispatch_post_publication
 
