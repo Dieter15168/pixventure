@@ -1,13 +1,15 @@
 # moderation/views.py
 
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
+from rest_framework.exceptions import ValidationError
 from posts.models import Post
 from media.models import MediaItem
 from .models import RejectionReason
 from .serializers import PostModerationSerializer, ModerationActionCreateSerializer, RejectionReasonSerializer
 from media.serializers import UnpublishedMediaItemSerializer
+from moderation.managers import ModerationManager
 
 class ModerationDashboardView(generics.ListAPIView):
     """
@@ -40,19 +42,65 @@ class ModerationDashboardView(generics.ListAPIView):
 
 class ModerationActionCreateView(generics.CreateAPIView):
     """
+    API view for creating moderation actions on posts or media items.
+    
     POST /api/moderation/action/
-    Performs a moderation action on a post or media item.
-    Example payload:
+    
+    Expected payload:
     {
       "entity_type": "post",
       "entity_id": 123,
       "action": "reject",
-      "rejection_reason": 5,
+      "rejection_reason": [5],
       "comment": "Inappropriate content"
     }
     """
     serializer_class = ModerationActionCreateSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = []  # Replace with appropriate permission classes (e.g., IsAdminUser)
+
+    def perform_create(self, serializer):
+        """
+        Handles the creation of a moderation action by delegating to the ModerationManager.
+        """
+        validated_data = serializer.validated_data
+        moderator = self.request.user
+        entity_type = validated_data['entity_type']
+        entity_id = validated_data['entity_id']
+        action = validated_data['action']
+        comment = validated_data.get('comment', "")
+        rejection_reasons = validated_data.get('rejection_reason', [])
+
+        manager = ModerationManager()
+
+        if action == 'approve':
+            if entity_type == 'post':
+                mod_action = manager.handle_post_approval(entity_id, moderator, comment)
+            elif entity_type == 'media':
+                mod_action = manager.handle_item_approval(entity_id, moderator, comment)
+            else:
+                raise ValidationError("Invalid entity type for approval.")
+        elif action == 'reject':
+            if entity_type == 'post':
+                mod_action = manager.handle_post_rejection(entity_id, moderator, rejection_reasons, comment)
+            elif entity_type == 'media':
+                mod_action = manager.handle_item_rejection(entity_id, moderator, rejection_reasons, comment)
+            else:
+                raise ValidationError("Invalid entity type for rejection.")
+        else:
+            raise ValidationError("Invalid moderation action.")
+
+        serializer.instance = mod_action
+        return mod_action
+
+    def create(self, request, *args, **kwargs):
+        """
+        Overridden create method to process the moderation action and return a response.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        mod_action = self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.to_representation(mod_action), status=status.HTTP_201_CREATED, headers=headers)
 
 
 class ActiveRejectionReasonListView(generics.ListAPIView):
