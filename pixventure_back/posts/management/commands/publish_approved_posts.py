@@ -1,7 +1,7 @@
 # posts/management/commands/publish_approved_posts.py
 from django.core.management.base import BaseCommand
 from posts.models import Post
-from posts.managers.post_publication_manager import PostPublicationManager
+from posts.managers.post_publication.post_publication_manager import PostPublicationManager
 
 class Command(BaseCommand):
     help = "Publish all posts that are approved and ready for publication."

@@ -1,10 +1,10 @@
-# posts/tasks/dispatcher.py
-from posts.tasks import publish_post_task
+from posts.tasks import run_post_task
+import logging
 
-class PostTaskDispatcher:
-    @staticmethod
-    def dispatch_publish_post(post_id, force=False):
-        """
-        Dispatch a task to publish a post.
-        """
-        return publish_post_task.delay(post_id, force)
+logger = logging.getLogger(__name__)
+
+def dispatch_post_publication(post_id, config, regenerate=False):
+    """
+    Return an immutable task signature for post publication.
+    """
+    return run_post_task.si("post_publication", post_id, config, regenerate).apply_async(ignore_result=True)

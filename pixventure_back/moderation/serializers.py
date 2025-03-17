@@ -111,7 +111,6 @@ class ModerationActionCreateSerializer(serializers.Serializer):
             "performed_at": instance.performed_at,
         }
 
-
         
 class RejectionReasonSerializer(serializers.ModelSerializer):
     class Meta:
