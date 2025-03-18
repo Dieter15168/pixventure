@@ -27,6 +27,9 @@ class PublicPostListView(generics.ListAPIView):
     """
     GET /api/posts/
     Returns a paginated list of 'published' posts using PostSerializer.
+    
+    Optionally, if you include ?slug=some-slug, returns only the matching post
+    (still in a paginated results array).
     """
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
@@ -34,8 +37,15 @@ class PublicPostListView(generics.ListAPIView):
 
     def get_queryset(self):
         # Only show PUBLISHED posts
-        return Post.objects.filter(status=Post.PUBLISHED).order_by('-created')
+        qs = Post.objects.filter(status=Post.PUBLISHED).order_by('-created')
 
+        # If ?slug= is provided, filter the queryset accordingly
+        slug = self.request.query_params.get('slug')
+        if slug:
+            qs = qs.filter(slug=slug)
+
+        return qs
+    
 
 # 2. MyPostsView
 class MyPostsView(generics.ListAPIView):
