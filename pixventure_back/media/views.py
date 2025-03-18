@@ -86,7 +86,7 @@ class MediaItemAvailableForPostView(generics.ListAPIView):
             MediaItem.objects
             .filter(
                 owner=self.request.user,
-                status__in=[MediaItem.PENDING_MODERATION, MediaItem.APPROVED, MediaItem.REJECTED],
+                status__in=[MediaItem.PENDING_MODERATION, MediaItem.APPROVED],
                 post_links__isnull=True  # Only items that are not associated with any PostMedia
             )
             .prefetch_related("versions")
