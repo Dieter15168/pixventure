@@ -34,12 +34,13 @@ class TestPostAPI:
 
         assert response.status_code == 201, response.data
         data = response.json()
-        assert data["id"] is not None
-        assert data["name"] == "E2E Test Post"
-        assert data["slug"]  # slug should be set
-        # Check that terms were applied
-        assert len(data["terms"]) == 2
-        assert set(data["items"]) == {media1.id, media2.id}
+        assert data["id"] is not None, f"Post creation failed: id is None, response: {data}"
+        assert data["name"] == "E2E Test Post", f"Post name mismatch: expected 'E2E Test Post', got '{data['name']}'"
+        assert data["slug"], f"Slug was not generated: response: {data}"
+        assert len(data["terms"]) == 2, f"Expected 2 terms, got {len(data['terms'])}"
+        assert set(data["items"]) == {media1.id, media2.id}, (
+            f"Expected items {media1.id, media2.id}, got {data['items']}"
+        )
 
     def test_create_post_partial_invalid_categories(self, user_factory, media_item_factory, term_factory):
         user = user_factory()

@@ -29,13 +29,15 @@ class TestPostCreationManager:
 
         post = PostCreationManager.create_post(data, user)
 
-        assert post.pk is not None
-        assert post.owner == user
-        assert post.name == "My Test Post"
-        assert post.slug  # slug is generated
-        assert post.featured_item == media1
-        assert post.terms.count() == 2  # category + tag
-        assert PostMedia.objects.filter(post=post).count() == 2
+        assert post.pk is not None, "Post creation failed: post.pk is None"
+        assert post.owner == user, f"Post owner mismatch: expected {user}, got {post.owner}"
+        assert post.name == "My Test Post", f"Post name mismatch: expected 'My Test Post', got '{post.name}'"
+        assert post.slug, "Post slug was not generated"
+        assert post.featured_item == media1, f"Post featured_item mismatch: expected {media1}, got {post.featured_item}"
+        assert post.terms.count() == 2, f"Expected 2 terms, got {post.terms.count()}"
+        assert PostMedia.objects.filter(post=post).count() == 2, (
+            f"Expected 2 media items, got {PostMedia.objects.filter(post=post).count()}"
+        )
 
     def test_create_post_skip_invalid_terms(self, user_factory, media_item_factory, term_factory):
         user = user_factory()
