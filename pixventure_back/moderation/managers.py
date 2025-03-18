@@ -47,7 +47,7 @@ class ModerationManager:
             raise ValidationError("Post not found.")
 
         old_status = post.status
-        post.status = Post.APPROVED  # Update post status to APPROVED.
+        post.status = Post.APPROVED
         post.save()
 
         # Create a moderation action record for the post approval.
@@ -68,8 +68,8 @@ class ModerationManager:
                 # Reuse the existing method to approve the media item.
                 self.handle_item_approval(media_item.id, moderator, comment)
 
-        # Schedule publication of the post using the PostPublicationManager.
-        PostPublicationManager.publish_post(post_id, force=False)
+        # Ensure publication only after transaction commits successfully.
+        transaction.on_commit(lambda: PostPublicationManager.publish_post(post_id, force=False))
 
         return mod_action
 
