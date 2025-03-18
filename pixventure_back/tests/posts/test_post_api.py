@@ -41,12 +41,11 @@ class TestPostAPI:
         assert len(data["terms"]) == 2
         assert set(data["items"]) == {media1.id, media2.id}
 
-    def test_create_post_partial_invalid_categories(self, user_factory, media_item_factory):
-        """
-        E2E test: invalid term IDs won't fail entire creation.
-        """
+    def test_create_post_partial_invalid_categories(self, user_factory, media_item_factory, term_factory):
         user = user_factory()
         media = media_item_factory(owner=user)
+        # create a fallback category for the manager to pick up
+        fallback_cat = term_factory(term_type=Term.CATEGORY, name="Default Category")
 
         payload = {
             "name": "Partial Invalid Categories",
@@ -61,8 +60,15 @@ class TestPostAPI:
         url = reverse('create-post')
         response = client.post(url, payload, format='json')
 
+        # By default, CreateAPIView returns 201 on success.
         assert response.status_code == 201, response.data
+        
         data = response.json()
+        # The manager should have used fallback_cat
         assert data["id"] is not None
-        assert len(data["terms"]) == 0  # no valid terms
-        # The post should be created successfully
+        assert len(data["terms"]) == 0  # no valid user terms
+        # if you want to confirm the fallback category is set:
+        # retrieve the Post from DB and check its main_category
+        from posts.models import Post
+        post = Post.objects.get(pk=data["id"])
+        assert post.main_category == fallback_cat

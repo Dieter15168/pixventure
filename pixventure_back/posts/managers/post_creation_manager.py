@@ -8,6 +8,7 @@ from media.models import MediaItem, MediaItemVersion
 from main.providers.settings_provider import SettingsProvider
 from main.utils import generate_unique_slug
 from media.managers.media_versions.media_version_manager import MediaVersionManager
+from taxonomy.utils import get_mandatory_category
 
 class PostCreationManager:
     """
@@ -61,21 +62,14 @@ class PostCreationManager:
             # We skip invalid terms without crashing
             # (invalid IDs simply won't be in valid_terms)
 
-            # Attempt to find at least one category from the valid terms
+            # 3. Attempt to find at least one category from the valid terms
             category_qs = valid_terms.filter(term_type=Term.CATEGORY)
+            main_cat = get_mandatory_category(category_qs)  # This might raise if none is found
 
-            # If none found among the user's terms, fallback to the first category in the DB (if any).
-            if category_qs.exists():
-                main_cat = category_qs.first()
-            else:
-                fallback_cat = Term.objects.filter(term_type=Term.CATEGORY).first()
-                main_cat = fallback_cat if fallback_cat else None
-
-            # Generate unique slug
+            # 4. Generate unique slug
             slug = generate_unique_slug(Post, name, max_length=50)
 
-            # 3. Create the Post
-            #    If no category is found at all, main_category stays None
+            # 5. Create the Post
             post = Post.objects.create(
                 owner=user,
                 name=name,
@@ -87,11 +81,11 @@ class PostCreationManager:
                 is_blurred=is_blurred
             )
 
-            # 4. Attach all valid terms (including categories and tags)
+            # 6. Attach all valid terms (including categories and tags)
             if valid_terms.exists():
                 post.terms.add(*valid_terms)
 
-            # 5. Create PostMedia links
+            # 7. Create PostMedia links
             for pos, m_id in enumerate(item_ids):
                 media_obj = media_items.get(id=m_id)
                 PostMedia.objects.create(
@@ -100,17 +94,10 @@ class PostCreationManager:
                     position=pos
                 )
 
-        # 6. For each media item, delegate version creation to MediaVersionManager
-        allowed_versions = [
-            MediaItemVersion.PREVIEW,
-            MediaItemVersion.WATERMARKED,
-        ]
+        # 8. Process media versions
+        allowed_versions = [MediaItemVersion.PREVIEW, MediaItemVersion.WATERMARKED]
         if is_blurred:
-            # If we decided to blur the entire post, include blur versions
-            allowed_versions += [
-                MediaItemVersion.BLURRED_THUMBNAIL,
-                MediaItemVersion.BLURRED_PREVIEW,
-            ]
+            allowed_versions += [MediaItemVersion.BLURRED_THUMBNAIL, MediaItemVersion.BLURRED_PREVIEW]
 
         for media_item in media_items:
             mvm = MediaVersionManager(media_item.id)

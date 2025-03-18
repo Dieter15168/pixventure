@@ -56,23 +56,31 @@ class TestPostCreationManager:
         # Terms should only contain the valid category
         assert list(post.terms.values_list('id', flat=True)) == [valid_cat.id]
 
-    def test_create_post_no_categories_at_all(self, user_factory, media_item_factory):
+    def test_create_post_no_categories_at_all(self, user_factory, media_item_factory, term_factory):
         user = user_factory()
         media = media_item_factory(owner=user)
+
+        # Create a fallback category in the DB, so the manager can pick it up
+        fallback_cat = term_factory(
+            term_type=Term.CATEGORY, 
+            name="Default Fallback Category", 
+            slug="default-fallback"
+        )
 
         data = {
             "name": "No Categories In DB",
             "featured_item": None,
             "items": [media.id],
-            "terms": [],  # no terms
+            "terms": [],  # no user terms
             "text": "No categories in system"
         }
 
         post = PostCreationManager.create_post(data, user)
+        
+        # Now the manager should have used the fallback category
         assert post.pk is not None
-        # If there's truly no category in the database, main_category should be None
-        assert post.main_category is None
-        assert post.terms.count() == 0
+        assert post.main_category == fallback_cat
+        assert post.terms.count() == 0  # user provided no valid terms
 
     def test_create_post_raises_on_invalid_media(self, user_factory, media_item_factory):
         user = user_factory()
