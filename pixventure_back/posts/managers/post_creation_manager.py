@@ -1,4 +1,5 @@
 # posts/managers/post_creation_manager.py
+
 import random
 from django.db import transaction
 from posts.models import Post, PostMedia
@@ -16,21 +17,22 @@ class PostCreationManager:
       1. Retrieve the post blur probability.
       2. Flip a coin to decide if the post is blurred.
       3. Create the Post with the determined `is_blurred` value.
-      4. Create PostMedia links for associated MediaItems.
-      5. For each media item in the post, call the MediaVersionManager
+      4. Attach valid terms and set main_category if possible.
+      5. Create PostMedia links for associated MediaItems.
+      6. For each media item in the post, call MediaVersionManager
          to process the required versions.
     """
     
     @staticmethod
     def create_post(data, user):
-        # 1. Fetch post blur probability.
+        # 1. Fetch post blur probability
         prob_str = SettingsProvider.get_setting("post_blur_probability")
         try:
             post_blur_probability = float(prob_str)
         except (TypeError, ValueError):
-            post_blur_probability = 0.0  # Default
-        
-        # 2. Decide if the post should be blurred.
+            post_blur_probability = 0.0  # Default to 0 if invalid
+
+        # 2. Decide if the post should be blurred
         is_blurred = random.random() < post_blur_probability
 
         with transaction.atomic():
@@ -38,40 +40,42 @@ class PostCreationManager:
             text = data.get('text', "")
             featured_item_id = data.get('featured_item')
             item_ids = data.get('items', [])
-            term_ids = data.get('terms', [])
-            
-            # Validate media items.
+            term_ids = data.get('terms', [])  # might contain invalid IDs
+
+            # Validate media items (these must be valid; otherwise, we fail).
             media_items = MediaItem.objects.filter(id__in=item_ids, owner=user)
             if media_items.count() != len(item_ids):
                 raise ValueError("One or more media items do not exist or do not belong to you.")
-            
-            # Validate featured item.
+
+            # Validate featured item
             featured_item_obj = None
             if featured_item_id is not None:
                 try:
                     featured_item_obj = MediaItem.objects.get(id=featured_item_id, owner=user)
                 except MediaItem.DoesNotExist:
                     raise ValueError("Featured item does not exist or does not belong to you.")
-            
-            # Validate terms.
-            terms_qs = Term.objects.filter(id__in=term_ids)
-            if term_ids and terms_qs.count() != len(term_ids):
-                raise ValueError("One or more terms do not exist.")
-            
-            # Determine main category.
-            if term_ids:
-                main_cat = terms_qs.filter(term_type=Term.CATEGORY).first()
-                if not main_cat:
-                    main_cat = Term.objects.filter(term_type=Term.CATEGORY).first()
+
+            # Load only the valid terms
+            valid_terms = Term.objects.filter(id__in=term_ids)
+
+            # We skip invalid terms without crashing
+            # (invalid IDs simply won't be in valid_terms)
+
+            # Attempt to find at least one category from the valid terms
+            category_qs = valid_terms.filter(term_type=Term.CATEGORY)
+
+            # If none found among the user's terms, fallback to the first category in the DB (if any).
+            if category_qs.exists():
+                main_cat = category_qs.first()
             else:
-                main_cat = Term.objects.filter(term_type=Term.CATEGORY).first()
-            if not main_cat:
-                raise ValueError("No valid category found.")
-            
-            # Generate unique slug.
+                fallback_cat = Term.objects.filter(term_type=Term.CATEGORY).first()
+                main_cat = fallback_cat if fallback_cat else None
+
+            # Generate unique slug
             slug = generate_unique_slug(Post, name, max_length=50)
-            
-            # 3. Create the Post.
+
+            # 3. Create the Post
+            #    If no category is found at all, main_category stays None
             post = Post.objects.create(
                 owner=user,
                 name=name,
@@ -82,8 +86,12 @@ class PostCreationManager:
                 status=Post.PENDING_MODERATION,
                 is_blurred=is_blurred
             )
-            
-            # 4. Create PostMedia links.
+
+            # 4. Attach all valid terms (including categories and tags)
+            if valid_terms.exists():
+                post.terms.add(*valid_terms)
+
+            # 5. Create PostMedia links
             for pos, m_id in enumerate(item_ids):
                 media_obj = media_items.get(id=m_id)
                 PostMedia.objects.create(
@@ -91,22 +99,21 @@ class PostCreationManager:
                     media_item=media_obj,
                     position=pos
                 )
-        
-        # 5. For each media item, delegate version creation to MediaVersionManager.
+
+        # 6. For each media item, delegate version creation to MediaVersionManager
+        allowed_versions = [
+            MediaItemVersion.PREVIEW,
+            MediaItemVersion.WATERMARKED,
+        ]
+        if is_blurred:
+            # If we decided to blur the entire post, include blur versions
+            allowed_versions += [
+                MediaItemVersion.BLURRED_THUMBNAIL,
+                MediaItemVersion.BLURRED_PREVIEW,
+            ]
+
         for media_item in media_items:
-            if is_blurred:
-                allowed_versions = [
-                    MediaItemVersion.PREVIEW,
-                    MediaItemVersion.WATERMARKED,
-                    MediaItemVersion.BLURRED_THUMBNAIL,
-                    MediaItemVersion.BLURRED_PREVIEW,
-                ]
-            else:
-                allowed_versions = [
-                    MediaItemVersion.PREVIEW,
-                    MediaItemVersion.WATERMARKED,
-                ]
             mvm = MediaVersionManager(media_item.id)
             mvm.process_versions(regenerate=False, allowed_versions=allowed_versions)
-        
+
         return post

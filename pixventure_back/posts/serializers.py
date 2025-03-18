@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db import transaction
 from posts.models import Post
 from posts.models import PostMedia
 from media.models import MediaItem, MediaItemVersion
@@ -205,15 +206,15 @@ class PostCreateSerializer(serializers.Serializer):
         allow_empty=True
     )
 
+    @transaction.atomic
     def create(self, validated_data):
         request_user = self.context['request'].user
-        
-        # Delegate the creation to the PostCreationManager.
+        # Defer all logic to PostCreationManager
         try:
             post = PostCreationManager.create_post(validated_data, request_user)
-        except Exception as e:
-            raise ValidationError(str(e))
-        
+        except ValueError as e:
+            # Convert ValueError to DRF ValidationError for proper error response
+            raise serializers.ValidationError(str(e))
         return post
 
     def to_representation(self, instance):
