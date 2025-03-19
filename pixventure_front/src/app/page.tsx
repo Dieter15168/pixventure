@@ -1,9 +1,12 @@
 // src/app/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import React from "react";
 import PostTile from "../components/Tile/Tile";
+import PaginationComponent from "../components/Pagination/Pagination";
+
 import { usePostsAPI } from "../utils/api/posts";
+import { usePaginatedData } from "@/hooks/usePaginatedData";
 
 interface Post {
   id: number;
@@ -13,41 +16,43 @@ interface Post {
   slug: string;
 }
 
+// Our backend returns { results: Post[], current_page, total_pages, ... }
+// We'll pass fetchPosts(page) to our hook.
 export default function Home() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { fetchPosts } = usePostsAPI();
 
-  useEffect(() => {
-    const getPosts = async () => {
-      try {
-        const data = await fetchPosts();
-        setPosts(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    getPosts();
-  }, [fetchPosts]);
+  const {
+    data: posts,
+    page,
+    totalPages,
+    loading,
+    error,
+    setPage,
+  } = usePaginatedData<Post>(fetchPosts); // <-- pass your fetch function
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="pin_container">
-      {posts.map((post) => (
-        <PostTile
-          key={post.id}
-          item={{
-            ...post,
-            entity_type: "post",
-            page_type: "posts_list",
-          }}
-        />
-      ))}
-    </div>
+    <>
+      <div className="pin_container">
+        {posts.map((post) => (
+          <PostTile
+            key={post.id}
+            item={{
+              ...post,
+              entity_type: "post",
+              page_type: "posts_list",
+            }}
+          />
+        ))}
+        {/* Pagination */}
+      </div>
+      <PaginationComponent
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
+    </>
   );
 }
