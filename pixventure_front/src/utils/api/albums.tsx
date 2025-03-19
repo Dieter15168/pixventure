@@ -7,11 +7,14 @@ import { useCallback } from "react";
 export function useAlbumsAPI() {
   const axios = useAxios();
 
-  // GET /api/albums/ - Public albums
-  const fetchAlbums = useCallback(async () => {
-    const res = await axios.get("/albums/");
-    return res.data.results;
-  }, [axios]);
+  // GET /api/albums/?page=<N>
+  const fetchAlbums = useCallback(
+    async (page = 1) => {
+      const res = await axios.get(`/albums/?page=${page}`);
+      return res.data;
+    },
+    [axios]
+  );
 
   // GET /api/albums/mine/ - Albums owned by the current user
   const fetchMyAlbums = useCallback(async () => {
@@ -24,6 +27,16 @@ export function useAlbumsAPI() {
     async (slug: string) => {
       const res = await axios.get(`/albums/${slug}/`);
       return res.data;
+    },
+    [axios]
+  );
+
+  // GET /api/albums/<slug>/elements/?page=<N>
+  // => returns paginated results
+  const fetchAlbumElementsBySlug = useCallback(
+    async (slug: string, page = 1) => {
+      const res = await axios.get(`/albums/${slug}/elements/?page=${page}`);
+      return res.data; // { results, current_page, total_pages, ... }
     },
     [axios]
   );
@@ -41,5 +54,11 @@ export function useAlbumsAPI() {
     [axios]
   );
 
-  return { fetchAlbums, fetchMyAlbums, fetchAlbumBySlug, createAlbum };
+  return {
+    fetchAlbums,
+    fetchMyAlbums,
+    fetchAlbumBySlug,
+    fetchAlbumElementsBySlug,
+    createAlbum,
+  };
 }

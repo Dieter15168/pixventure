@@ -74,43 +74,17 @@ class AlbumCreateView(generics.CreateAPIView):
 
 # --- 3. AlbumDetailView (rewritten) ---
 
-class AlbumDetailView(generics.GenericAPIView):
+class AlbumDetailView(generics.RetrieveAPIView):
     """
     GET /api/albums/<slug>/
-    Returns detail about the album (using AlbumDetailSerializer),
-    plus a paginated list of album elements (AlbumElementSerializer).
-    Uses IsAlbumOwnerOrAdminOrPublicRead for permissions.
+    Returns only the album metadata using AlbumDetailSerializer.
+    (No album elements here.)
     """
     serializer_class = AlbumDetailSerializer
     permission_classes = [IsAlbumOwnerOrAdminOrPublicRead]
-    pagination_class = StandardResultsSetPagination
-
-    def get_object(self):
-        album = get_object_or_404(Album, slug=self.kwargs['slug'])
-        self.check_object_permissions(self.request, album)
-        return album
-
-    def get(self, request, slug):
-        album = self.get_object()
-
-        # 1) Album detail
-        album_data = self.get_serializer(album).data
-
-        # 2) Paginated album elements
-        elements_qs = AlbumElement.objects.filter(album=album).order_by('position')
-        paginator = self.pagination_class()
-        page = paginator.paginate_queryset(elements_qs, request, view=self)
-
-        elements_serializer = AlbumElementSerializer(
-            page, many=True, context={'request': request}
-        )
-        return Response({
-            'album': album_data,
-            'album_elements': elements_serializer.data,
-            'count': elements_qs.count(),
-            'next': paginator.get_next_link(),
-            'previous': paginator.get_previous_link(),
-        }, status=status.HTTP_200_OK)
+    lookup_field = 'slug'
+    lookup_url_kwarg = 'slug'
+    queryset = Album.objects.all()
 
 # --- 4. AlbumUpdateDestroyView ---
 

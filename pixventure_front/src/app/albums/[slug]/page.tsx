@@ -1,29 +1,31 @@
+// src/app/albums/[slug]/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
+import PaginationComponent from "../../../components/Pagination/Pagination";
 import { useAlbumsAPI } from "../../../utils/api/albums";
+import { usePaginatedData } from "../../../hooks/usePaginatedData";
 import Tile, { TileProps } from "../../../components/Tile/Tile";
 import LikeButton from "../../../elements/LikeButton/LikeButton";
 
-// Example interfaces for album and album element data returned from the API.
+// Minimal types for clarity
 interface Album {
   id: number;
   name: string;
   slug: string;
   likes_counter: number;
   has_liked: boolean;
-  thumbnail_url?: string;
   can_edit: boolean;
+  thumbnail_url?: string;
 }
 
 interface AlbumElement {
-  id: number; // ID of the album element wrapper
-  element_type: number; // 1 = post, 2 = media
+  id: number;
+  element_type: number; // 1=post, 2=media
   position: number;
-  // The actionable entity data is nested here:
   post_data?: {
-    id: number; // Actual post ID to be used for like and navigation
+    id: number;
     name: string;
     slug: string;
     thumbnail_url?: string;
@@ -31,78 +33,97 @@ interface AlbumElement {
     has_liked: boolean;
     owner_username: string;
     tile_size: "small" | "medium" | "large";
+    media_type?: number;
   };
   media_data?: {
-    id: number; // Actual media item ID to be used for like and navigation
+    id: number;
     name: string;
     slug: string;
     thumbnail_url?: string;
-    media_type: string; // e.g. 1 = photo, 2 = video
+    media_type: string;
     likes_counter: number;
     has_liked: boolean;
     owner_username: string;
-    images_count?: number;
-    videos_count?: number;
     tile_size: "small" | "medium" | "large";
   };
 }
 
 export default function AlbumDetailPage() {
-  const params = useParams();
-  const slug = params.slug as string;
+  const { slug } = useParams() as { slug: string };
+  const { fetchAlbumBySlug, fetchAlbumElementsBySlug } = useAlbumsAPI();
 
+  // 1) Load the album metadata
   const [album, setAlbum] = useState<Album | null>(null);
-  const [elements, setElements] = useState<AlbumElement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const { fetchAlbumBySlug } = useAlbumsAPI();
+  const [albumLoading, setAlbumLoading] = useState<boolean>(true);
+  const [albumError, setAlbumError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
-
-    const loadAlbumDetail = async () => {
+    const loadAlbum = async () => {
+      setAlbumLoading(true);
       try {
-        const data = await fetchAlbumBySlug(slug);
-        // Expected data: { album: {...}, album_elements: [...] }
-        setAlbum(data.album);
-        setElements(data.album_elements || []);
+        const albumData = await fetchAlbumBySlug(slug);
+        setAlbum(albumData);
       } catch (err: any) {
-        setError(err.message);
+        setAlbumError(err.message ?? "Error loading album");
       } finally {
-        setLoading(false);
+        setAlbumLoading(false);
       }
     };
-
-    loadAlbumDetail();
+    loadAlbum();
   }, [slug, fetchAlbumBySlug]);
 
-  if (loading) return <p>Loading album...</p>;
-  if (error) return <p>Error: {error}</p>;
+  // 2) Define a function for fetching album elements (paginated)
+  // If album is not yet loaded, return an empty structure to avoid errors or loops
+  const fetchAlbumElements = useCallback(
+    async (page: number) => {
+      if (!album) {
+        return {
+          results: [],
+          current_page: 1,
+          total_pages: 1,
+        };
+      }
+      return await fetchAlbumElementsBySlug(album.slug, page);
+    },
+    [album, fetchAlbumElementsBySlug]
+  );
+
+  // 3) Use the pagination hook for album elements
+  const {
+    data: albumElements,
+    page,
+    totalPages,
+    loading: elementsLoading,
+    error: elementsError,
+    setPage,
+  } = usePaginatedData<AlbumElement>(fetchAlbumElements);
+
+  // 4) Basic checks
+  if (albumLoading) return <p>Loading album...</p>;
+  if (albumError) return <p>Error: {albumError}</p>;
   if (!album) return <p>No album found for slug: {slug}</p>;
 
-  /**
-   * Transform an album element into TileProps.
-   *
-   * IMPORTANT:
-   * - The outer album element is a wrapper and has its own id.
-   * - The actionable entity (post or media) is nested inside as post_data or media_data.
-   * - We use the inner entity's id for like toggling and navigation.
-   * - To ensure that each rendered tile has a unique React key,
-   *   we create a composite key combining the wrapper's id and the inner entity's id.
-   */
+  // If the album is loaded, but elements are still fetching
+  if (elementsLoading && albumElements.length === 0) {
+    return <p>Loading album elements...</p>;
+  }
+  if (elementsError) {
+    return <p>Error loading album elements: {elementsError}</p>;
+  }
+
+  // 5) Transform each album element -> TileProps
   const transformAlbumElementToTile = (element: AlbumElement): TileProps => {
+    // Check whether it's referencing a post or media
     if (element.element_type === 1 && element.post_data) {
       const post = element.post_data;
       return {
-        // Use the inner post id for actionable purposes...
         id: post.id,
-        // ...but use a composite key for rendering to ensure uniqueness.
         renderKey: `${element.id}-${post.id}`,
         name: post.name,
         slug: post.slug,
         thumbnail_url: post.thumbnail_url,
-        media_type: post.media_type,
+        media_type: post.media_type ?? 1,
         likes_counter: post.likes_counter,
         has_liked: post.has_liked,
         owner_username: post.owner_username,
@@ -112,7 +133,7 @@ export default function AlbumDetailPage() {
           albumSlug: album.slug,
           inAlbum: true,
           albumElementId: element.id,
-          can_edit: album.can_edit, // passed from album meta
+          can_edit: album.can_edit,
         },
       };
     }
@@ -128,19 +149,17 @@ export default function AlbumDetailPage() {
         likes_counter: media.likes_counter,
         has_liked: media.has_liked,
         owner_username: media.owner_username,
-        images_count: media.images_count,
-        videos_count: media.videos_count,
         tile_size: media.tile_size,
         entity_type: "media",
         albumContext: {
           albumSlug: album.slug,
           inAlbum: true,
           albumElementId: element.id,
-          can_edit: album.can_edit, // passed from album meta
+          can_edit: album.can_edit,
         },
       };
     }
-    // Fallback if element data is missing:
+    // fallback
     return {
       id: element.id,
       renderKey: String(element.id),
@@ -156,34 +175,43 @@ export default function AlbumDetailPage() {
         albumSlug: album.slug,
         inAlbum: true,
         albumElementId: element.id,
-        can_edit: album.can_edit, // passed from album meta
+        can_edit: album.can_edit,
       },
     };
   };
 
-  // Transform all album elements into TileProps.
-  // Use the composite key for rendering.
-  const tileItems: TileProps[] = elements.map(transformAlbumElementToTile);
+  const tileItems: TileProps[] = albumElements.map(transformAlbumElementToTile);
 
   return (
     <div>
       <h1>{album.name}</h1>
       <LikeButton
-        entity_type={"album"}
+        entity_type="album"
         targetId={album.id}
         initialLikesCounter={album.likes_counter}
         initialHasLiked={album.has_liked}
       />
+
       <hr />
       <h2>Album Elements</h2>
+
       <div className="pin_container">
         {tileItems.map((tile) => (
           <Tile
-            key={tile.renderKey || tile.id}
+            key={tile.renderKey}
             item={tile}
           />
         ))}
       </div>
+
+      {/* PAGINATION UI if multiple pages */}
+      {totalPages > 1 && (
+        <PaginationComponent
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }

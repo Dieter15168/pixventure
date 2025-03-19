@@ -1,10 +1,13 @@
 // src/app/albums/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import React from "react";
 import { useAlbumsAPI } from "../../utils/api/albums";
 import Tile, { TileProps } from "../../components/Tile/Tile";
+import PaginationComponent from "../../components/Pagination/Pagination";
+import { usePaginatedData } from "../../hooks/usePaginatedData";
 
+// The type for each album
 interface Album {
   id: number;
   name: string;
@@ -24,35 +27,25 @@ interface Album {
 }
 
 export default function AlbumsPage() {
-  const [albums, setAlbums] = useState<Album[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Use our custom hook
   const { fetchAlbums } = useAlbumsAPI();
 
-  useEffect(() => {
-    const loadAlbums = async () => {
-      try {
-        const data = await fetchAlbums();
-        setAlbums(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadAlbums();
-  }, [fetchAlbums]);
+  // 1) Use our custom pagination hook
+  const {
+    data: albums,
+    page,
+    totalPages,
+    loading,
+    error,
+    setPage,
+  } = usePaginatedData<Album>(fetchAlbums);
 
   if (loading) return <p>Loading albums...</p>;
   if (error) return <p>Error: {error}</p>;
 
-  // We'll transform each album to match TileProps
+  // 2) Transform each album to match TileProps
   const tileItems: TileProps[] = albums.map((album) => ({
     id: album.id,
     name: album.name,
-    // slug for the album detail route, e.g. "/albums/[slug]"
     slug: `albums/${album.slug}`,
     thumbnail_url: album.thumbnail_url,
     media_type: album.media_type,
@@ -70,15 +63,18 @@ export default function AlbumsPage() {
   return (
     <div>
       <h1>Albums</h1>
-      {/* a container that could be .pin_container if you want the masonry layout */}
       <div className="pin_container">
         {tileItems.map((item) => (
-          <Tile
-            key={item.id}
-            item={{ ...item, entity_type: "album" }}
-          />
+          <Tile key={item.id} item={{ ...item, entity_type: "album" }} />
         ))}
       </div>
+
+      {/* 3) Render pagination UI */}
+      <PaginationComponent
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 }
