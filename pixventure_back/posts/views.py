@@ -22,7 +22,7 @@ from .permissions import IsPostOwnerOrAdminOrPublicRead
 from main.pagination import StandardResultsSetPagination
 
 
-# 1. Public posts list
+# 0. All public posts list
 class PublicPostListView(generics.ListAPIView):
     """
     GET /api/posts/
@@ -44,6 +44,21 @@ class PublicPostListView(generics.ListAPIView):
         if slug:
             qs = qs.filter(slug=slug)
 
+        return qs
+    
+# 1. Featured posts list (displayed on main page)
+class FeaturedPostListView(generics.ListAPIView):
+    """
+    GET /api/posts/featured/
+    Returns a paginated list of PUBLISHED + FEATURED posts using PostSerializer.
+    """
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        # Only show PUBLISHED + is_featured_post
+        qs = Post.objects.filter(status=Post.PUBLISHED, is_featured_post=True).order_by('-created')
         return qs
     
 

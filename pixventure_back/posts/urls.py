@@ -3,6 +3,7 @@
 from django.urls import path
 from .views import (
     PublicPostListView,
+    FeaturedPostListView,
     MyPostsView,
     PostCreateView,
     PostDetailView,
@@ -15,6 +16,8 @@ from .views import (
 urlpatterns = [
     # 1. Public posts list
     path('', PublicPostListView.as_view(), name='post-public-list'),
+    
+    path("featured/", FeaturedPostListView.as_view(), name="featured-posts-list"),
 
     # 2. My posts (if you want to replicate the auto-create logic)
     path('mine/', MyPostsView.as_view(), name='my-posts'),

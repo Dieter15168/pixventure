@@ -10,7 +10,7 @@ export default function ScrollMenu() {
       <Link href="/" className="p-3 d-inline-block">
         Best Posts
       </Link>
-      <Link href="/posts/all" className="p-3 d-inline-block">
+      <Link href="/posts" className="p-3 d-inline-block">
         All Posts
       </Link>
       <Link href="/albums" className="p-3 d-inline-block">

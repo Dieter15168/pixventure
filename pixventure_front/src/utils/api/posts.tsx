@@ -14,11 +14,20 @@ interface CreatePostPayload {
 export function usePostsAPI() {
   const axios = useAxios();
 
-  // 1) Fetch all posts (paginated, if the endpoint supports it)
+  // 0) Fetch all posts (paginated)
   const fetchPosts = useCallback(
     async (page = 1) => {
       const res = await axios.get(`/posts/?page=${page}`);
       // Expect paginated data: { results, current_page, total_pages, ... }
+      return res.data;
+    },
+    [axios]
+  );
+
+  // 1) Fetch featured posts (to be displayed on main page)
+  const fetchFeaturedPosts = useCallback(
+    async (page = 1) => {
+      const res = await axios.get(`/posts/featured/?page=${page}`);
       return res.data;
     },
     [axios]
@@ -87,6 +96,7 @@ export function usePostsAPI() {
 
   return {
     fetchPosts,
+    fetchFeaturedPosts,
     fetchPostBySlug,
     fetchPostItemsBySlug,
     fetchPostItem,
