@@ -11,6 +11,7 @@ interface Post {
   id: number;
   name: string;
   slug: string;
+  main_category_slug?: string;
   thumbnail_url?: string;
   likes_counter: number;
   has_liked?: boolean; // might be undefined from backend
@@ -82,6 +83,7 @@ export default function MyPage() {
     id: post.id,
     name: post.name,
     slug: post.slug,
+    main_category_slug: post.main_category_slug,
     thumbnail_url: post.thumbnail_url,
     media_type: post.media_type, // Set as constant for posts.
     likes_counter: post.likes_counter,

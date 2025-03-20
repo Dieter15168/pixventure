@@ -1,14 +1,14 @@
-// src/app/[slug]/page.tsx
+// src/app/[mainCategorySlug]/[postSlug]/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 
-import { usePostsAPI } from "../../utils/api/posts";
-import { usePaginatedData } from "../../hooks/usePaginatedData";
-import Tile, { TileProps } from "../../components/Tile/Tile";
-import LikeButton from "../../elements/LikeButton/LikeButton";
-import PaginationComponent from "../../components/Pagination/Pagination";
+import { usePostsAPI } from "../../../utils/api/posts";
+import { usePaginatedData } from "../../../hooks/usePaginatedData";
+import Tile, { TileProps } from "../../../components/Tile/Tile";
+import LikeButton from "../../../elements/LikeButton/LikeButton";
+import PaginationComponent from "../../../components/Pagination/Pagination";
 
 interface PostDetail {
   id: number;
@@ -18,6 +18,7 @@ interface PostDetail {
   images_count: number;
   videos_count: number;
   has_liked: boolean;
+  main_category_slug?: string;
   thumbnail_url: string;
   owner_username: string;
 }
@@ -32,7 +33,7 @@ interface PostItem {
 }
 
 export default function PostPage() {
-  const params = useParams() as { slug: string };
+  const params = useParams() as { postSlug: string };
   const { fetchPostBySlug, fetchPostItemsBySlug } = usePostsAPI();
   const [post, setPost] = useState<PostDetail | null>(null);
   const [postLoading, setPostLoading] = useState(true);
@@ -43,7 +44,7 @@ export default function PostPage() {
     const loadPost = async () => {
       setPostLoading(true);
       try {
-        const data = await fetchPostBySlug(params.slug);
+        const data = await fetchPostBySlug(params.postSlug);
         setPost(data);
       } catch (err: any) {
         setPostError(err.message ?? "Failed to load post");
@@ -53,19 +54,19 @@ export default function PostPage() {
     };
 
     loadPost();
-  }, [params.slug, fetchPostBySlug]);
+  }, [params.postSlug, fetchPostBySlug]);
 
   // 2) Define a fetch function for the post items
   // If the post is not yet available, return empty results
   const fetchItems = useCallback(
     async (page: number) => {
-      if (!params.slug) {
+      if (!params.postSlug) {
         return { results: [], current_page: 1, total_pages: 1 };
       }
-      const res = await fetchPostItemsBySlug(params.slug, page);
+      const res = await fetchPostItemsBySlug(params.postSlug, page);
       return res;
     },
-    [params.slug, fetchPostItemsBySlug]
+    [params.postSlug, fetchPostItemsBySlug]
   );
 
   // 3) Paginated data for the post items
@@ -81,7 +82,7 @@ export default function PostPage() {
   // 4) Basic checks
   if (postLoading) return <div>Loading post...</div>;
   if (postError) return <div>Error: {postError}</div>;
-  if (!post) return <div>No post found for slug {params.slug}</div>;
+  if (!post) return <div>No post found for slug {params.postSlug}</div>;
 
   // If items are still loading
   if (itemsLoading && items.length === 0) {
@@ -96,6 +97,7 @@ export default function PostPage() {
     id: item.id,
     name: post.name,
     slug: `${post.slug}/${item.id}`,
+    main_category_slug: post.main_category_slug,
     thumbnail_url: item.thumbnail_url,
     media_type: item.media_type,
     likes_counter: item.likes_counter,

@@ -28,6 +28,7 @@ class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
     has_liked = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
     owner_username = serializers.CharField(source='owner.username', read_only=True)
+    main_category_slug = serializers.SerializerMethodField()
 
 
     class Meta:
@@ -43,6 +44,7 @@ class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
             'thumbnail_url',
             'owner_username',
             'tile_size',
+            'main_category_slug',
         ]
 
     def get_images_count(self, obj):
@@ -87,6 +89,11 @@ class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
         thumbnail = obj.featured_item.versions.filter(version_type=MediaItemVersion.THUMBNAIL).first()
         if thumbnail and thumbnail.width and thumbnail.height:
             return (thumbnail.width, thumbnail.height)
+        return None
+    
+    def get_main_category_slug(self, obj):
+        if obj.main_category:
+            return obj.main_category.slug
         return None
 
 

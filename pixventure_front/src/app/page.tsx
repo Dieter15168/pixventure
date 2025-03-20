@@ -14,6 +14,7 @@ interface Post {
   likes_counter: number;
   has_liked: boolean;
   slug: string;
+  main_category_slug?: string;
 }
 
 // Our backend returns { results: Post[], current_page, total_pages, ... }

@@ -33,6 +33,7 @@ export interface TileProps {
   id: number;
   name: string;
   slug: string;
+  main_category_slug?: string;
   thumbnail_url?: string;
   media_type: MediaItemType;
   images_count?: number;
@@ -72,6 +73,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     id,
     name,
     slug,
+    main_category_slug,
     thumbnail_url,
     media_type,
     images_count = 0,
@@ -139,6 +141,19 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
   const showLikeButton = show_likes && page_type !== "post_creation";
 
   const checkboxId = `select-item-${id}`;
+
+  // We build the link only for "post" or "album" type.
+  // For posts, we do /main-category-slug/post-slug
+  // If there's no main_category_slug, fallback to something sensible
+  let finalHref = "#"; // fallback
+  const catSlug = main_category_slug || "general";
+  if (entity_type === "post") {
+    finalHref = `/${catSlug}/${slug}`;
+  } else if (entity_type === "album") {
+    finalHref = `/${slug}`;
+  } else if (entity_type === "media") {
+    finalHref = `/${catSlug}/${slug}`;
+  }
 
   // In post_creation mode, we adjust the selection UI.
   if (page_type === "post_creation") {
@@ -217,7 +232,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
       <div className={`${styles.inline_card} ${cardClass} mb-2`}>
         {/* Normal link or anchor for non-post_creation */}
         {media_type === "photo" || thumbnail_url ? (
-          <a href={`/${slug}`}>
+          <a href={finalHref}>
             <Image
               name={name}
               thumbnailUrl={thumbnail_url}

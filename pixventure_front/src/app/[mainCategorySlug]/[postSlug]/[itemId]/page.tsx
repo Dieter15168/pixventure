@@ -1,4 +1,4 @@
-// src/app/[slug]/[itemId]/page.tsx
+// src/app/[mainCategorySlug]/[postSlug]/[itemId]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -22,22 +22,28 @@ interface ItemDetail {
 }
 
 export default function ItemViewerPage() {
-  const { slug, itemId } = useParams() as { slug: string; itemId: string };
+  const { mainCategorySlug, postSlug, itemId } = useParams() as {
+    mainCategorySlug: string;
+    postSlug: string;
+    itemId: string;
+  };
+
   const [post, setPost] = useState<Post | null>(null);
   const [itemDetail, setItemDetail] = useState<ItemDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const { fetchPostBySlug, fetchPostItem } = usePostsAPI();
 
   useEffect(() => {
-    if (!slug || !itemId) return;
+    if (!postSlug || !itemId) return;
 
     const loadData = async () => {
       try {
-        // Step A: fetch the post to get its ID
-        const foundPost = await fetchPostBySlug(slug);
+        // Step A: fetch the post (by postSlug)
+        const foundPost = await fetchPostBySlug(postSlug);
         if (!foundPost) {
-          throw new Error(`No post found for slug: ${slug}`);
+          throw new Error(`No post found for slug: ${postSlug}`);
         }
         setPost(foundPost);
 
@@ -54,7 +60,7 @@ export default function ItemViewerPage() {
     };
 
     loadData();
-  }, [slug, itemId, fetchPostBySlug, fetchPostItem]);
+  }, [postSlug, itemId, fetchPostBySlug, fetchPostItem]);
 
   if (loading) return <p>Loading item...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -77,12 +83,12 @@ export default function ItemViewerPage() {
 
       <div style={{ marginTop: "20px" }}>
         {previous_item_id && (
-          <Link href={`/${slug}/${previous_item_id}`}>
+          <Link href={`/${mainCategorySlug}/${postSlug}/${previous_item_id}`}>
             <button>Previous</button>
           </Link>
         )}
         {next_item_id && (
-          <Link href={`/${slug}/${next_item_id}`}>
+          <Link href={`/${mainCategorySlug}/${postSlug}/${next_item_id}`}>
             <button style={{ marginLeft: "10px" }}>Next</button>
           </Link>
         )}
