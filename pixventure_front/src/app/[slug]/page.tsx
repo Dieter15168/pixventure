@@ -1,8 +1,8 @@
 // src/app/[slug]/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { useParams } from "next/navigation";
 
 import { usePostsAPI } from "../../utils/api/posts";
 import { usePaginatedData } from "../../hooks/usePaginatedData";
@@ -10,7 +10,6 @@ import Tile, { TileProps } from "../../components/Tile/Tile";
 import LikeButton from "../../elements/LikeButton/LikeButton";
 import PaginationComponent from "../../components/Pagination/Pagination";
 
-// Type definitions
 interface PostDetail {
   id: number;
   name: string;
@@ -25,7 +24,7 @@ interface PostDetail {
 
 interface PostItem {
   id: number;
-  media_type: number; // 1 = photo, 2 = video
+  media_type: number; // 1=photo, 2=video
   likes_counter: number;
   has_liked: boolean;
   thumbnail_url: string;
@@ -33,65 +32,43 @@ interface PostItem {
 }
 
 export default function PostPage() {
-  const params = useParams();
-  const router = useRouter();
-
-  // Slug might be numeric or string
-  const rawSlug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
-
-  const { fetchPostById, fetchPostBySlug, fetchPostItems } = usePostsAPI();
-
-  // 1) Manage the "post" state
+  const params = useParams() as { slug: string };
+  const { fetchPostBySlug, fetchPostItemsBySlug } = usePostsAPI();
   const [post, setPost] = useState<PostDetail | null>(null);
   const [postLoading, setPostLoading] = useState(true);
   const [postError, setPostError] = useState<string | null>(null);
 
-  // 2) Load the post by slug or numeric ID
+  // 1) Load the post metadata (by slug)
   useEffect(() => {
-    if (!rawSlug) return;
-
     const loadPost = async () => {
       setPostLoading(true);
       try {
-        let foundPost: PostDetail | null = null;
-        // If numeric, fetch by ID
-        if (/^\d+$/.test(rawSlug)) {
-          const numericId = parseInt(rawSlug, 10);
-          foundPost = await fetchPostById(numericId);
-        } else {
-          // Otherwise fetch by slug
-          foundPost = await fetchPostBySlug(rawSlug);
-        }
-
-        if (!foundPost) {
-          setPostError("Post not found");
-        } else {
-          setPost(foundPost);
-        }
+        const data = await fetchPostBySlug(params.slug);
+        setPost(data);
       } catch (err: any) {
-        setPostError(err.message ?? "Error fetching post");
+        setPostError(err.message ?? "Failed to load post");
       } finally {
         setPostLoading(false);
       }
     };
 
     loadPost();
-  }, [rawSlug, fetchPostById, fetchPostBySlug]);
+  }, [params.slug, fetchPostBySlug]);
 
-  // 3) Define the fetch function for post items
-  // If post is null, we return a default shape to prevent errors
-  const fetchItemsForPost = useCallback(
+  // 2) Define a fetch function for the post items
+  // If the post is not yet available, return empty results
+  const fetchItems = useCallback(
     async (page: number) => {
-      if (!post) {
-        // Return a default empty shape if post isn't loaded yet
+      if (!params.slug) {
         return { results: [], current_page: 1, total_pages: 1 };
       }
-      return await fetchPostItems(post.id, page);
+      const res = await fetchPostItemsBySlug(params.slug, page);
+      return res;
     },
-    [post, fetchPostItems]
+    [params.slug, fetchPostItemsBySlug]
   );
 
-  // 4) Use our pagination hook with the items fetch function
+  // 3) Paginated data for the post items
   const {
     data: items,
     page,
@@ -99,43 +76,37 @@ export default function PostPage() {
     loading: itemsLoading,
     error: itemsError,
     setPage,
-  } = usePaginatedData<PostItem>(fetchItemsForPost);
+  } = usePaginatedData<PostItem>(fetchItems);
 
-  // 5) Render logic
-  if (postLoading) {
-    return <div>Loading post...</div>;
-  }
-  if (postError) {
-    return <div>Error: {postError}</div>;
-  }
-  if (!post) {
-    return <div>No post found</div>;
-  }
+  // 4) Basic checks
+  if (postLoading) return <div>Loading post...</div>;
+  if (postError) return <div>Error: {postError}</div>;
+  if (!post) return <div>No post found for slug {params.slug}</div>;
 
-  // If the post is loaded but items are in the process of loading
-  // you can show a partial spinner, or show them as they come in:
+  // If items are still loading
   if (itemsLoading && items.length === 0) {
     return <div>Loading post items...</div>;
   }
   if (itemsError) {
-    return <div>Error while loading items: {itemsError}</div>;
+    return <div>Error loading post items: {itemsError}</div>;
   }
 
-  // Convert "items" to your TileProps
+  // 5) Transform items -> TileProps
   const tileItems: TileProps[] = items.map((item) => ({
     id: item.id,
     name: post.name,
     slug: `${post.slug}/${item.id}`,
     thumbnail_url: item.thumbnail_url,
-    media_type: item.media_type as 1 | 2,
+    media_type: item.media_type,
     likes_counter: item.likes_counter,
     has_liked: item.has_liked,
     owner_username: post.owner_username,
     tile_size: item.tile_size,
-    page_type: "post",
     entity_type: "media",
+    page_type: "post",
   }));
 
+  // 6) Render
   return (
     <div>
       <h1>{post.name}</h1>
@@ -150,19 +121,18 @@ export default function PostPage() {
 
       <div className="pin_container">
         {tileItems.map((tile) => (
-          <Tile
-            key={tile.id}
-            item={tile}
-          />
+          <Tile key={tile.id} item={tile} />
         ))}
       </div>
 
-      {/* Pagination UI */}
-      <PaginationComponent
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-      />
+      {/* Paginate if more than one page */}
+      {totalPages > 1 && (
+        <PaginationComponent
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }

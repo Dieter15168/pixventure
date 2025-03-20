@@ -88,7 +88,7 @@ class PostDetailView(generics.RetrieveAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsPostOwnerOrAdminOrPublicRead]
-    lookup_field = 'pk'
+    lookup_field = "slug"
 
 
 # 5. PostUpdateDestroyView
@@ -122,7 +122,7 @@ class PostMediaListCreateView(generics.ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_post(self):
-        post = get_object_or_404(Post, pk=self.kwargs['pk'])
+        post = get_object_or_404(Post, slug=self.kwargs['slug'])
         self.check_object_permissions(self.request, post)
         return post
 

@@ -6,9 +6,9 @@ import { useCallback } from "react";
 
 interface CreatePostPayload {
   name: string;
-  items: number[];        // array of media IDs
+  items: number[]; // array of media IDs
   featured_item: number;
-  terms: number[];        // array of term IDs
+  terms: number[]; // array of term IDs
 }
 
 export function usePostsAPI() {
@@ -34,11 +34,10 @@ export function usePostsAPI() {
   );
 
   // 3) Fetch items belonging to a specific post (paginated)
-  const fetchPostItems = useCallback(
-    async (postId: number, page = 1) => {
-      const res = await axios.get(`/posts/${postId}/items/?page=${page}`);
-      // Expect { results, current_page, total_pages, ... }
-      return res.data;
+  const fetchPostItemsBySlug = useCallback(
+    async (slug: string, page = 1) => {
+      const res = await axios.get(`/posts/${slug}/items/?page=${page}`);
+      return res.data; // { results, current_page, total_pages, ... }
     },
     [axios]
   );
@@ -72,13 +71,10 @@ export function usePostsAPI() {
   );
 
   // 7) Fetch posts belonging to the current user
-  const fetchMyPosts = useCallback(
-    async () => {
-      const res = await axios.get("/posts/mine/");
-      return res.data.results;
-    },
-    [axios]
-  );
+  const fetchMyPosts = useCallback(async () => {
+    const res = await axios.get("/posts/mine/");
+    return res.data.results;
+  }, [axios]);
 
   // 8) Create a new post
   const createPost = useCallback(
@@ -92,7 +88,7 @@ export function usePostsAPI() {
   return {
     fetchPosts,
     fetchPostBySlug,
-    fetchPostItems,
+    fetchPostItemsBySlug,
     fetchPostItem,
     fetchPostMeta,
     deletePost,

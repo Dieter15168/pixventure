@@ -29,7 +29,7 @@ urlpatterns = [
     path('<int:pk>/edit/', PostUpdateDestroyView.as_view(), name='post-edit'),
 
     # 6. List / create post media items
-    path('<int:pk>/items/', PostMediaListCreateView.as_view(), name='post-items-list-create'),
+    path("<slug:slug>/items/", PostMediaListCreateView.as_view(), name="post-items-list-create"),
 
     # 7. Retrieve / delete a specific media item within a post
     path('<int:pk>/items/<int:media_item_id>/', PostMediaItemRetrieveDestroyView.as_view(), name='post-item-retrieve-destroy'),
