@@ -15,6 +15,7 @@ class AllTermsView(APIView):
     GET /api/terms/
     Returns {"categories": [...], "tags": [...]} using TermSerializer
     """
+    permission_classes = [AllowAny]
     def get(self, request, format=None):
         categories_qs = Term.objects.filter(term_type=2)
         tags_qs = Term.objects.filter(term_type=1)
