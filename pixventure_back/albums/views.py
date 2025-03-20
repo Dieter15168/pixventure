@@ -44,6 +44,7 @@ class MyAlbumsView(generics.ListAPIView):
     """
     serializer_class = AlbumDetailSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         user = self.request.user

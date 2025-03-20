@@ -17,10 +17,13 @@ export function useAlbumsAPI() {
   );
 
   // GET /api/albums/mine/ - Albums owned by the current user
-  const fetchMyAlbums = useCallback(async () => {
-    const res = await axios.get("/albums/mine/");
-    return res.data.results;
-  }, [axios]);
+  const fetchMyAlbumsPaginated = useCallback(
+    async (page = 1) => {
+      const res = await axios.get(`/albums/mine/?page=${page}`);
+      return res.data;
+    },
+    [axios]
+  );
 
   // GET /api/albums/<slug>/
   const fetchAlbumBySlug = useCallback(
@@ -56,7 +59,7 @@ export function useAlbumsAPI() {
 
   return {
     fetchAlbums,
-    fetchMyAlbums,
+    fetchMyAlbumsPaginated,
     fetchAlbumBySlug,
     fetchAlbumElementsBySlug,
     createAlbum,

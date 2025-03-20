@@ -80,10 +80,13 @@ export function usePostsAPI() {
   );
 
   // 7) Fetch posts belonging to the current user
-  const fetchMyPosts = useCallback(async () => {
-    const res = await axios.get("/posts/mine/");
-    return res.data.results;
-  }, [axios]);
+  const fetchMyPostsPaginated = useCallback(
+    async (page = 1) => {
+      const res = await axios.get(`/posts/mine/?page=${page}`);
+      return res.data; // { results, current_page, total_pages, etc. }
+    },
+    [axios]
+  );
 
   // 8) Create a new post
   const createPost = useCallback(
@@ -102,7 +105,7 @@ export function usePostsAPI() {
     fetchPostItem,
     fetchPostMeta,
     deletePost,
-    fetchMyPosts,
+    fetchMyPostsPaginated,
     createPost,
   };
 }
