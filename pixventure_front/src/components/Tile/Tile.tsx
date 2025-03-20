@@ -3,7 +3,7 @@
 
 import React from "react";
 import styles from "./Tile.module.scss";
-
+import Link from "next/link";
 import Image from "../../elements/Image/Image";
 import RenderingPlaceholder from "../../elements/PreviewPlaceholder/PreviewPlaceholder";
 import PlayButton from "../../elements/PlayButton/PlayButton";
@@ -232,12 +232,12 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
       <div className={`${styles.inline_card} ${cardClass} mb-2`}>
         {/* Normal link or anchor for non-post_creation */}
         {media_type === "photo" || thumbnail_url ? (
-          <a href={finalHref}>
+          <Link href={finalHref}>
             <Image
               name={name}
               thumbnailUrl={thumbnail_url}
             />
-          </a>
+          </Link>
         ) : media_type === "video" && !thumbnail_url ? (
           <RenderingPlaceholder />
         ) : null}
@@ -259,7 +259,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
         {entity_type !== "media" ? (
           <div className="w-100">
             <p className={`${styles.truncate} mb-0`}>
-              <a href={`/${slug}`}>{name}</a>
+              <Link href={finalHref}>{name}</Link>
             </p>
             <p className={`${styles.truncate} mt-0`}>{owner_username}</p>
           </div>
