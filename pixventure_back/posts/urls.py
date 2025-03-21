@@ -11,6 +11,8 @@ from .views import (
     PostMediaListCreateView,
     PostMediaItemRetrieveDestroyView,
     PostMetaView,
+    CategoryPostsListView,
+    TagPostsListView
 )
 
 urlpatterns = [
@@ -39,4 +41,8 @@ urlpatterns = [
     
     # 8. Retrieve post meta
     path('<int:pk>/meta/', PostMetaView.as_view(), name='post-meta'),
+    
+    # 9. Retrieve post lists filtered by categories and tags
+    path("categories/<slug:slug>/", CategoryPostsListView.as_view(), name="category-posts-list"),
+    path("tags/<slug:slug>/", TagPostsListView.as_view(), name="tag-posts-list"),
 ]

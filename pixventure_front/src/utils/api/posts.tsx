@@ -97,6 +97,26 @@ export function usePostsAPI() {
     [axios]
   );
 
+  // GET /api/categories/<slug>/posts/?page=...
+  const fetchPostsByCategory = useCallback(
+    async (categorySlug: string, page = 1) => {
+      const res = await axios.get(
+        `/posts/categories/${categorySlug}/?page=${page}`
+      );
+      return res.data; // { results, current_page, total_pages, etc. }
+    },
+    [axios]
+  );
+
+  // GET /api/tags/<slug>/posts/?page=...
+  const fetchPostsByTag = useCallback(
+    async (tagSlug: string, page = 1) => {
+      const res = await axios.get(`/posts/tags/${tagSlug}/?page=${page}`);
+      return res.data; // { results, current_page, total_pages, etc. }
+    },
+    [axios]
+  );
+
   return {
     fetchPosts,
     fetchFeaturedPosts,
@@ -107,5 +127,7 @@ export function usePostsAPI() {
     deletePost,
     fetchMyPostsPaginated,
     createPost,
+    fetchPostsByCategory,
+    fetchPostsByTag,
   };
 }

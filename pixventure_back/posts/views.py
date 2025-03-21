@@ -20,6 +20,7 @@ from .serializers import (
 from media.serializers import MediaItemSerializer
 from .permissions import IsPostOwnerOrAdminOrPublicRead
 from main.pagination import StandardResultsSetPagination
+from taxonomy.models import Term
 
 
 # 0. All public posts list
@@ -260,3 +261,55 @@ class PostMetaView(generics.RetrieveAPIView):
     queryset = Post.objects.all()
     serializer_class = PostMetaSerializer
     lookup_field = 'pk'
+    
+    
+# 8. Retrieve post lists filtered by categories and tags
+class CategoryPostsListView(generics.ListAPIView):
+    """
+    GET /api/categories/<slug>/posts/
+    Returns a paginated list of PUBLISHED posts that have a category
+    matching <slug>.
+    """
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        category_slug = self.kwargs['slug']
+        # Confirm the term actually exists
+        get_object_or_404(Term, slug=category_slug, term_type=Term.CATEGORY)
+
+        return (
+            Post.objects.filter(
+                status=Post.PUBLISHED,
+                terms__term_type=Term.CATEGORY,
+                terms__slug=category_slug
+            )
+            .distinct()
+            .order_by('-created')
+        )
+
+
+class TagPostsListView(generics.ListAPIView):
+    """
+    GET /api/tags/<slug>/posts/
+    Returns a paginated list of PUBLISHED posts that have a tag matching <slug>.
+    """
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        tag_slug = self.kwargs['slug']
+        # Confirm the term actually exists
+        get_object_or_404(Term, slug=tag_slug, term_type=Term.TAG)
+
+        return (
+            Post.objects.filter(
+                status=Post.PUBLISHED,
+                terms__term_type=Term.TAG,
+                terms__slug=tag_slug
+            )
+            .distinct()
+            .order_by('-created')
+        )

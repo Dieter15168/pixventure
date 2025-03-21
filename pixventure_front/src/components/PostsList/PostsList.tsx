@@ -1,7 +1,7 @@
 // src/components/PostsList/PostsList.tsx
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react"; // <-- Import useEffect
 import { usePaginatedData } from "@/hooks/usePaginatedData";
 import PaginationComponent from "../Pagination/Pagination";
 import PostTile from "../Tile/Tile";
@@ -17,11 +17,15 @@ export interface Post {
 
 interface PostsListProps {
   fetchFunction: (page: number) => Promise<any>;
-  // Optionally pass a "title" or other props if desired
   title?: string;
+  initialPage?: number; // default 1
 }
 
-export default function PostsList({ fetchFunction, title }: PostsListProps) {
+export default function PostsList({
+  fetchFunction,
+  title,
+  initialPage = 1,
+}: PostsListProps) {
   const {
     data: posts,
     page,
@@ -30,6 +34,16 @@ export default function PostsList({ fetchFunction, title }: PostsListProps) {
     error,
     setPage,
   } = usePaginatedData<Post>(fetchFunction);
+
+  // Provide a local alias so we can call setPageDirectly
+  // without renaming the existing "setPage" function in the hook:
+  const setPageDirectly = setPage;
+
+  useEffect(() => {
+    if (initialPage !== page) {
+      setPageDirectly(initialPage);
+    }
+  }, [initialPage, page, setPageDirectly]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
