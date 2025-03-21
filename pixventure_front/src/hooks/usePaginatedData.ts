@@ -43,7 +43,7 @@ export function usePaginatedData<T>(
 
   // Expose a page-changer that ensures we stay in range
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages) return;
+    if (newPage < 1) return;
     setPage(newPage);
   };
 
