@@ -1,7 +1,7 @@
 // src/components/PostsList/PostsList.tsx
 "use client";
 
-import React, { useEffect } from "react"; // <-- Import useEffect
+import React, { useEffect } from "react";
 import { usePaginatedData } from "@/hooks/usePaginatedData";
 import PaginationComponent from "../Pagination/Pagination";
 import PostTile from "../Tile/Tile";
@@ -35,15 +35,9 @@ export default function PostsList({
     setPage,
   } = usePaginatedData<Post>(fetchFunction);
 
-  // Provide a local alias so we can call setPageDirectly
-  // without renaming the existing "setPage" function in the hook:
-  const setPageDirectly = setPage;
-
   useEffect(() => {
-    if (initialPage !== page) {
-      setPageDirectly(initialPage);
-    }
-  }, [initialPage, page, setPageDirectly]);
+    setPage(initialPage);
+  }, [initialPage]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -51,7 +45,6 @@ export default function PostsList({
   return (
     <>
       {title && <h2>{title}</h2>}
-
       <div className="pin_container">
         {posts.map((post) => (
           <PostTile
