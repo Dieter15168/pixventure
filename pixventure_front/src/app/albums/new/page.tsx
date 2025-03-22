@@ -22,7 +22,7 @@ export default function CreateAlbumPage() {
         is_public: isPublic, 
         show_creator_to_others: isPublic ? showCreator : false 
       });
-      router.push(`/my/`);
+      router.push(`/my-page`);
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || "Failed to create album.");
     }
