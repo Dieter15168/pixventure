@@ -19,12 +19,6 @@ export default function ScrollMenu() {
       <Link href="/my-page" className="p-3 d-inline-block">
         My page
       </Link>
-      <Link href="/best-users" className="p-3 d-inline-block">
-        Best Users
-      </Link>
-      <Link href="/send-content" className="p-3 d-inline-block">
-        Submit Content
-      </Link>
       {/* Staff only links if user.is_staff */}
     </div>
   );
