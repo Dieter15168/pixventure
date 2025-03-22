@@ -4,7 +4,7 @@ from posts.models import Post
 from posts.models import PostMedia
 from media.models import MediaItem, MediaItemVersion
 from social.utils import user_has_liked
-from media.utils.media_file import get_media_file_for_display
+from media.utils.media_file import get_media_file_for_display, is_media_locked
 from media.serializers import TileInfoMixin
 from taxonomy.models import Term
 from django.core.exceptions import ValidationError
@@ -27,6 +27,7 @@ class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
     videos_count = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
+    locked = serializers.SerializerMethodField()
     owner_username = serializers.CharField(source='owner.username', read_only=True)
     main_category_slug = serializers.SerializerMethodField()
 
@@ -42,6 +43,7 @@ class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
             'videos_count',
             'has_liked',
             'thumbnail_url',
+            'locked',
             'owner_username',
             'tile_size',
             'main_category_slug',
@@ -80,6 +82,17 @@ class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
             post=obj,  # in case the post is blurred
             thumbnail=True  # we want the 'thumbnail' variant
         )
+        
+    def get_locked(self, obj):
+        """
+        Determines whether the featured media item is locked (i.e., a blurred version is served).
+        """
+        request = self.context.get('request')
+        user = request.user if request else None
+        featured = obj.featured_item
+        if not featured:
+            return False
+        return is_media_locked(featured, user, post=obj)
         
     # TileInfoMixin's required method:
     def get_featured_image_dimensions(self, obj):

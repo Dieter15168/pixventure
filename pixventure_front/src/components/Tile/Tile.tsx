@@ -43,7 +43,7 @@ export interface TileProps {
   likes_counter: number;
   has_liked: boolean;
   owner_username: string;
-  lock_logo?: boolean;
+  locked?: boolean;
   tile_size?: "small" | "medium" | "large";
   canAddToAlbum?: boolean;
   categories?: Array<{ name: string; slug: string }>;
@@ -83,7 +83,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     likes_counter,
     has_liked,
     owner_username,
-    lock_logo,
+    locked = false,
     tile_size = "small",
     categories,
     tags,
@@ -191,7 +191,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
             <PlayButton slug={slug} />
           )}
           <MediaCounter counters={counters} />
-          {lock_logo && <LockLogo />}
+          {locked && <LockLogo />}
           {status && <ModerationBadge statusStr={status} />}
           {selectMode === "checkbox" && (
             <input
@@ -253,7 +253,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
             />
           </div>
         )}
-        {lock_logo && <LockLogo />}
+        {locked && <LockLogo />}
       </div>
       <div className="ps-2 d-flex">
         {entity_type !== "media" ? (

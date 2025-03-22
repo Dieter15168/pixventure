@@ -18,6 +18,7 @@ interface PostDetail {
   has_liked: boolean;
   main_category_slug?: string;
   thumbnail_url: string;
+  locked: boolean;
   owner_username: string;
 }
 
@@ -27,6 +28,7 @@ interface PostItem {
   likes_counter: number;
   has_liked: boolean;
   thumbnail_url: string;
+  locked: boolean;
   tile_size: "small" | "medium" | "large";
 }
 
@@ -129,6 +131,7 @@ export default function PostPage() {
               slug: `${post.slug}/${item.id}`,
               main_category_slug: post.main_category_slug,
               thumbnail_url: item.thumbnail_url,
+              locked: item.locked,
               media_type: item.media_type,
               likes_counter: item.likes_counter,
               has_liked: item.has_liked,

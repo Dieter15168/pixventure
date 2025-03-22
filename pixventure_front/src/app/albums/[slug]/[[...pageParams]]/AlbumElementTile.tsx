@@ -8,12 +8,14 @@ interface AlbumElement {
     slug: string;
     name: string;
     thumbnail_url: string;
+    locked: boolean;
     has_liked: boolean;
   };
   media_data: null | {
     id: number;
     media_type: string;
     thumbnail_url: string;
+    locked: boolean;
     has_liked: boolean;
   };
 }

@@ -19,6 +19,7 @@ interface Album {
   has_liked: boolean;
   can_edit: boolean;
   thumbnail_url?: string;
+  locked: boolean;
 }
 
 interface AlbumElement {
@@ -30,6 +31,7 @@ interface AlbumElement {
     name: string;
     slug: string;
     thumbnail_url?: string;
+    locked: boolean;
     likes_counter: number;
     has_liked: boolean;
     owner_username: string;
@@ -41,6 +43,7 @@ interface AlbumElement {
     name: string;
     slug: string;
     thumbnail_url?: string;
+    locked: boolean;
     media_type: string;
     likes_counter: number;
     has_liked: boolean;
@@ -86,6 +89,7 @@ export default function AlbumItemsPaginated({ album }: AlbumItemsPaginatedProps)
         name: post.name,
         slug: post.slug,
         thumbnail_url: post.thumbnail_url,
+        locked: post.locked,
         media_type: post.media_type ?? 1,
         likes_counter: post.likes_counter,
         has_liked: post.has_liked,
@@ -108,6 +112,7 @@ export default function AlbumItemsPaginated({ album }: AlbumItemsPaginatedProps)
         name: media.name,
         slug: media.slug,
         thumbnail_url: media.thumbnail_url,
+        locked: media.locked,
         media_type: media.media_type,
         likes_counter: media.likes_counter,
         has_liked: media.has_liked,

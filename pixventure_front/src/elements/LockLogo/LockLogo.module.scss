@@ -1,0 +1,51 @@
+.lock_logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.lock_logo_link {
+  font-size: 70px;
+  text-decoration: none;
+
+  // explicitly override all default link colors and hover behaviors
+  &, &:hover, &:active, &:visited {
+    color: inherit;
+  }
+}
+
+.rainbow_text_animated {
+  background: linear-gradient(to right, #6666ff, #0099ff, #00ff00, #ff3399, #6666ff);
+  background-size: 400% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbow_animation 6s ease-in-out infinite;
+  transition: animation-duration 0.5s ease-in-out;
+
+  // explicitly target FontAwesome icons to inherit the gradient
+  i.fas, i.far, i.fa-solid, i.fa-regular {
+    background: inherit;
+    background-size: inherit;
+    -webkit-background-clip: inherit;
+    background-clip: inherit;
+    color: inherit;
+  }
+}
+
+// speed up animation on hover
+.lock_logo_link:hover .rainbow_text_animated {
+  animation-duration: 1s;
+}
+
+// Gradient animation keyframes
+@keyframes rainbow_animation {
+  0%, 100% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 100% 0;
+  }
+}

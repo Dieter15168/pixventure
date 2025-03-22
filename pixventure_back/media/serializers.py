@@ -3,7 +3,7 @@
 from rest_framework import serializers
 from .models import MediaItem, MediaItemVersion
 from social.utils import user_has_liked
-from media.utils.media_file import get_media_file_for_display
+from media.utils.media_file import get_media_file_for_display, is_media_locked
 
 
 class TileInfoMixin(serializers.Serializer):
@@ -47,6 +47,7 @@ class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
     media_type = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
+    locked = serializers.SerializerMethodField()
 
     class Meta:
         model = MediaItem
@@ -56,6 +57,7 @@ class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
             'likes_counter',
             'has_liked',
             'thumbnail_url',
+            'locked',
             'tile_size',
         ]
 
@@ -83,6 +85,15 @@ class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
             post=post,
             thumbnail=True
         )
+    
+    def get_locked(self, obj):
+        """
+        Determines whether the featured media item is locked (i.e., a blurred version is served).
+        """
+        request = self.context.get('request')
+        user = request.user if request else None
+        post = self.context.get('post', None)
+        return is_media_locked(obj, user, post)
         
     # TileInfoMixin's required method:
     def get_featured_image_dimensions(self, obj):

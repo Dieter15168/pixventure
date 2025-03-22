@@ -88,3 +88,26 @@ def get_media_file_for_display(media_item, user, post=None, thumbnail=False):
                 # Non-paying user sees preview for video
                 preview_version = media_item.versions.filter(version_type=MediaItemVersion.PREVIEW).first()
                 return preview_version.file.url if preview_version else ""
+
+def is_media_locked(media_item, user, post=None):
+    """
+    Determines whether a media item should be considered 'locked' for the given user.
+    Content is locked when:
+      - The media is a photo
+      - The user is not paying
+      - Either the post or the media item is marked as blurred
+
+    Args:
+        media_item (MediaItem): The media item object.
+        user (User): The user object.
+        post (Post, optional): The post object that may indicate blurred status.
+
+    Returns:
+        bool: True if the media content is locked (i.e., a blurred version is served), False otherwise.
+    """
+    user_is_paying = check_if_user_is_paying(user)
+    if media_item.media_type == MediaItem.PHOTO:
+        post_blurred = getattr(post, 'is_blurred', False)
+        return (not user_is_paying) and (post_blurred or media_item.is_blurred)
+    # Videos are never blurred; thus, not locked.
+    return False

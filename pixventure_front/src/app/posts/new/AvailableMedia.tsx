@@ -32,7 +32,7 @@ function mapDTOtoTileProps(
     likes_counter: 0,
     has_liked: false,
     owner_username: "",
-    lock_logo: false,
+    locked: false,
 
     status: item.status,
     tile_size: "medium",

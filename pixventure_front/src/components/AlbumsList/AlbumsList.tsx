@@ -16,6 +16,7 @@ interface Album {
   posts_count: number;
   images_count: number;
   videos_count: number;
+  locked?: boolean;
   owner_username: string;
   created: string;
   updated: string;
@@ -55,6 +56,7 @@ export default function AlbumsList({ fetchFunction, title }: AlbumsListProps) {
     images_count: album.images_count,
     videos_count: album.videos_count,
     posts_count: album.posts_count,
+    locked: album.locked,
     likes_counter: album.likes_counter,
     has_liked: album.has_liked ?? false,
     owner_username: album.owner_username,

@@ -25,6 +25,7 @@ interface PostItemsListProps {
   post: PostDetail;
   items: PostItem[];
   loading: boolean;
+  locked: boolean;
   error: string | null;
   title?: string;
 }
@@ -48,6 +49,7 @@ export default function PostItemsList({
     thumbnail_url: item.thumbnail_url,
     media_type: item.media_type,
     likes_counter: item.likes_counter,
+    locked: item.locked,
     has_liked: item.has_liked,
     owner_username: post.owner_username,
     tile_size: item.tile_size,

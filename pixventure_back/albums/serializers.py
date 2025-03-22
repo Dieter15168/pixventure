@@ -6,7 +6,7 @@ from .models import Album, AlbumElement
 from main.utils import generate_unique_slug
 from media.models import MediaItem, MediaItemVersion
 from social.utils import user_has_liked
-from media.utils.media_file import get_media_file_for_display
+from media.utils.media_file import get_media_file_for_display, is_media_locked
 from posts.serializers import PostSerializer
 from media.serializers import MediaItemSerializer, TileInfoMixin
 
@@ -71,6 +71,7 @@ class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
     videos_count = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
+    locked = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
 
     class Meta:
@@ -86,6 +87,7 @@ class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
             'videos_count',
             'has_liked',
             'thumbnail_url',
+            'locked',
             'owner_username',
             'show_creator_to_others',
             'created',
@@ -134,6 +136,17 @@ class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
             user=user,
             thumbnail=True
         )
+        
+    def get_locked(self, obj):
+        """
+        Determines whether the featured media item is locked (i.e., a blurred version is served).
+        """
+        request = self.context.get('request')
+        user = request.user if request else None
+        featured = obj.featured_item
+        if not featured:
+            return False
+        return is_media_locked(featured, user, post=obj)
         
     # TileInfoMixin's required method:
     def get_featured_image_dimensions(self, obj):
