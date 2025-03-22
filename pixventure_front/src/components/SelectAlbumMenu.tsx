@@ -31,8 +31,8 @@ export default function SelectAlbumMenu({
   onClose,
   onSuccess,
 }: SelectAlbumMenuProps) {
-  // Use fetchMyAlbums instead of fetchAlbums
-  const { fetchMyAlbums } = useAlbumsAPI();
+  // Use fetchMyAlbumsOrderedByLatest instead of fetchAlbums
+  const { fetchMyAlbumsOrderedByLatest } = useAlbumsAPI();
   const { addEntityToAlbum } = useAlbumElementsAPI();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -49,7 +49,7 @@ export default function SelectAlbumMenu({
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchMyAlbums();
+        const data = await fetchMyAlbumsOrderedByLatest();
         setAlbums(data);
       } catch (err: any) {
         setError(extractErrorMessage(err) || "Failed to load albums");
@@ -58,7 +58,7 @@ export default function SelectAlbumMenu({
       }
     };
     loadAlbums();
-  }, [fetchMyAlbums]);
+  }, [fetchMyAlbumsOrderedByLatest]);
 
   const handleAlbumClick = async (albumSlug: string, albumId: number) => {
     setAdding(albumId);

@@ -25,6 +25,14 @@ export function useAlbumsAPI() {
     [axios]
   );
 
+  const fetchMyAlbumsOrderedByLatest = useCallback(
+    async (page = 1) => {
+      const res = await axios.get(`/albums/mine/latest/?page=${page}`);
+      return res.data;
+    },
+    [axios]
+  );
+
   // GET /api/albums/<slug>/
   const fetchAlbumBySlug = useCallback(
     async (slug: string) => {
@@ -60,6 +68,7 @@ export function useAlbumsAPI() {
   return {
     fetchAlbums,
     fetchMyAlbumsPaginated,
+    fetchMyAlbumsOrderedByLatest,
     fetchAlbumBySlug,
     fetchAlbumElementsBySlug,
     createAlbum,

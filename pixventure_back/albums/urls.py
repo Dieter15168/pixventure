@@ -2,8 +2,9 @@
 
 from django.urls import path
 from .views import (
-    AlbumListView,           # existing public list (only PUBLIC albums)
+    AlbumListView,
     MyAlbumsView,
+    MyAlbumsLatestView,
     AlbumCreateView,
     AlbumDetailView,
     AlbumUpdateDestroyView,
@@ -17,6 +18,9 @@ urlpatterns = [
 
     # My albums: /api/albums/mine/
     path('mine/', MyAlbumsView.as_view(), name='my-albums'),
+    
+    # My albums ordered by last modified for "add item to album" dialog: /api/albums/mine/latest/
+    path('mine/latest/', MyAlbumsLatestView.as_view(), name='my-albums-latest'),
 
     # Create new album: /api/albums/new/
     path('new/', AlbumCreateView.as_view(), name='create-album'),

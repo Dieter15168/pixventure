@@ -60,6 +60,30 @@ class MyAlbumsView(generics.ListAPIView):
             user_albums = Album.objects.filter(owner=user)
         return user_albums
 
+class MyAlbumsLatestView(generics.ListAPIView):
+    """
+    GET /api/albums/mine/latest/
+    Returns current user's albums ordered by latest modification.
+    Modification includes changes to album metadata or its elements.
+    """
+    serializer_class = AlbumDetailSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Fetch albums owned by the current user
+        return (
+            Album.objects.filter(owner=user)
+            .annotate(
+                # Get latest modification time from either album or elements
+                latest_modification=Max('updated', 'album_elements__updated')
+            )
+            .order_by('-latest_modification')
+            .distinct()
+        )
+
 # --- 2. AlbumCreateView ---
 
 class AlbumCreateView(generics.CreateAPIView):
