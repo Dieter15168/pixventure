@@ -58,7 +58,7 @@ export default function UserPanel({ user, onSignOut }: UserPanelProps) {
       <Dropdown.Menu align="end">
         <Dropdown.Item
           as={Link}
-          href="/auth/signout"
+          href="/signout"
           onClick={handleSignOut}
         >
           <FontAwesomeIcon icon={faSignOutAlt} className="me-2" />

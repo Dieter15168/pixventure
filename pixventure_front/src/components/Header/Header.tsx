@@ -1,7 +1,8 @@
+// src/components/Header.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAuthToken } from "../../utils/auth";
+import { useAuth } from "@/contexts/AuthContext"; // Adjust the import path as needed
 import OffCanvasSearch from "../OffCanvasSearch/OffCanvasSearch";
 import ScrollMenu from "../ScrollMenu/ScrollMenu";
 import SiteLogo from "./SiteLogo";
@@ -14,11 +15,23 @@ interface UserState {
   isActiveMember: boolean;
 }
 
+/**
+ * Header Component
+ *
+ * This component displays the main navigation header. It uses the AuthContext to:
+ * - Determine whether the user is authenticated.
+ * - Fetch and display user details from the API if authenticated.
+ * - Trigger UI changes (such as showing the AddMenu and user dropdown) based on auth status.
+ *
+ * The component also manages the display state for the off-canvas search menu.
+ */
 export default function Header() {
+  const { token, logout, isAuthenticated } = useAuth();
   const [user, setUser] = useState<UserState | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
 
+  // Toggle for off-canvas search
   const handleSearchToggle = () => {
     setShowSearch(true);
   };
@@ -27,14 +40,18 @@ export default function Header() {
     setShowSearch(false);
   };
 
+  /**
+   * useEffect to check the user's auth details whenever the token changes.
+   * If a token exists, it calls the check-auth endpoint to retrieve user details.
+   * If the token is invalid or absent, the user state is cleared and auth state updated.
+   */
   useEffect(() => {
-    const token = getAuthToken();
-    if (!token) {
-      setLoading(false);
-      return; // Not logged in
-    }
-
-    const checkAuth = async () => {
+    async function checkAuth() {
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
       try {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL;
         const res = await fetch(`${baseUrl}/accounts/check-auth/`, {
@@ -52,20 +69,19 @@ export default function Header() {
             isActiveMember: !!data.is_active_member,
           });
         } else {
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("username");
+          // Invalidate token if response is not OK
+          logout();
         }
       } catch (e) {
         console.error("Auth check failed:", e);
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("username");
+        logout();
       }
       setLoading(false);
-    };
-
+    }
     checkAuth();
-  }, []);
+  }, [token, logout]);
 
+  // While checking auth, display a loading indicator in the header.
   if (loading) {
     return (
       <nav className="navbar navbar-dark bg-dark px-3">
@@ -81,27 +97,22 @@ export default function Header() {
         <SiteLogo brandName="MySite" />
 
         <div className="ms-auto d-flex align-items-center">
-          {/* (2) Search Toggle => triggers OffCanvasSearch */}
+          {/* (2) Search Toggle: triggers OffCanvasSearch */}
           <SearchToggle onClick={handleSearchToggle} />
 
-          {/* (3) Add Menu => plus icon */}
-          {user && <AddMenu />}
+          {/* (3) Add Menu: shown only if the user is authenticated */}
+          {isAuthenticated && <AddMenu />}
 
-          {/* (4) User Panel => login or user dropdown */}
-          <UserPanel
-            user={user}
-            onSignOut={() => console.log("Signed out")}
-          />
+          {/* (4) User Panel: displays login button or user dropdown,
+              the sign-out action now calls the logout function from AuthContext */}
+          <UserPanel user={user} onSignOut={logout} />
         </div>
       </nav>
 
-      {/* The offcanvas itself */}
-      <OffCanvasSearch
-        show={showSearch}
-        onHide={handleSearchClose}
-      />
+      {/* Off-canvas search component */}
+      <OffCanvasSearch show={showSearch} onHide={handleSearchClose} />
 
-      {/* The horizontal scroll menu */}
+      {/* Horizontal scroll menu */}
       <ScrollMenu />
     </>
   );
