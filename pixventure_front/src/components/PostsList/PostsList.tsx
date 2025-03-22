@@ -1,9 +1,8 @@
 // src/components/PostsList/PostsList.tsx
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { usePaginatedData } from "@/hooks/usePaginatedData";
-import PaginationComponent from "../Pagination/Pagination";
 import PostTile from "../Tile/Tile";
 
 export interface Post {
@@ -21,29 +20,23 @@ interface PostsListProps {
   initialPage?: number; // default 1
 }
 
+/**
+ * PostsList now directly passes initialPage to usePaginatedData.
+ * We also set a key based on initialPage so that when it changes the component re-mounts.
+ */
 export default function PostsList({
   fetchFunction,
   title,
   initialPage = 1,
 }: PostsListProps) {
-  const {
-    data: posts,
-    page,
-    totalPages,
-    loading,
-    error,
-    setPage,
-  } = usePaginatedData<Post>(fetchFunction);
-
-  useEffect(() => {
-    setPage(initialPage);
-  }, [initialPage]);
+  const { data: posts, page, totalPages, loading, error, setPage } =
+    usePaginatedData<Post>(fetchFunction, initialPage);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <>
+    <div key={initialPage}>
       {title && <h2>{title}</h2>}
       <div className="pin_container">
         {posts.map((post) => (
@@ -57,14 +50,6 @@ export default function PostsList({
           />
         ))}
       </div>
-
-      {totalPages > 1 && (
-        <PaginationComponent
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
-      )}
-    </>
+    </div>
   );
 }

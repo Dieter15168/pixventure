@@ -7,16 +7,18 @@ export interface PaginatedResponse<T> {
   results: T[];
   current_page: number;
   total_pages: number;
-  // you can include other fields if your backend returns them
+  // other fields if needed
 }
 
 export function usePaginatedData<T>(
-  fetchFunction: (page: number) => Promise<PaginatedResponse<T>>
+  fetchFunction: (page: number) => Promise<PaginatedResponse<T>>,
+  initialPage: number = 1
 ) {
+  // Initialize state with the provided initialPage (instead of always 1)
   const [data, setData] = useState<T[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState<number>(initialPage);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const getData = useCallback(
@@ -36,14 +38,14 @@ export function usePaginatedData<T>(
     [fetchFunction]
   );
 
-  // Fetch data whenever "page" changes
+  // Fetch data when the page changes
   useEffect(() => {
     getData(page);
   }, [page, getData]);
 
-  // Expose a page-changer that ensures we stay in range
   const handlePageChange = (newPage: number) => {
     if (newPage < 1) return;
+    // We now allow newPage even if our local totalPages is not updated yet.
     setPage(newPage);
   };
 

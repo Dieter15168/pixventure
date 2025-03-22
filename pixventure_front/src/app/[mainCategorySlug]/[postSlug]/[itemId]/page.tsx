@@ -1,4 +1,4 @@
-// src/app/[mainCategorySlug]/[postSlug]/[itemId]/page.tsx
+// src/app/[mainCategorySlug]/[postSlug]/items/[itemId]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";

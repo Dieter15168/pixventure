@@ -1,4 +1,4 @@
-// src/app/page.tsx
+// src/app/best-posts/[[...pageParams]]/page.tsx
 "use client";
 
 import React from "react";
@@ -7,19 +7,15 @@ import { usePostsAPI } from "@/utils/api/posts";
 import PaginatedRoute from "@/components/routes/PaginatedRoute";
 import PostsList from "@/components/PostsList/PostsList";
 
-export default function HomePage() {
-  // We want all featured posts to be accessed via "/best-posts".
+export default function BestPostsPage() {
+  // Set the basePath to "/best-posts" so that page 1 is /best-posts,
+  // and other pages become /best-posts/page/2, etc.
   const basePath = "/best-posts";
-  // Use our custom hook to parse the route. This will look for an optional catch-all
-  // and return the current page number (defaulting to 1) and a buildPageUrl helper.
-  const { currentPage } = usePaginatedRoute(basePath, 1);
-
-  // Here we override the URL builder so that:
-  // - If page === 1, we return "/best-posts"
-  // - Otherwise, we return "/best-posts/page/{n}"
-  const buildPageUrl = (p: number) => (p === 1 ? basePath : `${basePath}/page/${p}`);
+  const { currentPage, buildPageUrl } = usePaginatedRoute(basePath, 1);
 
   const { fetchFeaturedPosts } = usePostsAPI();
+
+  // Define the fetch function to get featured posts (paginated)
   const fetchFunction = async (page: number) => {
     return await fetchFeaturedPosts(page);
   };

@@ -1,15 +1,16 @@
-// src/app/albums/[slug]/page.tsx
+// src/app/albums/[slug]/[[...pageParams]]/AlbumItemsPaginated.tsx
+
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
-import PaginationComponent from "../../../components/Pagination/Pagination";
-import { useAlbumsAPI } from "../../../utils/api/albums";
-import { usePaginatedData } from "../../../hooks/usePaginatedData";
-import Tile, { TileProps } from "../../../components/Tile/Tile";
-import LikeButton from "../../../elements/LikeButton/LikeButton";
+import React, { useCallback } from "react";
+import { usePaginatedRoute } from "@/hooks/usePaginatedRoute";
+import { usePaginatedData } from "@/hooks/usePaginatedData";
+import { useAlbumsAPI } from "@/utils/api/albums";
+import Tile, { TileProps } from "@/components/Tile/Tile";
+import PaginationComponent from "@/components/Pagination/Pagination";
+import LikeButton from "@/elements/LikeButton/LikeButton";
 
-// Minimal types for clarity
+// Minimal type definitions:
 interface Album {
   id: number;
   name: string;
@@ -22,7 +23,7 @@ interface Album {
 
 interface AlbumElement {
   id: number;
-  element_type: number; // 1=post, 2=media
+  element_type: number; // 1 = post, 2 = media
   position: number;
   post_data?: {
     id: number;
@@ -48,73 +49,35 @@ interface AlbumElement {
   };
 }
 
-export default function AlbumDetailPage() {
-  const { slug } = useParams() as { slug: string };
-  const { fetchAlbumBySlug, fetchAlbumElementsBySlug } = useAlbumsAPI();
+interface AlbumItemsPaginatedProps {
+  album: Album;
+}
 
-  // 1) Load the album metadata
-  const [album, setAlbum] = useState<Album | null>(null);
-  const [albumLoading, setAlbumLoading] = useState<boolean>(true);
-  const [albumError, setAlbumError] = useState<string | null>(null);
+export default function AlbumItemsPaginated({ album }: AlbumItemsPaginatedProps) {
+  // The base path for album elements pages will be "/albums/{album.slug}".
+  const basePath = `/albums/${album.slug}`;
+  // Use our custom hook to derive current page from the route's optional catch-all.
+  // This hook synchronously computes the current page from useParams.
+  const { currentPage, buildPageUrl } = usePaginatedRoute(basePath, 1);
 
-  useEffect(() => {
-    if (!slug) return;
-    const loadAlbum = async () => {
-      setAlbumLoading(true);
-      try {
-        const albumData = await fetchAlbumBySlug(slug);
-        setAlbum(albumData);
-      } catch (err: any) {
-        setAlbumError(err.message ?? "Error loading album");
-      } finally {
-        setAlbumLoading(false);
-      }
-    };
-    loadAlbum();
-  }, [slug, fetchAlbumBySlug]);
-
-  // 2) Define a function for fetching album elements (paginated)
-  // If album is not yet loaded, return an empty structure to avoid errors or loops
-  const fetchAlbumElements = useCallback(
+  const { fetchAlbumElementsBySlug } = useAlbumsAPI();
+  const fetchFunction = useCallback(
     async (page: number) => {
-      if (!album) {
-        return {
-          results: [],
-          current_page: 1,
-          total_pages: 1,
-        };
-      }
       return await fetchAlbumElementsBySlug(album.slug, page);
     },
     [album, fetchAlbumElementsBySlug]
   );
 
-  // 3) Use the pagination hook for album elements
+  // Now call the paginated data hook using the derived current page.
   const {
     data: albumElements,
-    page,
     totalPages,
     loading: elementsLoading,
     error: elementsError,
-    setPage,
-  } = usePaginatedData<AlbumElement>(fetchAlbumElements);
+  } = usePaginatedData<AlbumElement>(fetchFunction, currentPage);
 
-  // 4) Basic checks
-  if (albumLoading) return <p>Loading album...</p>;
-  if (albumError) return <p>Error: {albumError}</p>;
-  if (!album) return <p>No album found for slug: {slug}</p>;
-
-  // If the album is loaded, but elements are still fetching
-  if (elementsLoading && albumElements.length === 0) {
-    return <p>Loading album elements...</p>;
-  }
-  if (elementsError) {
-    return <p>Error loading album elements: {elementsError}</p>;
-  }
-
-  // 5) Transform each album element -> TileProps
+  // Transform album elements into TileProps.
   const transformAlbumElementToTile = (element: AlbumElement): TileProps => {
-    // Check whether it's referencing a post or media
     if (element.element_type === 1 && element.post_data) {
       const post = element.post_data;
       return {
@@ -159,7 +122,7 @@ export default function AlbumDetailPage() {
         },
       };
     }
-    // fallback
+    // Fallback if data is missing:
     return {
       id: element.id,
       renderKey: String(element.id),
@@ -182,34 +145,29 @@ export default function AlbumDetailPage() {
 
   const tileItems: TileProps[] = albumElements.map(transformAlbumElementToTile);
 
+  if (elementsLoading) return <p>Loading album elements...</p>;
+  if (elementsError) return <p>Error loading album elements: {elementsError}</p>;
+
   return (
     <div>
-      <h1>{album.name}</h1>
       <LikeButton
         entity_type="album"
         targetId={album.id}
         initialLikesCounter={album.likes_counter}
         initialHasLiked={album.has_liked}
       />
-
       <hr />
       <h2>Album Elements</h2>
-
       <div className="pin_container">
         {tileItems.map((tile) => (
-          <Tile
-            key={tile.renderKey}
-            item={tile}
-          />
+          <Tile key={tile.renderKey} item={tile} />
         ))}
       </div>
-
-      {/* PAGINATION UI if multiple pages */}
       {totalPages > 1 && (
         <PaginationComponent
-          currentPage={page}
+          currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={setPage}
+          buildPageUrl={buildPageUrl}
         />
       )}
     </div>
