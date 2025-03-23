@@ -4,6 +4,9 @@
 
 import React, { useState, useEffect } from 'react';
 import useSWR from 'swr';
+import { Container, Row, Col, Card, Button, Accordion } from 'react-bootstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSync, faCopy, faExternalLinkAlt, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { 
   usePaymentAPI, 
   MembershipPlan, 
@@ -17,18 +20,18 @@ const fetcher = (key: string, fetchFunction: () => Promise<any>) => fetchFunctio
 
 /**
  * PaymentPage Component
- * Displays membership plan and payment method selection along with updated payment context.
+ * Implements a modern UI for selecting membership plans, payment methods,
+ * and displaying the updated payment context using React Bootstrap and Font Awesome.
  */
 const PaymentPage: React.FC = () => {
   const { fetchPaymentSetup, updatePaymentContext } = usePaymentAPI();
-  const { data, error } = useSWR<PaymentSetupResponse>('paymentSetup', () => fetchPaymentSetup());
+  const { data, error, mutate } = useSWR<PaymentSetupResponse>('paymentSetup', () => fetchPaymentSetup());
 
-  // Local state for selected options and payment context.
+  // Local state for selected membership plan, payment method, and payment context.
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [paymentContext, setPaymentContext] = useState<PaymentContext | null>(null);
 
-  // Initialize default selections from the aggregated API response.
   useEffect(() => {
     if (data) {
       setSelectedPlan(data.default_selected.membership_plan);
@@ -37,133 +40,160 @@ const PaymentPage: React.FC = () => {
     }
   }, [data]);
 
-  // Handler for when the membership plan changes.
+  // When the user selects a different membership plan.
   const handlePlanChange = async (plan: MembershipPlan) => {
     setSelectedPlan(plan);
     if (selectedMethod) {
       try {
-        const response = await updatePaymentContext(plan.id, selectedMethod.id);
-        setPaymentContext(response.payment_context);
+        const res = await updatePaymentContext(plan.id, selectedMethod.id);
+        setPaymentContext(res.payment_context);
       } catch (err) {
         console.error("Error updating payment context", err);
       }
     }
   };
 
-  // Handler for when the payment method changes.
+  // When the user selects a different payment method.
   const handleMethodChange = async (method: PaymentMethod) => {
     setSelectedMethod(method);
     if (selectedPlan) {
       try {
-        const response = await updatePaymentContext(selectedPlan.id, method.id);
-        setPaymentContext(response.payment_context);
+        const res = await updatePaymentContext(selectedPlan.id, method.id);
+        setPaymentContext(res.payment_context);
       } catch (err) {
         console.error("Error updating payment context", err);
       }
     }
   };
 
-  if (error) return <div>Error loading payment setup data.</div>;
-  if (!data) return <div>Loading...</div>;
+  // Manual refresh triggers SWR revalidation.
+  const handleManualRefresh = async () => {
+    await mutate();
+  };
+
+  if (error) return <Container><p>Error loading payment setup data.</p></Container>;
+  if (!data) return <Container><p>Loading...</p></Container>;
 
   return (
-    <div className="payment-container" style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Choose Your Plan and Payment Method</h1>
-      <div className="selection-area" style={{ display: 'flex', gap: '2rem' }}>
-        {/* Membership Plan Selection */}
-        <div className="plan-selection">
-          <h2>Select Membership Plan</h2>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {data.membership_plans.map((plan) => (
-              <li key={plan.id} style={{ marginBottom: '1rem' }}>
-                <label>
-                  <input
-                    type="radio"
-                    name="membershipPlan"
-                    value={plan.id}
-                    checked={selectedPlan?.id === plan.id}
-                    onChange={() => handlePlanChange(plan)}
-                  />
-                  {` ${plan.name} - $${plan.price} ${plan.currency} (Duration: ${plan.duration_days} days)`}
-                </label>
-              </li>
-            ))}
-          </ul>
-        </div>
+    <Container className="my-4">
+      <h1 className="mb-4 text-center">Become a Member</h1>
 
-        {/* Payment Method Selection */}
-        <div className="payment-method-selection">
-          <h2>Select Payment Method</h2>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {data.payment_methods.filter((method) => method.is_active).map((method) => (
-              <li key={method.id} style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value={method.id}
-                    checked={selectedMethod?.id === method.id}
-                    onChange={() => handleMethodChange(method)}
-                  />
-                  <img
-                    src={method.icon}
-                    alt={method.name}
-                    style={{ width: '32px', height: '32px', marginLeft: '0.5rem', marginRight: '0.5rem' }}
-                  />
-                  {method.name}
-                </label>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      {/* FAQ Accordion */}
+      <Accordion defaultActiveKey="0" className="mb-4">
+        <Accordion.Item eventKey="0">
+          <Accordion.Header>
+            <strong>FAQ:</strong> Will I be charged automatically for the next period?
+          </Accordion.Header>
+          <Accordion.Body>
+            No, you will not be charged automatically. Our service does not use recurring payments.
+            Your membership will expire at the end of the period. To continue your membership,
+            simply make a separate payment for the next month or year.
+          </Accordion.Body>
+        </Accordion.Item>
+      </Accordion>
 
-      {/* Payment Details Display */}
-      <div className="payment-details" style={{ marginTop: '2rem' }}>
-        <h2>Payment Details</h2>
-        {selectedPlan && selectedMethod && paymentContext && (
-          <div>
-            <p>
-              <strong>Plan:</strong> {selectedPlan.name}
-            </p>
-            <p>
-              <strong>Payment Method:</strong> {selectedMethod.name}
-            </p>
-            <p>
-              <strong>Amount:</strong> ${selectedPlan.price} {selectedPlan.currency}
-            </p>
-            <p>
-              <strong>Payment Address:</strong> {paymentContext.payment_address}
-            </p>
-            <p>
-              <strong>Native Crypto Amount:</strong> {paymentContext.crypto_amount}
-            </p>
-            <p>
-              <strong>Transaction Status:</strong> {paymentContext.transaction_status}
-            </p>
-            <p>
-              <strong>Expires At:</strong> {paymentContext.expires_at}
-            </p>
-            <p>
-              <strong>QR Code:</strong>
-            </p>
-            {/* Placeholder for QR Code; integrate a QR code library as needed */}
-            <div
-              style={{
-                width: '128px',
-                height: '128px',
-                backgroundColor: '#eee',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
+      {/* Membership Plan Selection */}
+      <h4 className="text-center mb-3">1. Select Membership Plan</h4>
+      <Row className="mb-4">
+        {data.membership_plans.map((plan) => (
+          <Col md={6} key={plan.id} className="mb-3">
+            <Card 
+              className={selectedPlan?.id === plan.id ? "border-danger" : ""}
+              onClick={() => handlePlanChange(plan)}
+              style={{ cursor: 'pointer' }}
             >
-              <span>QR Code</span>
+              <Card.Body className="text-center">
+                <Card.Title className="text-uppercase text-muted">{plan.name}</Card.Title>
+                <Card.Text>
+                  <div style={{ fontSize: '1.5rem' }}>
+                    ${plan.price} <small className="text-muted">/{plan.duration_days} days</small>
+                  </div>
+                </Card.Text>
+                <Button 
+                  variant={selectedPlan?.id === plan.id ? "danger" : "primary"} 
+                  disabled={selectedPlan?.id === plan.id}
+                >
+                  {selectedPlan?.id === plan.id ? "Selected" : "Select"}
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      {/* Payment Method Selection */}
+      <h4 className="text-center mb-3">2. Select Payment Method</h4>
+      <Row className="mb-4 justify-content-center">
+        {data.payment_methods.filter(method => method.is_active).map((method) => (
+          <Col key={method.id} xs="auto" className="text-center">
+            <div onClick={() => handleMethodChange(method)} style={{ cursor: 'pointer' }}>
+              <img 
+                src={method.icon}
+                alt={method.name}
+                style={{
+                  width: '80px',
+                  border: selectedMethod?.id === method.id ? "2px solid hotpink" : "none",
+                  borderRadius: "8px",
+                  padding: "2px",
+                  margin: "2px",
+                }}
+              />
+              <div>{method.name}</div>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
+          </Col>
+        ))}
+      </Row>
+
+      {/* Payment Details Card */}
+      {selectedPlan && selectedMethod && paymentContext && (
+        <Card bg="dark" text="light" className="mb-4">
+          <Card.Header className="d-flex justify-content-between align-items-center">
+            <span>Payment Details</span>
+            <Button variant="secondary" size="sm" onClick={handleManualRefresh}>
+              <FontAwesomeIcon icon={faSync} />
+            </Button>
+          </Card.Header>
+          <Card.Body className="text-center">
+            <div>
+              <img 
+                src={`https://quickchart.io/qr?text=${encodeURIComponent(paymentContext.wallet_url)}`} 
+                alt="QR Code"
+                style={{ width: '200px', height: '200px' }}
+              />
+            </div>
+            <div className="mt-3" style={{ fontSize: '1.75rem' }}>
+              {paymentContext.crypto_amount} <small className="text-muted">{selectedMethod.name}</small>
+            </div>
+            {/* Display plain text crypto address */}
+            <div className="mt-3">
+              <strong>Crypto Address:</strong>
+              <div style={{ wordBreak: 'break-all' }}>
+                {paymentContext.payment_address}
+              </div>
+            </div>
+            <div className="d-flex justify-content-center mt-3">
+              <Button variant="outline-light" className="me-2" onClick={() => navigator.clipboard.writeText(paymentContext.payment_address)}>
+                <FontAwesomeIcon icon={faCopy} /> Copy Address
+              </Button>
+              <Button variant="outline-light" onClick={() => window.open(paymentContext.wallet_url, "_blank")}>
+                <FontAwesomeIcon icon={faExternalLinkAlt} /> Open Wallet
+              </Button>
+            </div>
+            <div className="mt-3">
+              {paymentContext.transaction_status.toLowerCase().includes("completed") ? (
+                <Button variant="success" disabled>
+                  <FontAwesomeIcon icon={faCheck} /> Payment Confirmed
+                </Button>
+              ) : (
+                <Button variant="primary" disabled>
+                  Awaiting Payment
+                </Button>
+              )}
+            </div>
+          </Card.Body>
+        </Card>
+      )}
+    </Container>
   );
 };
 
