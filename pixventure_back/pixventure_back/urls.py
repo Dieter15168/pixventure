@@ -14,6 +14,9 @@ urlpatterns = [
     path('api/social/', include('social.urls')),
     path('api/moderation/', include('moderation.urls')),
     path('api/reports/', include('reports.urls')),
+    path('api/memberships/', include('memberships.urls')),
+    path('api/payments/', include('payments.urls')),
+    path('api/gourl/', include('integrations.gourl.urls')),
 ]
 
 if settings.DEBUG:

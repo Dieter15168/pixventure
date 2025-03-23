@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'moderation',
     'reports',
     'memberships',
+    'payments',
+    'integrations.gourl',
 ]
 
 REST_FRAMEWORK = {
