@@ -27,8 +27,12 @@ class PaymentMethod(models.Model):
     name = models.CharField(max_length=100)
     icon = models.ImageField(null=True, upload_to='payment_icons/')
     is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'id']  # Order by 'order' field, then by id.
 
     def __str__(self):
         return f"{self.name} ({self.provider.name})"
