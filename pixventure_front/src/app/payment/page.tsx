@@ -79,10 +79,10 @@ const PaymentPage: React.FC = () => {
       <h1 className="mb-4 text-center">Become a Member</h1>
 
       {/* FAQ Accordion */}
-      <Accordion defaultActiveKey="0" className="mb-4">
+      <Accordion className="mb-4">
         <Accordion.Item eventKey="0">
           <Accordion.Header>
-            <strong>FAQ:</strong> Will I be charged automatically for the next period?
+            <strong className="me-2">FAQ:</strong> Will I be charged automatically for the next period?
           </Accordion.Header>
           <Accordion.Body>
             No, you will not be charged automatically. Our service does not use recurring payments.
