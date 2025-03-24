@@ -13,14 +13,20 @@ from integrations.gourl.models import GoURLConfig
 class GoUrlIntegration(PaymentIntegration):
     """
     Real implementation of the GoURL payment integration.
-    This class constructs a request to the GoURL API using configuration data stored in the GoURLConfig model,
-    sends the request, and returns the payment context needed by the frontend.
+    This class now dynamically determines the coin type from the PaymentMethod,
+    constructs a request to the GoURL API using configuration data stored in GoURLConfig,
+    and returns the payment context.
     """
 
     def create_transaction_context(self, transaction: Transaction) -> dict:
-        # For this example, assume the coin type is 'BTC'. Extend as needed for other coins.
-        coin = "BTC"
-        
+        # Determine the coin from the payment method.
+        # Assume PaymentMethod.name is in the format "GoUrl_BTC", "GoUrl_DOGE", etc.
+        method_name = transaction.payment_method.name.upper()
+        if method_name:
+            coin = method_name
+        else:
+            coin = "BTC"  # default fallback
+
         # Retrieve GoURL configuration for the specified coin.
         try:
             config = GoURLConfig.objects.get(coin=coin)
@@ -30,11 +36,12 @@ class GoUrlIntegration(PaymentIntegration):
         # Retrieve configuration values from the model.
         boxID = config.box_id
         private_key = config.private_key
-        public_key = config.public_key  # Now coming directly from the model.
+        public_key = config.public_key
         
         # Define static parameters.
         coin_code = coin
-        coin_name = "bitcoin"  # Adjust if supporting other coins like BCH or DOGE.
+        # For display purposes, we can map coin codes to friendly names if needed.
+        coin_name = "bitcoin" if coin == "BTC" else "dogecoin" if coin == "DOGE" else "bitcoincash" if coin == "BCH" else coin.lower()
         webdev_key = ''        # Legacy integration uses an empty webdev_key.
         amount = 0             # The amount in crypto is determined by GoURL.
         period = 'NOEXPIRY'
@@ -42,7 +49,7 @@ class GoUrlIntegration(PaymentIntegration):
         userID = str(transaction.user.id)
         language = 'en'
         orderID = str(transaction.id)
-        ip = "127.0.0.1"       # Use a default IP; in production, use the actual client IP.
+        ip = "127.0.0.1"       # In production, use the actual client IP.
         
         # Helper function to compute the required MD5 hash.
         def compute_hash(boxID, coin_name, public_key, private_key, webdev_key,
@@ -66,12 +73,14 @@ class GoUrlIntegration(PaymentIntegration):
         # Random integer for cache-busting.
         z = random.randint(0, 10000000)
         
-        # Construct the API request URL following GoURL specification.
+        # Construct the API request URL following the GoURL specification.
         request_url = (
             f"https://coins.gourl.io/b/{boxID}/c/{coin_name}/p/{public_key}/a/{amount}"
             f"/au/{amountUSD}/pe/{period}/l/{language}/o/{orderID}/u/{userID}/us/MANUAL"
             f"/j/1/d/{base64_ip}/h/{calculated_hash}/z/{z}"
         )
+        
+        print(boxID, coin_name, public_key, amount, amountUSD, period, language, orderID, userID, base64_ip, calculated_hash, z)
         
         try:
             response = requests.get(request_url, verify=False, timeout=10)
@@ -80,7 +89,7 @@ class GoUrlIntegration(PaymentIntegration):
         except Exception as e:
             raise Exception(f"Error communicating with GoURL API: {e}")
         
-        # Extract fields from the response.
+        # Extract required fields from the response.
         status_response = response_json.get('status')
         crypto_amount = response_json.get('amount')
         wallet_url = response_json.get('wallet_url')
@@ -93,7 +102,7 @@ class GoUrlIntegration(PaymentIntegration):
             'crypto_amount': crypto_amount,
             'wallet_url': wallet_url,
             'transaction_status': status_response,
-            # Set expiration 15 minutes from now.
+            # For demonstration, set expiration 15 minutes from now.
             'expires_at': (timezone.now() + timedelta(minutes=15)).isoformat()
         }
         
