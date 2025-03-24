@@ -105,9 +105,9 @@ const PaymentPage: React.FC = () => {
               <Card.Body className="text-center">
                 <Card.Title className="text-uppercase text-muted">{plan.name}</Card.Title>
                 <Card.Text>
-                  <div style={{ fontSize: '1.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>
                     ${plan.price} <small className="text-muted">/{plan.duration_days} days</small>
-                  </div>
+                  </span>
                 </Card.Text>
                 <Button 
                   variant={selectedPlan?.id === plan.id ? "danger" : "primary"} 
