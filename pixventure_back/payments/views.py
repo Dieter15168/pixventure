@@ -108,7 +108,7 @@ class PaymentUpdateView(APIView):
         try:
             # process_payment() uses get_or_create_transaction to either reuse an existing
             # transaction (if one exists for the same user, sum, and payment method) or creates a new one.
-            payment_context = process_payment(user, payment_method, amount)
+            payment_context = process_payment(user, payment_method, amount, request=request)
         except Exception as e:
             return Response(
                 {'error': str(e)},

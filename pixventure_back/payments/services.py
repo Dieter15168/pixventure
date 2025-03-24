@@ -24,7 +24,7 @@ def get_or_create_transaction(user: User, payment_method: PaymentMethod, amount,
     )
     return transaction
 
-def process_payment(user, payment_method: PaymentMethod, amount):
+def process_payment(user, payment_method: PaymentMethod, amount, request=None):
     """
     Process the payment by retrieving or creating a transaction and interfacing with the appropriate integration.
     Returns the context required by the frontend.
@@ -35,5 +35,5 @@ def process_payment(user, payment_method: PaymentMethod, amount):
     if not integration:
         raise Exception("Payment integration not found for this method")
     
-    context = integration.create_transaction_context(transaction)
+    context = integration.create_transaction_context(transaction, request=request)
     return context

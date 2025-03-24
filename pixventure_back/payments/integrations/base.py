@@ -2,7 +2,8 @@
 
 from abc import ABC, abstractmethod
 from payments.models import Transaction
-from typing import Dict
+from typing import Dict, Optional
+from django.http import HttpRequest
 
 class PaymentIntegration(ABC):
     """
@@ -10,7 +11,7 @@ class PaymentIntegration(ABC):
     """
 
     @abstractmethod
-    def create_transaction_context(self, transaction: Transaction) -> Dict:
+    def create_transaction_context(self, transaction: Transaction, request: Optional[HttpRequest] = None) -> Dict:
         """
         Generate and return the context necessary for processing the payment.
         This should include details like payment address, native crypto amount, etc.

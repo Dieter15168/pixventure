@@ -2,9 +2,9 @@ import hashlib
 import base64
 import random
 import requests
-import json
 from datetime import timedelta
 from django.utils import timezone
+from django.http import HttpRequest
 
 from payments.integrations.base import PaymentIntegration
 from payments.models import Transaction
@@ -13,45 +13,57 @@ from integrations.gourl.models import GoURLConfig
 class GoUrlIntegration(PaymentIntegration):
     """
     Real implementation of the GoURL payment integration.
-    This class now dynamically determines the coin type from the PaymentMethod,
+    Dynamically determines the coin type from the PaymentMethod,
     constructs a request to the GoURL API using configuration data stored in GoURLConfig,
     and returns the payment context.
     """
 
-    def create_transaction_context(self, transaction: Transaction) -> dict:
-        # Determine the coin from the payment method.
-        # Assume PaymentMethod.name is in the format "GoUrl_BTC", "GoUrl_DOGE", etc.
-        method_name = transaction.payment_method.name.upper()
-        if method_name:
-            coin = method_name
-        else:
-            coin = "BTC"  # default fallback
+    def get_client_ip(self, request: HttpRequest = None) -> str:
+        """
+        Attempts to extract the real user IP address from the incoming request.
+        Falls back to 127.0.0.1 if unavailable or request is None.
+        """
+        if request:
+            print(request)
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip = x_forwarded_for.split(',')[0].strip()
+                if ip:
+                    return ip
+            ip = request.META.get('REMOTE_ADDR')
+            if ip:
+                return ip
+        return "127.0.0.1"
 
-        # Retrieve GoURL configuration for the specified coin.
+    def create_transaction_context(self, transaction: Transaction, request: HttpRequest = None) -> dict:
+        method_name = transaction.payment_method.name.upper() if transaction.payment_method else None
+        coin = method_name or "BTC"
+
         try:
             config = GoURLConfig.objects.get(coin=coin)
         except GoURLConfig.DoesNotExist:
             raise Exception(f"GoURL configuration for coin '{coin}' not found.")
-        
-        # Retrieve configuration values from the model.
+
         boxID = config.box_id
         private_key = config.private_key
         public_key = config.public_key
-        
-        # Define static parameters.
         coin_code = coin
-        # For display purposes, we can map coin codes to friendly names if needed.
-        coin_name = "bitcoin" if coin == "BTC" else "dogecoin" if coin == "DOGE" else "bitcoincash" if coin == "BCH" else coin.lower()
-        webdev_key = ''        # Legacy integration uses an empty webdev_key.
-        amount = 0             # The amount in crypto is determined by GoURL.
+        coin_name = (
+            "bitcoin" if coin == "BTC"
+            else "dogecoin" if coin == "DOGE"
+            else "bitcoincash" if coin == "BCH"
+            else coin.lower()
+        )
+
+        webdev_key = ''
+        amount = 0
         period = 'NOEXPIRY'
-        amountUSD = str(transaction.amount)  # Transaction amount in USD as string.
+        amountUSD = str(transaction.amount)
         userID = str(transaction.user.id)
         language = 'en'
         orderID = str(transaction.id)
-        ip = "127.0.0.1"       # In production, use the actual client IP.
-        
-        # Helper function to compute the required MD5 hash.
+        ip = self.get_client_ip(request)
+
         def compute_hash(boxID, coin_name, public_key, private_key, webdev_key,
                          amount, period, amountUSD, userID, language, orderID, ip):
             user_format = 'MANUAL'
@@ -64,46 +76,33 @@ class GoUrlIntegration(PaymentIntegration):
             m = hashlib.md5(string.encode('utf-8'))
             return m.hexdigest()
 
-        calculated_hash = compute_hash(boxID, coin_name, public_key, private_key, webdev_key,
-                                       amount, period, amountUSD, userID, language, orderID, ip)
-        
-        # Base64-encode the IP address.
+        calculated_hash = compute_hash(
+            boxID, coin_name, public_key, private_key, webdev_key,
+            amount, period, amountUSD, userID, language, orderID, ip
+        )
+
         base64_ip = base64.b64encode(ip.encode('ascii')).decode('utf-8')
-        
-        # Random integer for cache-busting.
         z = random.randint(0, 10000000)
-        
-        # Construct the API request URL following the GoURL specification.
+
         request_url = (
             f"https://coins.gourl.io/b/{boxID}/c/{coin_name}/p/{public_key}/a/{amount}"
             f"/au/{amountUSD}/pe/{period}/l/{language}/o/{orderID}/u/{userID}/us/MANUAL"
             f"/j/1/d/{base64_ip}/h/{calculated_hash}/z/{z}"
         )
-        
-        print(boxID, coin_name, public_key, amount, amountUSD, period, language, orderID, userID, base64_ip, calculated_hash, z)
-        
+
         try:
             response = requests.get(request_url, verify=False, timeout=10)
             response.raise_for_status()
             response_json = response.json()
         except Exception as e:
             raise Exception(f"Error communicating with GoURL API: {e}")
-        
-        # Extract required fields from the response.
-        status_response = response_json.get('status')
-        crypto_amount = response_json.get('amount')
-        wallet_url = response_json.get('wallet_url')
-        addr = response_json.get('addr')
-        confirmed = response_json.get('confirmed')
-        
-        # Build the payment context to return.
+
         context = {
-            'payment_address': addr,
-            'crypto_amount': crypto_amount,
-            'wallet_url': wallet_url,
-            'transaction_status': status_response,
-            # For demonstration, set expiration 15 minutes from now.
+            'payment_address': response_json.get('addr'),
+            'crypto_amount': response_json.get('amount'),
+            'wallet_url': response_json.get('wallet_url'),
+            'transaction_status': response_json.get('status'),
             'expires_at': (timezone.now() + timedelta(minutes=15)).isoformat()
         }
-        
+
         return context
