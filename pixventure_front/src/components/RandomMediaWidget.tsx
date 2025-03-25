@@ -68,7 +68,6 @@ const RandomMediaWidget: React.FC<{ count?: number }> = ({ count = 4 }) => {
 
   return (
     <div>
-      <h2>Random Items</h2>
       <div className="random-media-grid">
         {tileItems.map((item) => (
           <Tile key={item.id} item={item} />
