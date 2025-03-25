@@ -38,7 +38,7 @@ class PublicPostListView(generics.ListAPIView):
 
     def get_queryset(self):
         # Only show PUBLISHED posts
-        qs = Post.objects.filter(status=Post.PUBLISHED).order_by('-created')
+        qs = Post.objects.filter(status=Post.PUBLISHED).order_by('-published')
 
         # If ?slug= is provided, filter the queryset accordingly
         slug = self.request.query_params.get('slug')
@@ -59,7 +59,7 @@ class FeaturedPostListView(generics.ListAPIView):
 
     def get_queryset(self):
         # Only show PUBLISHED + is_featured_post
-        qs = Post.objects.filter(status=Post.PUBLISHED, is_featured_post=True).order_by('-created')
+        qs = Post.objects.filter(status=Post.PUBLISHED, is_featured_post=True).order_by('-published')
         return qs
     
 
@@ -286,7 +286,7 @@ class CategoryPostsListView(generics.ListAPIView):
                 terms__slug=category_slug
             )
             .distinct()
-            .order_by('-created')
+            .order_by('-published')
         )
 
 
@@ -311,7 +311,7 @@ class TagPostsListView(generics.ListAPIView):
                 terms__slug=tag_slug
             )
             .distinct()
-            .order_by('-created')
+            .order_by('-published')
         )
         
 
