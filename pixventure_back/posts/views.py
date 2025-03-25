@@ -258,6 +258,7 @@ class PostMetaView(generics.RetrieveAPIView):
     GET /api/posts/<pk>/meta/
     Returns minimal post meta info (name, slug, categories, tags, etc.)
     """
+    permission_classes = [AllowAny]
     queryset = Post.objects.all()
     serializer_class = PostMetaSerializer
     lookup_field = 'pk'
