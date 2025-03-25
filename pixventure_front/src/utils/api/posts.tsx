@@ -117,6 +117,15 @@ export function usePostsAPI() {
     [axios]
   );
 
+  // 9) Fetch media redirect meta info by media item id.
+  const fetchMediaRedirectMeta = useCallback(
+    async (media_item_id: number) => {
+      const res = await axios.get(`/posts/redirect/${media_item_id}/`);
+      return res.data; // { post_id, post_slug, main_category_slug }
+    },
+    [axios]
+  );
+
   return {
     fetchPosts,
     fetchFeaturedPosts,
@@ -129,5 +138,6 @@ export function usePostsAPI() {
     createPost,
     fetchPostsByCategory,
     fetchPostsByTag,
+    fetchMediaRedirectMeta,
   };
 }

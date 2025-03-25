@@ -1,6 +1,6 @@
 # posts/views.py
 
-import uuid
+from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db.models import Max
 from rest_framework import generics, status
@@ -313,3 +313,33 @@ class TagPostsListView(generics.ListAPIView):
             .distinct()
             .order_by('-created')
         )
+        
+
+class MediaRedirectAPIView(APIView):
+    """
+    API endpoint that returns the meta information of the first published post
+    associated with a given media item. The returned data includes the post's ID,
+    slug, and main category slug – used to construct a redirect URL.
+    """
+    permission_classes = []  # AllowAny by default; adjust if needed.
+
+    def get(self, request, media_item_id, *args, **kwargs):
+        # Find a PostMedia entry where the media item is linked to a published post.
+        post_media = PostMedia.objects.filter(
+            media_item_id=media_item_id,
+            post__status=Post.PUBLISHED
+        ).select_related("post", "post__main_category").first()
+
+        if not post_media:
+            return Response(
+                {"detail": "No published post associated with this media item."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        post = post_media.post
+        data = {
+            "post_id": post.id,
+            "post_slug": post.slug,
+            "main_category_slug": post.main_category.slug,
+        }
+        return Response(data, status=status.HTTP_200_OK)

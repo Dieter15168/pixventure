@@ -12,7 +12,8 @@ from .views import (
     PostMediaItemRetrieveDestroyView,
     PostMetaView,
     CategoryPostsListView,
-    TagPostsListView
+    TagPostsListView,
+    MediaRedirectAPIView,
 )
 
 urlpatterns = [
@@ -45,4 +46,7 @@ urlpatterns = [
     # 9. Retrieve post lists filtered by categories and tags
     path("categories/<slug:slug>/", CategoryPostsListView.as_view(), name="category-posts-list"),
     path("tags/<slug:slug>/", TagPostsListView.as_view(), name="tag-posts-list"),
+    
+    # 10. Retrieve context necessary for the media redirect page necessary to navigate from item id to view post item page
+    path("redirect/<int:media_item_id>/", MediaRedirectAPIView.as_view(), name="media-redirect"),
 ]

@@ -61,7 +61,7 @@ const RandomMediaWidget: React.FC<{ count?: number }> = ({ count = 4 }) => {
       locked: dto.locked,
       tile_size: dto.tile_size,
       entity_type: "media",
-      page_type: "posts_list", // Use an appropriate page type (or define a dedicated one if needed)
+      page_type: "random_items_list",
       status: dto.status_str,
     };
   });

@@ -1,4 +1,3 @@
-// src/components/Tile/Tile.tsx
 "use client";
 
 import React from "react";
@@ -49,21 +48,16 @@ export interface TileProps {
   categories?: Array<{ name: string; slug: string }>;
   tags?: Array<{ name: string; slug: string }>;
   entity_type: "post" | "media" | "album";
-  page_type: "posts_list" | "albums_list" | "post" | "album" | "post_creation";
-  /**
-   * e.g. "Approved", "Pending moderation", "Rejected"
-   */
+  page_type:
+    | "posts_list"
+    | "albums_list"
+    | "random_items_list"
+    | "post"
+    | "album"
+    | "post_creation";
   status?: string;
-  /**
-   * When in a selectable mode, this indicates whether the tile is selected.
-   * In checkbox mode, multiple may be selected.
-   * In radio mode, only one is selected (the featured item).
-   */
   selected?: boolean;
   onSelectChange?: (id: number, newVal: boolean) => void;
-  /**
-   * New prop: "checkbox" for multi-select; "radio" for a featured (single) selection.
-   */
   selectMode?: "checkbox" | "radio";
   albumContext?: AlbumContext;
 }
@@ -142,20 +136,24 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
 
   const checkboxId = `select-item-${id}`;
 
-  // We build the link only for "post" or "album" type.
-  // For posts, we do /main-category-slug/post-slug
-  // If there's no main_category_slug, fallback to something sensible
+  // Determine finalHref based on page_type.
   let finalHref = "#"; // fallback
-  const catSlug = main_category_slug || "general";
-  if (entity_type === "post") {
-    finalHref = `/${catSlug}/${slug}`;
-  } else if (entity_type === "album") {
-    finalHref = `/${slug}`;
-  } else if (entity_type === "media") {
-    finalHref = `/${catSlug}/${slug}`;
+  if (page_type === "random_items_list") {
+    // For random items, use the media redirect path.
+    finalHref = `/media-redirect/${id}`;
+  } else {
+    // Use standard logic for constructing the URL.
+    const catSlug = main_category_slug || "general";
+    if (entity_type === "post") {
+      finalHref = `/${catSlug}/${slug}`;
+    } else if (entity_type === "album") {
+      finalHref = `/${slug}`;
+    } else if (entity_type === "media") {
+      finalHref = `/${catSlug}/${slug}`;
+    }
   }
 
-  // In post_creation mode, we adjust the selection UI.
+  // In post_creation mode, adjust the selection UI.
   if (page_type === "post_creation") {
     return (
       // Use a label as the container so the entire tile is clickable.
@@ -167,7 +165,6 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
           display: "block",
           position: "relative",
         }}
-        // In radio mode, clicking the tile selects it (and unselects others in parent)
         onClick={() => {
           if (selectMode === "radio" && onSelectChange) {
             onSelectChange(id, true);
@@ -230,9 +227,13 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
   return (
     <div className={styles.item_container}>
       <div className={`${styles.inline_card} ${cardClass} mb-2`}>
-        {/* Normal link or anchor for non-post_creation */}
+        {/* For non-post_creation mode, render a Link.
+            When on a random_items_list page, open the link in a new tab */}
         {media_type === "photo" || thumbnail_url ? (
-          <Link href={finalHref}>
+          <Link
+            href={finalHref}
+            {...(page_type === "random_items_list" ? { target: "_blank" } : {})}
+          >
             <Image
               name={name}
               thumbnailUrl={thumbnail_url}
@@ -259,7 +260,14 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
         {entity_type !== "media" ? (
           <div className="w-100">
             <p className={`${styles.truncate} mb-0`}>
-              <Link href={finalHref}>{name}</Link>
+              <Link
+                href={finalHref}
+                {...(page_type === "random_items_list"
+                  ? { target: "_blank" }
+                  : {})}
+              >
+                {name}
+              </Link>
             </p>
             <p className={`${styles.truncate} mt-0`}>{owner_username}</p>
           </div>
