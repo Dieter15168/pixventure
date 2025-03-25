@@ -30,8 +30,8 @@ class AlbumListView(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        # Example filter: only show PUBLIC albums
-        return Album.objects.filter(status=Album.PUBLIC).order_by('-created')
+        # Example filter: only show PUBLISHED albums
+        return Album.objects.filter(status=Album.PUBLISHED).order_by('-published')
 
 
 # --- 1. MyAlbumsView ---

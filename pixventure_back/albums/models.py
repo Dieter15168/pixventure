@@ -11,23 +11,33 @@ class Album(models.Model):
     # Automatic timestamps
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+    published = models.DateTimeField(null=True, blank=True)
 
-    # Possible statuses: 
-    # - PENDING_MODRATION: waiting for the moderator's action
-    # - PUBLIC: visible to all
-    # - PRIVATE: only owner or authorized users can view
-    # - DELETED: soft delete, can be restored or archived from this state
-    # - ARCHIVED: no longer visible in normal listings
-    PENDING_MODERATION = 0
-    PUBLIC = 1
-    PRIVATE = 2
-    DELETED = 3
-    ARCHIVED = 4
+    # Possible statuses:
+    # - DRAFT: initial state, not submitted for moderation
+    # - PENDING_MODERATION: waiting for a moderator's review
+    # - APPROVED: approved by moderator but not yet published
+    # - PUBLISHED: visible to all users
+    # - PRIVATE: visible only to the owner or authorized users
+    # - REJECTED: rejected during moderation process
+    # - DELETED: soft-deleted, can be restored or permanently archived
+    # - ARCHIVED: no longer visible in normal listings, read-only
+    DRAFT = 0
+    PENDING_MODERATION = 1
+    APPROVED = 2
+    PUBLISHED = 3
+    PRIVATE = 4
+    REJECTED = 5
+    DELETED = 6
+    ARCHIVED = 7
 
     ALBUM_STATUS_CHOICES = [
+        (DRAFT, 'Draft'),
         (PENDING_MODERATION, 'Pending moderation'),
-        (PUBLIC, 'Public'),
+        (APPROVED, 'Approved'),
+        (PUBLISHED, 'Published'),
         (PRIVATE, 'Private'),
+        (REJECTED, 'Rejected by moderation'),
         (DELETED, 'Deleted'),
         (ARCHIVED, 'Archived'),
     ]
