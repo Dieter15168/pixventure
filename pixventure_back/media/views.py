@@ -1,13 +1,15 @@
 # media/views.py
 
+import random
+from django.db.models import Min, Max
+from rest_framework.views import APIView
 from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .models import MediaItem
 from .serializers import MediaItemSerializer, UnpublishedMediaItemSerializer
 from media.managers.media_item_creation_manager import MediaItemCreationManager
 from rest_framework.exceptions import PermissionDenied
-from .services.file_processor import process_uploaded_file
 
 class MediaItemListView(generics.ListAPIView):
     """
@@ -70,7 +72,6 @@ class MediaItemDeleteView(generics.DestroyAPIView):
             raise PermissionDenied("You do not have permission to delete this media item.")
         instance.delete()
 
-
 class MediaItemAvailableForPostView(generics.ListAPIView):
     """
     Returns a list of media items for the authenticated user that
@@ -92,3 +93,71 @@ class MediaItemAvailableForPostView(generics.ListAPIView):
             .prefetch_related("versions")
             .order_by("-created")
         )
+
+class RandomMediaItemView(APIView):
+    """
+    API endpoint that returns a customizable number of random published MediaItem objects.
+
+    - Limits the maximum number of items served to 30.
+    - Uses repeated oversampling to efficiently retrieve random items from large datasets.
+    - As a last-resort fallback, uses random ordering if repeated oversampling does not yield enough items.
+    """
+    serializer_class = MediaItemSerializer
+    permission_classes = [AllowAny]
+    pagination_class = None
+    
+    def get(self, request, *args, **kwargs):
+        # Parse and enforce the 'count' parameter; default is 10, maximum is 30.
+        try:
+            count = int(request.query_params.get('count', 10))
+            if count <= 0:
+                return Response(
+                    {"detail": "Count must be a positive integer."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except ValueError:
+            return Response(
+                {"detail": "Invalid count parameter."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        required = min(count, 30)
+
+        # Filter for published media items.
+        qs = MediaItem.objects.filter(status=MediaItem.PUBLISHED)
+        total = qs.count()
+        if total == 0:
+            return Response([], status=status.HTTP_200_OK)
+
+        # Determine the min and max IDs in the queryset.
+        min_id = qs.aggregate(Min('id'))['id__min']
+        max_id = qs.aggregate(Max('id'))['id__max']
+
+        # Use repeated oversampling to gather candidate items.
+        candidate_dict = {}  # Mapping of id -> MediaItem
+        attempts = 0
+        max_attempts = 3  # Number of oversampling rounds before fallback
+
+        while len(candidate_dict) < required and attempts < max_attempts:
+            oversample_factor = 3
+            num_to_sample = (required - len(candidate_dict)) * oversample_factor
+            new_candidate_ids = {random.randint(min_id, max_id) for _ in range(num_to_sample)}
+            # Exclude IDs already fetched
+            new_candidate_ids = new_candidate_ids - set(candidate_dict.keys())
+            new_items = qs.filter(id__in=new_candidate_ids)
+            for item in new_items:
+                candidate_dict[item.id] = item
+            attempts += 1
+
+        candidate_items = list(candidate_dict.values())
+
+        # If still not enough, as a last resort, fetch additional items using random ordering.
+        if len(candidate_items) < required:
+            additional_needed = required - len(candidate_items)
+            fallback_items = list(qs.order_by('?')[:additional_needed])
+            candidate_items.extend(fallback_items)
+        else:
+            # Randomly select the required number from the candidate pool.
+            candidate_items = random.sample(candidate_items, required)
+
+        serializer = MediaItemSerializer(candidate_items, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)

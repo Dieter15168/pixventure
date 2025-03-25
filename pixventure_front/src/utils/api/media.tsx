@@ -1,4 +1,4 @@
-// src/utils/api/media.ts
+// src/utils/api/media.tsx
 "use client";
 
 import { useCallback } from "react";
@@ -15,7 +15,7 @@ export interface MinimalMediaItemDTO {
 }
 
 export function useMediaAPI() {
-  const axios = useAxios(); // your specialized Axios w/ auth tokens, interceptors, etc.
+  const axios = useAxios(); // Specialized Axios with auth tokens, interceptors, etc.
 
   const uploadFile = useCallback(
     async (file: File) => {
@@ -37,5 +37,13 @@ export function useMediaAPI() {
     return res.data;
   }, [axios]);
 
-  return { uploadFile, fetchAvailableMedia };
+  const fetchRandomMedia = useCallback(
+    async (count: number): Promise<MinimalMediaItemDTO[]> => {
+      const res = await axios.get("/media/random/", { params: { count } });
+      return res.data;
+    },
+    [axios]
+  );
+
+  return { uploadFile, fetchAvailableMedia, fetchRandomMedia };
 }
