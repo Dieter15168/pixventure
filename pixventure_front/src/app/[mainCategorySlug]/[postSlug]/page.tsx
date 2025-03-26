@@ -7,6 +7,7 @@ import { usePostsAPI } from "@/utils/api/posts";
 import Tile, { TileProps } from "@/components/Tile/Tile";
 import LikeButton from "@/elements/LikeButton/LikeButton";
 import PaginationComponent from "@/components/Pagination/Pagination";
+import SharedMasonry from "@/components/common/SharedMasonry";
 
 interface PostDetail {
   id: number;
@@ -123,7 +124,7 @@ export default function PostPage() {
       ) : previewError ? (
         <p>Error loading post items: {previewError}</p>
       ) : (
-        <div className="pin_container">
+        <SharedMasonry>
           {previewItems.map((item) => {
             const tile: TileProps = {
               id: item.id,
@@ -147,7 +148,7 @@ export default function PostPage() {
               />
             );
           })}
-        </div>
+        </SharedMasonry>
       )}
 
       {/* Render paginator that links to the dedicated paginated items route */}

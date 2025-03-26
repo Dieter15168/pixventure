@@ -2,7 +2,8 @@
 "use client";
 
 import React from "react";
-import Tile, { TileProps } from "../../../components/Tile/Tile";
+import Tile, { TileProps } from "@/components/Tile/Tile";
+import SharedMasonry from "@/components/common/SharedMasonry";
 
 export interface MinimalMediaItemDTO {
   id: number;
@@ -67,7 +68,7 @@ export default function AvailableMedia({
   }
 
   return (
-    <div className="pin_container">
+    <SharedMasonry>
       {mediaItems.map((item) => {
         const baseProps = mapDTOtoTileProps(item);
 
@@ -85,6 +86,6 @@ export default function AvailableMedia({
           />
         );
       })}
-    </div>
+    </SharedMasonry>
   );
 }

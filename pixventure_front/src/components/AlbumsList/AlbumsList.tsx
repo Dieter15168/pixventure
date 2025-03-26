@@ -5,6 +5,7 @@ import React from "react";
 import { usePaginatedData } from "@/hooks/usePaginatedData";
 import PaginationComponent from "../Pagination/Pagination";
 import Tile, { TileProps } from "../Tile/Tile";
+import SharedMasonry from "../common/SharedMasonry";
 
 // The type for each album
 interface Album {
@@ -68,11 +69,14 @@ export default function AlbumsList({ fetchFunction, title }: AlbumsListProps) {
   return (
     <div>
       {title && <h2>{title}</h2>}
-      <div className="pin_container">
+      <SharedMasonry>
         {tileItems.map((item) => (
-          <Tile key={item.id} item={item} />
+          <Tile
+            key={item.id}
+            item={item}
+          />
         ))}
-      </div>
+      </SharedMasonry>
 
       {totalPages > 1 && (
         <PaginationComponent

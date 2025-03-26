@@ -5,47 +5,10 @@
   Adjust as needed
 */
 
-@media (max-width: 405px) {
-  :root {
-    --card_width: 50%;
-    --row_increment: 10px;
-    --card_border_radius: 15px;
-    --card_small: 19;
-    --card_medium: 26;
-    --card_large: 33;
-    --caption_height: 11;
-    --image_caption_height: 6;
-  }
-}
-
-@media (min-width: 406px) {
-  :root {
-    --card_width: 200px;
-    --row_increment: 10px;
-    --card_border_radius: 15px;
-    --card_small: 19;
-    --card_medium: 26;
-    --card_large: 33;
-    --caption_height: 11;
-    --image_caption_height: 6;
-  }
-}
-
 .item_container {
   position: relative;
   padding: 0;
   margin: 15px 10px;
-}
-
-/* container_small / container_medium / container_large define vertical span in the grid */
-.container_small {
-  grid-row-end: span calc(var(--card_small) + var(--caption_height));
-}
-.container_medium {
-  grid-row-end: span calc(var(--card_medium) + var(--caption_height));
-}
-.container_large {
-  grid-row-end: span calc(var(--card_large) + var(--caption_height));
 }
 
 /* The tile content block */
@@ -56,16 +19,6 @@
   border-radius: var(--card_border_radius, 10px);
   background-color: var(--main_dominant_color, hotpink);
   margin-bottom: 2px;
-}
-
-.card_small {
-  height: 195px;
-}
-.card_medium {
-  height: 265px;
-}
-.card_large {
-  height: 330px;
 }
 
 /* text truncation */

@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import Tile, { TileProps } from "@/components/Tile/Tile";
 import { useMediaAPI } from "@/utils/api/media";
+import SharedMasonry from "@/components/common/SharedMasonry";
 
 interface RandomMediaItemDTO {
   id: number;
@@ -17,7 +18,7 @@ interface RandomMediaItemDTO {
 }
 
 /**
- * RandomMediaWidget fetches a specified number of random published media items 
+ * RandomMediaWidget fetches a specified number of random published media items
  * (default 4) and renders each using the Tile component.
  */
 const RandomMediaWidget: React.FC<{ count?: number }> = ({ count = 4 }) => {
@@ -68,19 +69,14 @@ const RandomMediaWidget: React.FC<{ count?: number }> = ({ count = 4 }) => {
 
   return (
     <div>
-      <div className="random-media-grid">
+      <SharedMasonry>
         {tileItems.map((item) => (
-          <Tile key={item.id} item={item} />
+          <Tile
+            key={item.id}
+            item={item}
+          />
         ))}
-      </div>
-      <style jsx>{`
-        .random-media-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 1rem;
-          padding: 1rem;
-        }
-      `}</style>
+      </SharedMasonry>
     </div>
   );
 };

@@ -4,6 +4,7 @@
 import React from "react";
 import { usePaginatedData } from "@/hooks/usePaginatedData";
 import PostTile from "../Tile/Tile";
+import SharedMasonry from "../common/SharedMasonry";
 
 export interface Post {
   id: number;
@@ -29,8 +30,14 @@ export default function PostsList({
   title,
   initialPage = 1,
 }: PostsListProps) {
-  const { data: posts, page, totalPages, loading, error, setPage } =
-    usePaginatedData<Post>(fetchFunction, initialPage);
+  const {
+    data: posts,
+    page,
+    totalPages,
+    loading,
+    error,
+    setPage,
+  } = usePaginatedData<Post>(fetchFunction, initialPage);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -38,7 +45,7 @@ export default function PostsList({
   return (
     <div key={initialPage}>
       {title && <h2>{title}</h2>}
-      <div className="pin_container">
+      <SharedMasonry>
         {posts.map((post) => (
           <PostTile
             key={post.id}
@@ -49,7 +56,7 @@ export default function PostsList({
             }}
           />
         ))}
-      </div>
+      </SharedMasonry>
     </div>
   );
 }

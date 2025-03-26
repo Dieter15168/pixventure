@@ -3,10 +3,11 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Tile, { TileProps } from "../../../components/Tile/Tile";
+import Tile, { TileProps } from "@/components/Tile/Tile";
 import { MinimalMediaItemDTO } from "./AvailableMedia";
-import { usePostsAPI } from "../../../utils/api/posts";
-import { useTermsAPI, Term } from "../../../utils/api/terms";
+import { usePostsAPI } from "@/utils/api/posts";
+import { useTermsAPI, Term } from "@/utils/api/terms";
+import SharedMasonry from "@/components/common/SharedMasonry";
 
 interface Step2Props {
   selectedItems: MinimalMediaItemDTO[];
@@ -116,7 +117,7 @@ export default function Step2PostFinalization({
 
       <h4>Chosen Media Items</h4>
       <p>Click a tile to mark it as the featured item.</p>
-      <div className="pin_container">
+      <SharedMasonry>
         {selectedItems.map((item) => {
           const isFeatured = item.id === featuredId;
           const tileProps: TileProps = {
@@ -149,7 +150,7 @@ export default function Step2PostFinalization({
             />
           );
         })}
-      </div>
+      </SharedMasonry>
 
       <hr />
 

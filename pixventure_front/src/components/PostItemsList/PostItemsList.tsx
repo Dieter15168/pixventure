@@ -3,6 +3,7 @@
 
 import React from "react";
 import Tile, { TileProps } from "../Tile/Tile";
+import SharedMasonry from "../common/SharedMasonry";
 
 export interface PostItem {
   id: number;
@@ -60,11 +61,16 @@ export default function PostItemsList({
   return (
     <div>
       {title && <h2>{title}</h2>}
-      <div className="pin_container">
+      <SharedMasonry>
         {tileItems.map((tile) => (
-          <Tile key={tile.id} item={tile} />
+          <div key={tile.id}>
+            <Tile
+              key={tile.id}
+              item={tile}
+            />
+          </div>
         ))}
-      </div>
+      </SharedMasonry>
     </div>
   );
 }

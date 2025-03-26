@@ -3,7 +3,6 @@
 
 import React, { useState } from "react";
 import RandomMediaWidget from "@/components/RandomMediaWidget";
-import Link from "next/link";
 
 export default function RandomItemsPage() {
   // Use a key to force re-mounting the widget for re-fetching items.
@@ -16,7 +15,7 @@ export default function RandomItemsPage() {
   };
 
   return (
-    <div className="container my-4">
+    <div>
       {/* Header with page title and back link */}
       <h2>Random Items</h2>
 

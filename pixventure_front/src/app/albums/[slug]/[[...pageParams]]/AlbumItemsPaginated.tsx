@@ -9,6 +9,7 @@ import { useAlbumsAPI } from "@/utils/api/albums";
 import Tile, { TileProps } from "@/components/Tile/Tile";
 import PaginationComponent from "@/components/Pagination/Pagination";
 import LikeButton from "@/elements/LikeButton/LikeButton";
+import SharedMasonry from "@/components/common/SharedMasonry";
 
 // Minimal type definitions:
 interface Album {
@@ -56,7 +57,9 @@ interface AlbumItemsPaginatedProps {
   album: Album;
 }
 
-export default function AlbumItemsPaginated({ album }: AlbumItemsPaginatedProps) {
+export default function AlbumItemsPaginated({
+  album,
+}: AlbumItemsPaginatedProps) {
   // The base path for album elements pages will be "/albums/{album.slug}".
   const basePath = `/albums/${album.slug}`;
   // Use our custom hook to derive current page from the route's optional catch-all.
@@ -153,7 +156,8 @@ export default function AlbumItemsPaginated({ album }: AlbumItemsPaginatedProps)
   const tileItems: TileProps[] = albumElements.map(transformAlbumElementToTile);
 
   if (elementsLoading) return <p>Loading album elements...</p>;
-  if (elementsError) return <p>Error loading album elements: {elementsError}</p>;
+  if (elementsError)
+    return <p>Error loading album elements: {elementsError}</p>;
 
   return (
     <div>
@@ -165,11 +169,14 @@ export default function AlbumItemsPaginated({ album }: AlbumItemsPaginatedProps)
       />
       <hr />
       <h2>Album Elements</h2>
-      <div className="pin_container">
+      <SharedMasonry>
         {tileItems.map((tile) => (
-          <Tile key={tile.renderKey} item={tile} />
+          <Tile
+            key={tile.renderKey}
+            item={tile}
+          />
         ))}
-      </div>
+      </SharedMasonry>
       {totalPages > 1 && (
         <PaginationComponent
           currentPage={currentPage}
