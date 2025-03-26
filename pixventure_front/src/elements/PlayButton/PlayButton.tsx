@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import React from "react";
 import styles from "./PlayButton.module.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -10,11 +9,15 @@ interface PlayButtonProps {
   slug: string;
 }
 
+/**
+ * PlayButton renders the play icon without wrapping it in a <Link>.
+ * The expectation is that the parent container is already clickable.
+ */
 const PlayButton: React.FC<PlayButtonProps> = ({ slug }) => {
   return (
-    <Link href={`/${slug}`} className={styles.player_button}>
+    <div className={styles.player_button}>
       <FontAwesomeIcon icon={faPlayCircle} />
-    </Link>
+    </div>
   );
 };
 
