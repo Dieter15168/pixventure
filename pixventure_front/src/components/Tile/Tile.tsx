@@ -102,6 +102,9 @@ function computeTileLink(item: TileProps): TileLinkInfo {
   if (page_type === "random_items_list") {
     return { finalHref: `/media-redirect/${id}`, linkAction: "newTab" };
   }
+    if (page_type === "album" && entity_type === "media") {
+    return { finalHref: `/media-redirect/${id}`, linkAction: "newTab" };
+  }
   if (page_type === "moderation" || page_type === "album") {
     let href = "#";
     switch (entity_type) {

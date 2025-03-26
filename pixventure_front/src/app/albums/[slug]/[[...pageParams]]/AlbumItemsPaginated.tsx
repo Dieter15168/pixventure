@@ -96,6 +96,7 @@ export default function AlbumItemsPaginated({ album }: AlbumItemsPaginatedProps)
         owner_username: post.owner_username,
         tile_size: post.tile_size,
         entity_type: "post",
+        page_type: "album",
         albumContext: {
           albumSlug: album.slug,
           inAlbum: true,
@@ -119,6 +120,7 @@ export default function AlbumItemsPaginated({ album }: AlbumItemsPaginatedProps)
         owner_username: media.owner_username,
         tile_size: media.tile_size,
         entity_type: "media",
+        page_type: "album",
         albumContext: {
           albumSlug: album.slug,
           inAlbum: true,
