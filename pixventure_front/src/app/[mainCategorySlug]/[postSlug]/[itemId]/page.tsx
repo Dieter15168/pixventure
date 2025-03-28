@@ -1,15 +1,15 @@
-// src/app/[mainCategorySlug]/[postSlug]/items/[itemId]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import ZoomableImage from "@/components/ZoomableImage/ZoomableImage";
 import { usePostsAPI } from "@/utils/api/posts";
+import styles from "./ItemViewerPage.module.scss";
 
 interface Post {
   id: number;
   slug: string;
-  // ...
 }
 
 interface ItemDetail {
@@ -19,6 +19,12 @@ interface ItemDetail {
   previous_item_id: number | null;
   next_item_id: number | null;
   item_url: string;
+  served_width: number;
+  served_height: number;
+  original_width: number;
+  original_height: number;
+  show_membership_prompt: boolean;
+  locked: boolean;
 }
 
 export default function ItemViewerPage() {
@@ -40,14 +46,12 @@ export default function ItemViewerPage() {
 
     const loadData = async () => {
       try {
-        // Step A: fetch the post (by postSlug)
         const foundPost = await fetchPostBySlug(postSlug);
         if (!foundPost) {
           throw new Error(`No post found for slug: ${postSlug}`);
         }
         setPost(foundPost);
 
-        // Step B: fetch the item from that post
         const postId = foundPost.id;
         const numericItemId = parseInt(itemId, 10);
         const detailData = await fetchPostItem(postId, numericItemId);
@@ -66,32 +70,45 @@ export default function ItemViewerPage() {
   if (error) return <p>Error: {error}</p>;
   if (!post || !itemDetail) return <p>No data found</p>;
 
-  const { item_id, previous_item_id, next_item_id, item_url } = itemDetail;
+  const {
+    item_id,
+    previous_item_id,
+    next_item_id,
+    item_url,
+    served_width,
+    served_height,
+  } = itemDetail;
 
   return (
-    <div>
-      <h2>
-        Viewing Item #{item_id} of Post "{post.slug}"
-      </h2>
-      <div style={{ margin: "10px 0" }}>
-        <img
-          src={item_url}
-          alt={`Item ${item_id}`}
-          style={{ maxWidth: "400px" }}
-        />
-      </div>
+    <div className={styles.fullscreen}>
+      <ZoomableImage
+        src={item_url}
+        alt={`Item ${item_id}`}
+        imageWidth={served_width}
+        imageHeight={served_height}
+      />
 
-      <div style={{ marginTop: "20px" }}>
-        {previous_item_id && (
-          <Link href={`/${mainCategorySlug}/${postSlug}/${previous_item_id}`}>
-            <button>Previous</button>
-          </Link>
-        )}
-        {next_item_id && (
-          <Link href={`/${mainCategorySlug}/${postSlug}/${next_item_id}`}>
-            <button style={{ marginLeft: "10px" }}>Next</button>
-          </Link>
-        )}
+      <div className={styles.overlay}>
+        <p>
+          Item #{item_id} of Post "{post.slug}"
+        </p>
+
+        <div className={styles.navButtons}>
+          {previous_item_id && (
+            <Link
+              href={`/${mainCategorySlug}/${postSlug}/items/${previous_item_id}`}
+            >
+              <button>Previous</button>
+            </Link>
+          )}
+          {next_item_id && (
+            <Link
+              href={`/${mainCategorySlug}/${postSlug}/items/${next_item_id}`}
+            >
+              <button style={{ marginLeft: "10px" }}>Next</button>
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

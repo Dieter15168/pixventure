@@ -1,93 +1,120 @@
 from memberships.utils import check_if_user_is_paying
 from media.models import MediaItem, MediaItemVersion
 
-def get_media_file_for_display(media_item, user, post=None, thumbnail=False):
-    """
-    Returns the appropriate file URL for a MediaItem given:
-      - user's membership status
-      - whether post or item is blurred
-      - whether we want thumbnail or "full" file
 
-    Special logic for videos:
-      - Videos do not have blurred versions (blurred_thumbnail_file, blurred_preview_file).
-        If the video or post is blurred:
-           - paying users see watermarked_file
-           - non-paying users see preview_file
-           - thumbnail is always the normal thumbnail_file (if any)
-
-    Photos:
-      - If user is paying => always watermarked_file (or thumbnail_file if thumbnail=True)
-        ignoring blur
-      - If user is non-paying:
-          * If blurred => use blurred_preview_file or blurred_thumbnail_file
-          * If not blurred => use preview_file or thumbnail_file
+def get_media_display_info(media_item, user, post=None, thumbnail=False):
     """
-    
-    # 1. Check if user is paying
+    Returns a tuple of (chosen_version, chosen_url) for a MediaItem:
+      - chosen_version: the MediaItemVersion instance used.
+      - chosen_url: the corresponding file URL string.
+
+    This function encapsulates all the logic of picking which version is served
+    (blurred preview, watermarked, etc.), so we only have to maintain it in one place.
+
+    Then get_media_file_for_display() can simply call this function and return
+    only the URL, for backward compatibility.
+    """
+    # (1) Get the final URL from your existing logic
+    #     We'll call the existing function. 
+    #     But we also need to figure out which version was chosen.
+    #
+    #     Because your existing function only returns the URL, we need to replicate
+    #     enough of its logic to determine the chosen_version. If you prefer to keep
+    #     your existing function 100% untouched, you can do so, but you'd have to
+    #     replicate the logic here. Instead, we can shift the actual logic from
+    #     get_media_file_for_display() into this new function, then have the old
+    #     function call *this* to get the URL. 
+    #
+    # For illustration, let's move the entire logic from get_media_file_for_display here,
+    # so we can also track the chosen_version in parallel:
+
     user_is_paying = check_if_user_is_paying(user)
-
-    # 2. Determine if the content is blurred
-    #    If the post is blurred OR the item is blurred => entire content is blurred
-    post_blurred = getattr(post, 'is_blurred', False)  # post may be None if unknown
+    post_blurred = getattr(post, 'is_blurred', False) if post else False
     item_blurred = media_item.is_blurred
-    is_blurred = (post_blurred or item_blurred)
+    is_blurred = post_blurred or item_blurred
 
-    # 3. Get the correct MediaItemVersion
-    version_type = MediaItemVersion.WATERMARKED if not thumbnail else MediaItemVersion.THUMBNAIL
-    version_query = media_item.versions.filter(version_type=version_type).first()
+    chosen_version = None
+    chosen_url = ""
 
-    if not version_query:
-        return ""  # No matching version found, return empty string
-
-    # 4. Separate logic if this is a PHOTO or VIDEO
-    if media_item.media_type == MediaItem.PHOTO:
-        # --- PHOTO LOGIC (supports blurred files) ---
+    if media_item.media_type == MediaItem.VIDEO:
+        # -- VIDEO --
+        # Watermarked or thumbnail version_type
+        version_type = (MediaItemVersion.THUMBNAIL if thumbnail
+                        else MediaItemVersion.WATERMARKED)
+        version_obj = media_item.versions.filter(version_type=version_type).first()
         if user_is_paying:
-            # Paying users see watermarked_file or thumbnail_file
-            if thumbnail:
-                return version_query.file.url if version_query.file else ""
+            # paying user sees watermarked or thumbnail
+            if version_obj and version_obj.file:
+                chosen_version = version_obj
+                chosen_url = version_obj.file.url
             else:
-                # Paying users always see the watermarked version
-                return version_query.file.url if version_query.file else ""
+                chosen_version = None
+                chosen_url = ""
+        else:
+            # non-paying sees preview or thumbnail
+            if thumbnail:
+                if version_obj and version_obj.file:
+                    chosen_version = version_obj
+                    chosen_url = version_obj.file.url
+            else:
+                preview_obj = media_item.versions.filter(version_type=MediaItemVersion.PREVIEW).first()
+                if preview_obj and preview_obj.file:
+                    chosen_version = preview_obj
+                    chosen_url = preview_obj.file.url
+
+    else:
+        # -- PHOTO --
+        # If user is paying => watermarked/thumbnail
+        # If not => blurred or preview
+        if user_is_paying:
+            # For paying users, we use watermarked or thumbnail
+            version_type = (MediaItemVersion.THUMBNAIL if thumbnail
+                            else MediaItemVersion.WATERMARKED)
+            version_obj = media_item.versions.filter(version_type=version_type).first()
+            if version_obj and version_obj.file:
+                chosen_version = version_obj
+                chosen_url = version_obj.file.url
+
         else:
             # Non-paying user
             if is_blurred:
-                # Return blurred version
+                # blurred thumbnail or blurred preview
+                version_type = (MediaItemVersion.BLURRED_THUMBNAIL if thumbnail
+                                else MediaItemVersion.BLURRED_PREVIEW)
+                version_obj = media_item.versions.filter(version_type=version_type).first()
+                if version_obj and version_obj.file:
+                    chosen_version = version_obj
+                    chosen_url = version_obj.file.url
+            else:
+                # normal thumbnail or normal preview
                 if thumbnail:
-                    # Non-paying user sees blurred thumbnail if available
-                    blurred_version = media_item.versions.filter(version_type=MediaItemVersion.BLURRED_THUMBNAIL).first()
-                    return blurred_version.file.url if blurred_version else ""
+                    # normal thumbnail
+                    version_obj = media_item.versions.filter(version_type=MediaItemVersion.THUMBNAIL).first()
+                    if version_obj and version_obj.file:
+                        chosen_version = version_obj
+                        chosen_url = version_obj.file.url
                 else:
-                    # Non-paying user sees blurred preview if available
-                    blurred_version = media_item.versions.filter(version_type=MediaItemVersion.BLURRED_PREVIEW).first()
-                    return blurred_version.file.url if blurred_version else ""
-            else:
-                # Return normal preview
-                if thumbnail:
-                    return version_query.file.url if version_query.file else ""
-                else:
-                    # Non-paying user sees preview file
-                    preview_version = media_item.versions.filter(version_type=MediaItemVersion.PREVIEW).first()
-                    return preview_version.file.url if preview_version else ""
-    else:
-        # --- VIDEO LOGIC (no blurred files exist) ---
-        # If blurred => paying user sees watermarked, non-paying sees preview
-        if user_is_paying:
-            # Always see watermarked_file for paying users
-            if thumbnail:
-                # The thumbnail for a video is not blurred, so we use normal thumbnail_file if any
-                thumbnail_version = media_item.versions.filter(version_type=MediaItemVersion.THUMBNAIL).first()
-                return thumbnail_version.file.url if thumbnail_version else ""
-            else:
-                return version_query.file.url if version_query.file else ""
-        else:
-            # Non-paying user
-            if thumbnail:
-                return version_query.file.url if version_query.file else ""
-            else:
-                # Non-paying user sees preview for video
-                preview_version = media_item.versions.filter(version_type=MediaItemVersion.PREVIEW).first()
-                return preview_version.file.url if preview_version else ""
+                    # normal preview
+                    preview_obj = media_item.versions.filter(version_type=MediaItemVersion.PREVIEW).first()
+                    if preview_obj and preview_obj.file:
+                        chosen_version = preview_obj
+                        chosen_url = preview_obj.file.url
+
+    # If no version found or no file, fallback to empty strings
+    if not chosen_version:
+        chosen_version = None
+        chosen_url = ""
+
+    return chosen_version, chosen_url
+
+
+def get_media_file_for_display(media_item, user, post=None, thumbnail=False):
+    """
+    Preserves the old signature, but re-uses the new logic:
+    """
+    _, chosen_url = get_media_display_info(media_item, user, post, thumbnail)
+    return chosen_url
+
 
 def is_media_locked(media_item, user, post=None):
     """

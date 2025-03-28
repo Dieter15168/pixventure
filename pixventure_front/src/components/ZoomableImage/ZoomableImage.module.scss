@@ -1,0 +1,26 @@
+.outerContainer {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: black;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.imageContainer {
+  width: 100% !important;        // allow container to fill parent flex container
+  height: 100% !important;       // allow container to fill parent flex container
+  display: flex !important;      // <-- crucial: enables reliable centering
+  justify-content: center !important; // horizontally center the image
+  align-items: center !important;     // vertically center the image
+}
+
+.image {
+  width: auto !important;        // prevents unwanted stretching
+  height: auto !important;       // prevents unwanted stretching
+  max-width: 100%;               // scales large images to fit
+  max-height: 100%;              // scales large images to fit
+  object-fit: contain;
+  display: block;
+}

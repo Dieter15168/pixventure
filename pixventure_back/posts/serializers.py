@@ -4,7 +4,8 @@ from posts.models import Post
 from posts.models import PostMedia
 from media.models import MediaItem, MediaItemVersion
 from social.utils import user_has_liked
-from media.utils.media_file import get_media_file_for_display, is_media_locked
+from memberships.utils import check_if_user_is_paying
+from media.utils.media_file import get_media_file_for_display, get_media_display_info, is_media_locked
 from media.serializers import TileInfoMixin
 from taxonomy.models import Term
 from django.core.exceptions import ValidationError
@@ -113,12 +114,18 @@ class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
 class PostMediaItemDetailSerializer(serializers.ModelSerializer):
     """
     Serializes a single PostMedia object for the item viewer, returning:
-    - item_id: The ID of the MediaItem
-    - likes_counter: Number of likes on that MediaItem
-    - has_liked: Whether the current user has liked this MediaItem
-    - previous_item_id: ID of the previous MediaItem in the same Post
-    - next_item_id: ID of the next MediaItem in the same Post
-    - item_url: The URL for the MediaItem file (e.g., original_file.url)
+      item_id,
+      likes_counter,
+      has_liked,
+      previous_item_id,
+      next_item_id,
+      item_url,
+      served_width,
+      served_height,
+      original_width,
+      original_height,
+      show_membership_prompt,
+      locked
     """
 
     item_id = serializers.SerializerMethodField()
@@ -127,6 +134,12 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
     previous_item_id = serializers.SerializerMethodField()
     next_item_id = serializers.SerializerMethodField()
     item_url = serializers.SerializerMethodField()
+    served_width = serializers.SerializerMethodField()
+    served_height = serializers.SerializerMethodField()
+    original_width = serializers.SerializerMethodField()
+    original_height = serializers.SerializerMethodField()
+    show_membership_prompt = serializers.SerializerMethodField()
+    locked = serializers.SerializerMethodField()
 
     class Meta:
         model = PostMedia
@@ -137,6 +150,12 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
             'previous_item_id',
             'next_item_id',
             'item_url',
+            'served_width',
+            'served_height',
+            'original_width',
+            'original_height',
+            'show_membership_prompt',
+            'locked',
         ]
 
     def get_item_id(self, obj):
@@ -185,22 +204,86 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
         )
         return next_pm.media_item_id if next_pm else None
 
+    def _get_display_info(self, obj):
+        """
+        Returns (chosen_version, chosen_url) for this media item.
+        We cache it in serializer context to avoid multiple queries.
+        """
+        cache_key = f"postmedia_item_{obj.pk}_info"
+        if cache_key not in self.context:
+            request = self.context.get('request')
+            user = request.user if request else None
+
+            chosen_version, chosen_url = get_media_display_info(
+                media_item=obj.media_item,
+                user=user,
+                post=obj.post,
+                thumbnail=False  # or True if you're serving "thumbnail" in this endpoint
+            )
+            self.context[cache_key] = (chosen_version, chosen_url)
+        return self.context[cache_key]
+
     def get_item_url(self, obj):
-        """Return an appropriate URL for the file."""
+        """
+        The final URL. Pulled from the chosen version's info.
+        """
+        chosen_version, chosen_url = self._get_display_info(obj)
+        return chosen_url
+
+    def get_served_width(self, obj):
+        chosen_version, _ = self._get_display_info(obj)
+        return chosen_version.width if chosen_version and chosen_version.width else None
+
+    def get_served_height(self, obj):
+        chosen_version, _ = self._get_display_info(obj)
+        return chosen_version.height if chosen_version and chosen_version.height else None
+
+    def get_original_width(self, obj):
+        original = obj.media_item.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
+        return original.width if original and original.width else None
+
+    def get_original_height(self, obj):
+        original = obj.media_item.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
+        return original.height if original and original.height else None
+
+    def get_show_membership_prompt(self, obj):
+        """
+        True if the served version is 'smaller' than the original
+        and is some kind of preview/blurred preview (i.e. for non-paying user).
+        Adapt the condition as you see fit.
+        """
+        chosen_version, _ = self._get_display_info(obj)
+        if not chosen_version:
+            return False
+
+        # If we want to treat all non-ORIGINAL versions as "preview" for membership prompt:
+        if chosen_version.version_type in [
+            MediaItemVersion.PREVIEW,
+            MediaItemVersion.BLURRED_PREVIEW,
+            # possibly THUMBNAIL, etc., if you want the prompt for them too
+        ]:
+            original = obj.media_item.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
+            if not original:
+                return False
+            # Compare resolutions
+            served_w = chosen_version.width or 0
+            served_h = chosen_version.height or 0
+            orig_w = original.width or 0
+            orig_h = original.height or 0
+
+            # If either dimension is smaller, we consider it "lower-res"
+            if served_w < orig_w or served_h < orig_h:
+                return True
+
+        return False
+
+    def get_locked(self, obj):
+        """
+        Use is_media_locked to see if the item is locked for this user.
+        """
         request = self.context.get('request')
         user = request.user if request else None
-        media_item = obj.media_item
-
-        if not media_item:
-            return ""
-
-        # We assume in "PostMedia" we can do obj.post to see if post is blurred
-        return get_media_file_for_display(
-            media_item=media_item,
-            user=user,
-            post=obj.post,
-            thumbnail=False  # we want the "full" version
-        )
+        return is_media_locked(obj.media_item, user, post=obj.post)
 
 
 class PostCreateSerializer(serializers.Serializer):
