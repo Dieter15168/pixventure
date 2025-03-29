@@ -15,3 +15,53 @@
 .navButtons {
   margin-top: 10px;
 }
+
+/* 
+  Loader overlay that sits on top of the entire screen
+  (but below the navigation if you keep that z-index higher)
+*/
+.loaderOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: black;
+  opacity: 0.85; /* slightly transparent if you like */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000; /* or something high */
+  color: white;
+}
+
+/* 
+  If you want a full-screen loader for the initial data fetch 
+  before itemDetail is ready
+*/
+.loaderScreen {
+  position: fixed;
+  inset: 0;
+  background-color: black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  color: white;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #ccc;
+  border-top: 5px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+/* Simple keyframes for spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

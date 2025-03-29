@@ -1,26 +1,40 @@
-// src/components/ZoomableImage/ZoomableImage.tsx
-
+// /components/ZoomableImage/ZoomableImage.tsx
 "use client";
 
-import React from "react";
-import {
-  TransformWrapper,
-  TransformComponent
-} from "react-zoom-pan-pinch";
+import React, { useCallback } from "react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import styles from "./ZoomableImage.module.scss";
 
 interface ZoomableImageProps {
   src: string;
   alt?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  onLoadComplete?: () => void; // <--- add this
 }
 
-const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt = "" }) => {
+const ZoomableImage: React.FC<ZoomableImageProps> = ({
+  src,
+  alt = "",
+  imageWidth,
+  imageHeight,
+  onLoadComplete,
+}) => {
+  // optional: if you have width/height, you can pass them to contentStyle
+
+  const handleImageLoad = useCallback(() => {
+    // Let parent know image is loaded
+    if (onLoadComplete) {
+      onLoadComplete();
+    }
+  }, [onLoadComplete]);
+
   return (
     <div className={styles.outerContainer}>
       <TransformWrapper
         limitToBounds={false}
         minScale={0.1}
-        maxScale={10}
+        maxScale={5}
         initialScale={1}
         centerOnInit={true}
       >
@@ -33,7 +47,13 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt = "" }) => {
             alignItems: "center",
           }}
         >
-          <img src={src} alt={alt} className={styles.image} draggable={false} />
+          <img
+            src={src}
+            alt={alt}
+            className={styles.image}
+            draggable={false}
+            onLoad={handleImageLoad}
+          />
         </TransformComponent>
       </TransformWrapper>
     </div>
