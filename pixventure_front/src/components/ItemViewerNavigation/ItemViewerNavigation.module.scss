@@ -28,5 +28,17 @@
     right: 20px;
   }
   
-  /* Optional: basic styling for icons, you might want hover states, etc. */
+  .likeButton {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    pointer-events: auto;
+  }
   
+  .menuButton {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    pointer-events: auto;
+    cursor: pointer;
+  }
