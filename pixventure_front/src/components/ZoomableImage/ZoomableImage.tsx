@@ -1,3 +1,5 @@
+// src/components/ZoomableImage/ZoomableImage.tsx
+
 "use client";
 
 import React from "react";
@@ -18,7 +20,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({ src, alt = "" }) => {
       <TransformWrapper
         limitToBounds={false}
         minScale={0.1}
-        maxScale={5}
+        maxScale={10}
         initialScale={1}
         centerOnInit={true}
       >
