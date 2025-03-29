@@ -1,0 +1,32 @@
+.navContainer {
+    position: fixed;
+    inset: 0; /* covers full screen */
+    pointer-events: none; /* base container won't block zoom */
+    z-index: 9999;        /* above the zoom container */
+  }
+  
+  .backButton {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    pointer-events: auto; /* allow clicks */
+  }
+  
+  .leftArrow,
+  .rightArrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: auto; /* allow clicks */
+  }
+  
+  .leftArrow {
+    left: 20px;
+  }
+  
+  .rightArrow {
+    right: 20px;
+  }
+  
+  /* Optional: basic styling for icons, you might want hover states, etc. */
+  

@@ -1,10 +1,10 @@
-// scr/app/[mainCategorySlug]/[postSlug]/[itemId]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ZoomableImage from "@/components/ZoomableImage/ZoomableImage";
+import ItemViewerNavigation from "@/components/ItemViewerNavigation/ItemViewerNavigation";
 import { usePostsAPI } from "@/utils/api/posts";
 import styles from "./ItemViewerPage.module.scss";
 
@@ -34,6 +34,11 @@ export default function ItemViewerPage() {
     postSlug: string;
     itemId: string;
   };
+
+  // If you are using searchParams to pass ?from=someUrl
+  const searchParams = useSearchParams();
+  const fromParam = searchParams.get("from") || `/${mainCategorySlug}/${postSlug}`;
+  // Or you can define any fallback if 'from' doesn't exist
 
   const [post, setPost] = useState<Post | null>(null);
   const [itemDetail, setItemDetail] = useState<ItemDetail | null>(null);
@@ -80,8 +85,21 @@ export default function ItemViewerPage() {
     served_height,
   } = itemDetail;
 
+  // Construct your navigation URLs:
+  const prevUrl = previous_item_id
+    ? `/${mainCategorySlug}/${postSlug}/${previous_item_id}?from=${encodeURIComponent(fromParam)}`
+    : undefined;
+
+  const nextUrl = next_item_id
+    ? `/${mainCategorySlug}/${postSlug}/${next_item_id}?from=${encodeURIComponent(fromParam)}`
+    : undefined;
+
+  // For "Back to Post" or "Back to Category" logic, you can pass fromParam or fallback:
+  const backUrl = fromParam;
+
   return (
     <div className={styles.fullscreen}>
+      {/* The zoomed image (z-index: 10 in .outerContainer from ZoomableImage) */}
       <ZoomableImage
         src={item_url}
         alt={`Item ${item_id}`}
@@ -89,27 +107,20 @@ export default function ItemViewerPage() {
         imageHeight={served_height}
       />
 
-      <div className={styles.overlay}>
-        <p>
-          Item #{item_id} of Post "{post.slug}"
-        </p>
+      {/* The high-level navigation overlay above the zoomed image */}
+      <ItemViewerNavigation
+        previousItemUrl={prevUrl}
+        nextItemUrl={nextUrl}
+        backUrl={backUrl}
+      />
 
-        <div className={styles.navButtons}>
-          {previous_item_id && (
-            <Link
-              href={`/${mainCategorySlug}/${postSlug}/items/${previous_item_id}`}
-            >
-              <button>Previous</button>
-            </Link>
-          )}
-          {next_item_id && (
-            <Link
-              href={`/${mainCategorySlug}/${postSlug}/items/${next_item_id}`}
-            >
-              <button style={{ marginLeft: "10px" }}>Next</button>
-            </Link>
-          )}
-        </div>
+      {/* 
+        Optionally, if you still want to show some textual info, 
+        you could place it somewhere else in the DOM or style it 
+        with appropriate z-index 
+      */}
+      <div className={styles.infoBox}>
+        <p>Item #{item_id} of Post "{post.slug}"</p>
       </div>
     </div>
   );
