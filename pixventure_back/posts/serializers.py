@@ -125,7 +125,9 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
       original_width,
       original_height,
       show_membership_prompt,
-      locked
+      locked,
+      media_type,
+      video_poster_url
     """
 
     item_id = serializers.SerializerMethodField()
@@ -140,6 +142,8 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
     original_height = serializers.SerializerMethodField()
     show_membership_prompt = serializers.SerializerMethodField()
     locked = serializers.SerializerMethodField()
+    media_type = serializers.SerializerMethodField()
+    video_poster_url = serializers.SerializerMethodField()
 
     class Meta:
         model = PostMedia
@@ -156,6 +160,8 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
             'original_height',
             'show_membership_prompt',
             'locked',
+            'media_type',
+            'video_poster_url',
         ]
 
     def get_item_id(self, obj):
@@ -224,9 +230,7 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
         return self.context[cache_key]
 
     def get_item_url(self, obj):
-        """
-        The final URL. Pulled from the chosen version's info.
-        """
+        """The final URL. Pulled from the chosen version's info."""
         chosen_version, chosen_url = self._get_display_info(obj)
         return chosen_url
 
@@ -256,7 +260,6 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
         if not chosen_version:
             return False
 
-        # If we want to treat all non-ORIGINAL versions as "preview" for membership prompt:
         if chosen_version.version_type in [
             MediaItemVersion.PREVIEW,
             MediaItemVersion.BLURRED_PREVIEW,
@@ -265,7 +268,7 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
             original = obj.media_item.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
             if not original:
                 return False
-            # Compare resolutions
+
             served_w = chosen_version.width or 0
             served_h = chosen_version.height or 0
             orig_w = original.width or 0
@@ -284,6 +287,29 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user if request else None
         return is_media_locked(obj.media_item, user, post=obj.post)
+
+    def get_media_type(self, obj):
+        """Returns the media type as a string, e.g. 'photo' or 'video'."""
+        return obj.media_item.get_media_type_display().lower()
+
+    def get_video_poster_url(self, obj):
+        """
+        If the media is a video, return a URL to the thumbnail/poster version.
+        Otherwise return None.
+        """
+        if obj.media_item.media_type != MediaItem.VIDEO:
+            return None
+
+        # For example, assume there is a 'THUMBNAIL' version type you use as a poster
+        thumbnail_version = obj.media_item.versions.filter(
+            version_type=MediaItemVersion.THUMBNAIL
+        ).first()
+
+        # If a thumbnail version exists, return its URL; otherwise None
+        if thumbnail_version and thumbnail_version.file:
+            return thumbnail_version.file.url
+
+        return None
 
 
 class PostCreateSerializer(serializers.Serializer):

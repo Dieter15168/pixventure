@@ -6,25 +6,21 @@
  * ItemViewerPage
  * --------------
  * This page displays a single "media item" within a post, providing:
- *  - Fullscreen zoomable image
+ *  - Fullscreen media viewer (image or video) via MediaViewer
  *  - Navigation arrows to previous/next item
  *  - "Back to post" link
- *  - Loader overlay while fetching data or loading images
+ *  - Loader overlay while fetching data or loading media
  *  - Like button & item menu button in navigation overlay
- *
- * The page fetches item details via the Posts API based on the current
- * route parameters (mainCategorySlug, postSlug, itemId). Once loaded,
- * it displays a ZoomableImage component and a navigation overlay.
  */
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import ZoomableImage from "@/components/ZoomableImage/ZoomableImage";
 import ItemViewerNavigation from "@/components/ItemViewerNavigation/ItemViewerNavigation";
+import MediaViewer from "@/components/MediaViewer/MediaViewer"; // <-- Important: use your custom MediaViewer
 import { usePostsAPI } from "@/utils/api/posts";
 import styles from "./ItemViewerPage.module.scss";
 
-// Post interface for storing basic post info
+// Basic interface for storing info about the post
 interface Post {
   id: number;
   slug: string;
@@ -33,12 +29,11 @@ interface Post {
 /**
  * ItemDetail
  * ----------
- * Represents metadata for the specific item (media).
- * The API returns previous_item_id, next_item_id, etc.
- * We also have fields for controlling like state and counters.
+ * The API now provides media_type to indicate "image" or "video".
  */
 interface ItemDetail {
   item_id: number;
+  media_type: "image" | "video";
   likes_counter: number;
   has_liked: boolean;
   previous_item_id: number | null;
@@ -46,41 +41,37 @@ interface ItemDetail {
   item_url: string;
   served_width: number;
   served_height: number;
-  // ... other fields relevant to item
+  video_poster_url: string;
 }
 
 export default function ItemViewerPage() {
-  // Extract route parameters
+  // Route parameters
   const { mainCategorySlug, postSlug, itemId } = useParams() as {
     mainCategorySlug: string;
     postSlug: string;
     itemId: string;
   };
 
-  // Retrieve any "from" parameter to allow "Back to post" or fallback
+  // "from" param for back navigation
   const searchParams = useSearchParams();
   const fromParam = searchParams.get("from") || `/${mainCategorySlug}/${postSlug}`;
 
-  // Local state for storing the post and item detail
+  // Local state for post and item detail
   const [post, setPost] = useState<Post | null>(null);
   const [itemDetail, setItemDetail] = useState<ItemDetail | null>(null);
 
-  // Loader states: fetch in progress (data) and image in progress
+  // Loader states: data fetch + media load
   const [isFetchingItem, setIsFetchingItem] = useState(false);
-  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [isMediaLoading, setIsMediaLoading] = useState(false);
 
-  // Error state for any fetch or load issues
+  // Error state
   const [error, setError] = useState<string | null>(null);
 
-  // API hook for fetching data
+  // API hooks
   const { fetchPostBySlug, fetchPostItem } = usePostsAPI();
 
   /**
-   * useEffect - on route parameter changes:
-   *  1. Start item fetch
-   *  2. Clear error
-   *  3. Mark that we're fetching, and that an image load is pending
-   *  4. Fetch post + item data
+   * Fetch post + item detail whenever slug/itemId changes
    */
   useEffect(() => {
     if (!postSlug || !itemId) return;
@@ -88,17 +79,15 @@ export default function ItemViewerPage() {
     const loadData = async () => {
       try {
         setIsFetchingItem(true);
-        setIsImageLoading(true); // we'll unset this when the <img> finishes loading
+        setIsMediaLoading(true);
         setError(null);
 
-        // Fetch the Post object by slug
         const foundPost = await fetchPostBySlug(postSlug);
         if (!foundPost) {
           throw new Error(`No post found for slug: ${postSlug}`);
         }
         setPost(foundPost);
 
-        // Fetch the ItemDetail using the post's ID and numeric itemId
         const numericItemId = parseInt(itemId, 10);
         const detailData = await fetchPostItem(foundPost.id, numericItemId);
         setItemDetail(detailData);
@@ -112,12 +101,12 @@ export default function ItemViewerPage() {
     loadData();
   }, [postSlug, itemId, fetchPostBySlug, fetchPostItem]);
 
-  // If there's any error, show it
+  // If there's an error, show it
   if (error) {
     return <p style={{ color: "red" }}>Error: {error}</p>;
   }
 
-  // If we have no post or item detail yet, show a simple full-screen loader
+  // If not yet loaded, show a basic loader
   if (!post || !itemDetail) {
     return (
       <div className={styles.loaderScreen}>
@@ -127,9 +116,10 @@ export default function ItemViewerPage() {
     );
   }
 
-  // Deconstruct needed fields from item detail
+  // Deconstruct item detail
   const {
     item_id,
+    media_type,
     likes_counter,
     has_liked,
     previous_item_id,
@@ -137,12 +127,10 @@ export default function ItemViewerPage() {
     item_url,
     served_width,
     served_height,
+    video_poster_url,
   } = itemDetail;
 
-  /**
-   * Build next and prev URLs, including "?from" parameter
-   * so the user can navigate back to the referring page.
-   */
+  // Construct prev/next URLs for navigation
   const prevUrl = previous_item_id
     ? `/${mainCategorySlug}/${postSlug}/${previous_item_id}?from=${encodeURIComponent(fromParam)}`
     : undefined;
@@ -151,16 +139,12 @@ export default function ItemViewerPage() {
     ? `/${mainCategorySlug}/${postSlug}/${next_item_id}?from=${encodeURIComponent(fromParam)}`
     : undefined;
 
-  /**
-   * Prepare data for the Item Menu.
-   * Example: we assume "media" as the entity_type for an item,
-   * but you can adjust it if needed.
-   */
+  // Data for the item menu
   const itemMenuData = {
     id: item_id,
-    name: post.slug,        // use post slug or any other title
-    entity_type: "media",   // "post" or "album" also possible
-    canAddToAlbum: true,    // adjust if needed
+    name: post.slug,
+    entity_type: "media",
+    canAddToAlbum: true,
     categories: [],
     tags: [],
     pageContext: {
@@ -174,10 +158,10 @@ export default function ItemViewerPage() {
       {/**
        * NAVIGATION OVERLAY
        * Includes:
-       *  - Back arrow (top-left) => fromParam
-       *  - Prev/Next arrows (left/right center)
-       *  - Like button (bottom-left), using likes_counter & has_liked
-       *  - Menu button (bottom-right), opening itemMenuData
+       *  - Back arrow => fromParam
+       *  - Prev/Next arrows => prevUrl, nextUrl
+       *  - Like button => likes_counter, has_liked
+       *  - Menu button => itemMenuData
        */}
       <ItemViewerNavigation
         previousItemUrl={prevUrl}
@@ -191,26 +175,29 @@ export default function ItemViewerPage() {
       />
 
       {/**
-       * ZOOMABLE IMAGE
-       * We pass an onLoadComplete prop so we can hide the overlay loader
-       * as soon as the image finishes loading in the browser.
+       * MEDIA VIEWER (image or video) 
+       * We'll rely on MediaViewer to handle correct rendering & 
+       * center the content on-screen. We pass onLoadComplete to 
+       * turn off the loader overlay once ready.
        */}
-      <ZoomableImage
+      <MediaViewer
         src={item_url}
         alt={`Item ${item_id}`}
         imageWidth={served_width}
         imageHeight={served_height}
-        onLoadComplete={() => setIsImageLoading(false)}
+        onLoadComplete={() => setIsMediaLoading(false)}
+        fallbackMediaType={media_type}
+        posterUrl={video_poster_url}
       />
 
       {/**
        * LOADING OVERLAY
-       * Displayed whenever we're fetching new item data or the image has not yet loaded.
+       * Active while we're fetching item data or if the media isn't loaded yet.
        */}
-      {(isFetchingItem || isImageLoading) && (
+      {(isFetchingItem || isMediaLoading) && (
         <div className={styles.loaderOverlay}>
           <div className={styles.spinner} />
-          <p>Loading image...</p>
+          <p>Loading media...</p>
         </div>
       )}
     </div>
