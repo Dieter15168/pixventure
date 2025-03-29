@@ -21,7 +21,7 @@ class PostCreationManager:
       4. Attach valid terms and set main_category if possible.
       5. Create PostMedia links for associated MediaItems.
       6. For each media item in the post, call MediaVersionManager
-         to process the required versions.
+         to process the required versions (only those that don't yet exist).
     """
     
     @staticmethod
@@ -59,17 +59,14 @@ class PostCreationManager:
             # Load only the valid terms
             valid_terms = Term.objects.filter(id__in=term_ids)
 
-            # We skip invalid terms without crashing
-            # (invalid IDs simply won't be in valid_terms)
-
-            # 3. Attempt to find at least one category from the valid terms
+            # Attempt to find at least one category from the valid terms
             category_qs = valid_terms.filter(term_type=Term.CATEGORY)
-            main_cat = get_mandatory_category(category_qs)  # This might raise if none is found
+            main_cat = get_mandatory_category(category_qs)  # Might raise if none found
 
-            # 4. Generate unique slug
+            # 3. Generate unique slug
             slug = generate_unique_slug(Post, name, max_length=50)
 
-            # 5. Create the Post
+            # 4. Create the Post
             post = Post.objects.create(
                 owner=user,
                 name=name,
@@ -81,11 +78,11 @@ class PostCreationManager:
                 is_blurred=is_blurred
             )
 
-            # 6. Attach all valid terms (including categories and tags)
+            # 5. Attach all valid terms
             if valid_terms.exists():
                 post.terms.add(*valid_terms)
 
-            # 7. Create PostMedia links
+            # 6. Create PostMedia links
             for pos, m_id in enumerate(item_ids):
                 media_obj = media_items.get(id=m_id)
                 PostMedia.objects.create(
@@ -94,13 +91,23 @@ class PostCreationManager:
                     position=pos
                 )
 
-        # 8. Process media versions
+        # 7. Process media versions (only if they do not already exist)
         allowed_versions = [MediaItemVersion.PREVIEW, MediaItemVersion.WATERMARKED]
         if is_blurred:
             allowed_versions += [MediaItemVersion.BLURRED_THUMBNAIL, MediaItemVersion.BLURRED_PREVIEW]
 
         for media_item in media_items:
-            mvm = MediaVersionManager(media_item.id)
-            mvm.process_versions(regenerate=False, allowed_versions=allowed_versions)
+            existing_version_types = MediaItemVersion.objects.filter(
+                media_item=media_item,
+                version_type__in=allowed_versions
+            ).values_list('version_type', flat=True)
+
+            # Only generate new versions
+            versions_to_create = [v for v in allowed_versions if v not in existing_version_types]
+
+            # If there are still versions to create, call the manager
+            if versions_to_create:
+                mvm = MediaVersionManager(media_item.id)
+                mvm.process_versions(regenerate=False, allowed_versions=versions_to_create)
 
         return post
