@@ -13,7 +13,7 @@ from taxonomy.utils import get_mandatory_category
 class PostCreationManager:
     """
     Manager for creating a Post with associated media items.
-    
+
     Workflow:
       1. Retrieve the post blur probability.
       2. Flip a coin to decide if the post is blurred.
@@ -21,9 +21,9 @@ class PostCreationManager:
       4. Attach valid terms and set main_category if possible.
       5. Create PostMedia links for associated MediaItems.
       6. For each media item in the post, call MediaVersionManager
-         to process the required versions (only those that don't yet exist).
+         to process only the required versions that do not already exist.
     """
-    
+
     @staticmethod
     def create_post(data, user):
         # 1. Fetch post blur probability
@@ -54,7 +54,7 @@ class PostCreationManager:
                 try:
                     featured_item_obj = MediaItem.objects.get(id=featured_item_id, owner=user)
                 except MediaItem.DoesNotExist:
-                    raise ValueError("Featured item does not exist or does not belong to you.")
+                    raise ValueError("Featured item does not exist or do not belong to you.")
 
             # Load only the valid terms
             valid_terms = Term.objects.filter(id__in=term_ids)
@@ -92,20 +92,28 @@ class PostCreationManager:
                 )
 
         # 7. Process media versions (only if they do not already exist)
+        #    If post is blurred, we also need blurred variants.
         allowed_versions = [MediaItemVersion.PREVIEW, MediaItemVersion.WATERMARKED]
         if is_blurred:
-            allowed_versions += [MediaItemVersion.BLURRED_THUMBNAIL, MediaItemVersion.BLURRED_PREVIEW]
+            # Adjust these as needed if your model names differ 
+            allowed_versions += [
+                MediaItemVersion.BLURRED_PREVIEW,
+                MediaItemVersion.BLURRED_THUMBNAIL
+            ]
+        print(allowed_versions)
 
         for media_item in media_items:
             existing_version_types = MediaItemVersion.objects.filter(
                 media_item=media_item,
                 version_type__in=allowed_versions
             ).values_list('version_type', flat=True)
+            print(existing_version_types)
 
-            # Only generate new versions
+            # Filter down to only the versions that do not yet exist.
             versions_to_create = [v for v in allowed_versions if v not in existing_version_types]
+            print(versions_to_create)
 
-            # If there are still versions to create, call the manager
+            # If we have anything left to create, do so.
             if versions_to_create:
                 mvm = MediaVersionManager(media_item.id)
                 mvm.process_versions(regenerate=False, allowed_versions=versions_to_create)
