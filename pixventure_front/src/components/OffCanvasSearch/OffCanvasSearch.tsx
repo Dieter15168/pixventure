@@ -1,24 +1,35 @@
 // components/OffCanvasSearch.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Offcanvas, Button, Form } from "react-bootstrap";
+import React, { useState, useEffect, ChangeEvent } from "react";
+import { Offcanvas, Button, Form, InputGroup } from "react-bootstrap";
 import { useTermsAPI } from "../../utils/api/terms";
-import TermDisplay from "../TermDisplay"; // Import the new component
+import TermDisplay from "../TermDisplay";
+
+interface Term {
+  id: number;
+  name: string;
+  slug: string;
+  term_type: number; // 1 => tag, 2 => category
+}
 
 interface OffCanvasSearchProps {
   show: boolean;
   onHide: () => void;
 }
 
+/**
+ * OffCanvasSearch component renders a search panel that loads terms from the API,
+ * filters them in real time, and provides a responsive layout.
+ */
 export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) {
   const { fetchAllTerms } = useTermsAPI();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
+  const [categories, setCategories] = useState<Term[]>([]);
+  const [tags, setTags] = useState<Term[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (show) {
@@ -31,7 +42,7 @@ export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) 
     setError(null);
     try {
       const data = await fetchAllTerms();
-      // data => { categories: Term[], tags: Term[] }
+      // data is expected to be { categories: Term[], tags: Term[] }
       setCategories(data.categories || []);
       setTags(data.tags || []);
     } catch (err: any) {
@@ -42,7 +53,20 @@ export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) 
   };
 
   const handleSubmit = () => {
-    console.log("Search form submitted");
+    // Full search submission logic can be implemented here.
+    console.log("Search form submitted with query:", searchTerm);
+  };
+
+  // Filter terms based on user input.
+  const filteredCategories = categories.filter(term =>
+    term.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const filteredTags = tags.filter(term =>
+    term.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   return (
@@ -51,13 +75,20 @@ export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) 
         <Offcanvas.Title>Search</Offcanvas.Title>
       </Offcanvas.Header>
       <Offcanvas.Body>
-        <Form>
+        <Form className="mb-3">
           <Form.Group controlId="searchQuery">
-            <Form.Control type="text" placeholder="Start typing..." />
+            <InputGroup>
+              <Form.Control
+                type="text"
+                placeholder="Start typing..."
+                value={searchTerm}
+                onChange={handleInputChange}
+              />
+              <Button variant="primary" onClick={handleSubmit}>
+                Search
+              </Button>
+            </InputGroup>
           </Form.Group>
-          <Button variant="primary" onClick={handleSubmit} className="mt-2">
-            Search
-          </Button>
         </Form>
 
         {loading && <p>Loading terms...</p>}
@@ -65,8 +96,8 @@ export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) 
 
         {!loading && !error && (
           <TermDisplay
-            categories={categories}
-            tags={tags}
+            categories={filteredCategories}
+            tags={filteredTags}
           />
         )}
       </Offcanvas.Body>
