@@ -21,6 +21,7 @@ interface OffCanvasSearchProps {
 /**
  * OffCanvasSearch component renders a search panel that loads terms from the API,
  * filters them in real time, and provides a responsive layout.
+ * When a search is submitted or a term is clicked, the offcanvas closes.
  */
 export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) {
   const { fetchAllTerms } = useTermsAPI();
@@ -53,8 +54,9 @@ export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) 
   };
 
   const handleSubmit = () => {
-    // Full search submission logic can be implemented here.
     console.log("Search form submitted with query:", searchTerm);
+    // Close the offcanvas after search submission.
+    onHide();
   };
 
   // Filter terms based on user input.
@@ -98,6 +100,7 @@ export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) 
           <TermDisplay
             categories={filteredCategories}
             tags={filteredTags}
+            onTermClick={onHide}
           />
         )}
       </Offcanvas.Body>

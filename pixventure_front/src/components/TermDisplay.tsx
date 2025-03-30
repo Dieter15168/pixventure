@@ -13,16 +13,18 @@ interface Term {
 }
 
 interface TermDisplayProps {
-  categories?: Term[]; 
+  categories?: Term[];
   tags?: Term[];
+  onTermClick?: () => void;
 }
 
 /**
  * TermDisplay component shows filtered categories and tags as clickable links.
- * Uses React Bootstrap grid system for a responsive layout: categories in one column
+ * Uses React Bootstrap's grid system for a responsive layout: categories in one column
  * (1/3 width on wide screens) and tags in another (2/3 width).
+ * When a term is clicked, the onTermClick callback is triggered to close the offcanvas.
  */
-export default function TermDisplay({ categories = [], tags = [] }: TermDisplayProps) {
+export default function TermDisplay({ categories = [], tags = [], onTermClick }: TermDisplayProps) {
   return (
     <div className="mb-3">
       <Row>
@@ -34,6 +36,7 @@ export default function TermDisplay({ categories = [], tags = [] }: TermDisplayP
                 <Link
                   key={cat.id}
                   href={`/category/${cat.slug}`}
+                  onClick={onTermClick}
                   className="tag m-1 p-1 border border-secondary rounded text-decoration-none text-light"
                 >
                   {cat.name}
@@ -50,6 +53,7 @@ export default function TermDisplay({ categories = [], tags = [] }: TermDisplayP
                 <Link
                   key={tag.id}
                   href={`/tag/${tag.slug}`}
+                  onClick={onTermClick}
                   className="tag m-1 p-1 border border-secondary rounded text-decoration-none text-light"
                 >
                   {tag.name}
