@@ -18,7 +18,6 @@ export default function AlbumsPage() {
 
   return (
     <div>
-      <h1>Albums</h1>
       <PaginatedRoute
         currentPage={currentPage}
         buildPageUrl={buildPageUrl}

@@ -18,7 +18,6 @@ export default function AllPostsPage() {
 
   return (
     <div>
-      <h1>All Posts</h1>
       <PaginatedRoute
         currentPage={currentPage}
         buildPageUrl={buildPageUrl}
