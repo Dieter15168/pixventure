@@ -38,16 +38,18 @@ class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
     """
     Returns core information about a MediaItem:
     - id
-    - media_type (as a verbose string: "photo" or "video")
+    - media_type (verbose: "photo"/"video")
     - likes_counter
     - whether current user has liked it
     - a thumbnail/preview URL
+    - conditionally, the status (only if the current user is the owner)
     """
     id = serializers.IntegerField(read_only=True, source='pk')
     media_type = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
     locked = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = MediaItem
@@ -59,6 +61,7 @@ class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
             'thumbnail_url',
             'locked',
             'tile_size',
+            'status',  # Included in the output conditionally
         ]
 
     def get_media_type(self, obj):
@@ -101,6 +104,41 @@ class MediaItemSerializer(TileInfoMixin, serializers.ModelSerializer):
         if thumbnail and thumbnail.width and thumbnail.height:
             return (thumbnail.width, thumbnail.height)
         return None
+
+    def get_status(self, obj):
+        """
+        Returns the human-readable status only if the current user owns the item.
+        This check uses the owner's id (which should be pre-fetched or annotated)
+        to avoid extra DB queries.
+        """
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return None
+
+        user = request.user
+
+        # Check if the MediaItem itself has an owner field.
+        if hasattr(obj, 'owner'):
+            if obj.owner_id == user.id:
+                return obj.get_status_display()
+
+        # Alternatively, if the MediaItem is rendered in the context of a Post,
+        # we can check if that Post's owner matches.
+        post = self.context.get('post')
+        if post and getattr(post, 'owner_id', None) == user.id:
+            return obj.get_status_display()
+
+        return None
+
+    def to_representation(self, instance):
+        """
+        Remove the status field if it is None so that it is only included
+        when the current user is the owner.
+        """
+        data = super().to_representation(instance)
+        if data.get('status') is None:
+            data.pop('status')
+        return data
     
 
 class UnpublishedMediaItemSerializer(serializers.ModelSerializer):

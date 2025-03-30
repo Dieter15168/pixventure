@@ -12,7 +12,7 @@ interface Album {
   id: number;
   name: string;
   slug: string;
-  status: number;
+  status?: string;
   likes_counter: number;
   posts_count: number;
   images_count: number;
@@ -52,6 +52,7 @@ export default function AlbumsList({ fetchFunction, title }: AlbumsListProps) {
     name: album.name,
     // Build the slug for linking to single album
     slug: `albums/${album.slug}`,
+    status: album.status,
     thumbnail_url: album.thumbnail_url,
     media_type: album.media_type,
     images_count: album.images_count,

@@ -14,7 +14,8 @@ from .serializers import (
     AlbumDetailSerializer,
     AlbumCreateSerializer,
     AlbumElementSerializer,
-    AlbumElementCreateSerializer
+    AlbumElementCreateSerializer,
+    MyAlbumSerializer
 )
 from .permissions import IsAlbumOwnerOrAdminOrPublicRead
 from main.pagination import StandardResultsSetPagination
@@ -42,7 +43,7 @@ class MyAlbumsView(generics.ListAPIView):
     Returns current user’s albums. If none exist, auto-create
     a private "Quick save" album with a random slug (no username).
     """
-    serializer_class = AlbumDetailSerializer
+    serializer_class = MyAlbumSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 

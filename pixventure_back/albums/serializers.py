@@ -164,6 +164,19 @@ class AlbumDetailSerializer(TileInfoMixin, serializers.ModelSerializer):
         return False
 
 
+class MyAlbumSerializer(AlbumDetailSerializer):
+    """
+    Owner-facing serializer for an Album,
+    extends the public serializer by adding `status`.
+    """
+    status = serializers.SerializerMethodField()
+
+    class Meta(AlbumDetailSerializer.Meta):
+        fields = AlbumDetailSerializer.Meta.fields + ['status']
+
+    def get_status(self, obj):
+        return obj.get_status_display()
+
 
 class AlbumElementSerializer(serializers.ModelSerializer):
     """

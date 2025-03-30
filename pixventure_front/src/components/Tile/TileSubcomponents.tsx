@@ -1,12 +1,12 @@
-// src/components/Tile/TileSubcomponents.tsx
 "use client";
 
-import React, { useCallback } from "react";
+import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faThumbsUp,
   faGlasses,
   faFaceFrown,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import styles from "./Tile.module.scss";
 
@@ -15,13 +15,22 @@ import styles from "./Tile.module.scss";
  * - thumbs-up for "Approved"
  * - glasses for "Pending"
  * - frown for "Rejected"
+ * - trash can for "Deleted"
+ *
+ * If the status is "published" or not a valid string, no icon is displayed.
  */
-export function ModerationBadge({ statusStr }: { statusStr: string }) {
-  if (!statusStr) return null;
+export function ModerationBadge({ statusStr }: { statusStr?: string }) {
+  if (!statusStr || typeof statusStr !== "string") return null;
 
   const normalized = statusStr.toLowerCase();
-  let icon = faGlasses; // Default for pending
-  let className = styles.moderation_symbol; // Default color or style
+
+  // Do not display any icon for published items.
+  if (normalized.includes("published")) {
+    return null;
+  }
+
+  let icon;
+  let className;
 
   if (normalized.includes("approved")) {
     icon = faThumbsUp;
@@ -32,50 +41,16 @@ export function ModerationBadge({ statusStr }: { statusStr: string }) {
   } else if (normalized.includes("pending")) {
     icon = faGlasses;
     className = styles.moderation_symbol;
+  } else if (normalized.includes("deleted")) {
+    icon = faTrash;
+    className = styles.deleted_symbol;
+  } else {
+    return null;
   }
 
   return (
     <div className={styles.moderation_icon_container}>
       <FontAwesomeIcon icon={icon} className={className} />
     </div>
-  );
-}
-
-/**
- * A large checkbox for selecting a tile in the "post_creation" page type.
- */
-export function SelectCheckbox({
-  id,
-  selected = false,
-  onChange,
-}: {
-  id: number;
-  selected?: boolean;
-  onChange?: (newVal: boolean) => void;
-}) {
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      onChange?.(e.target.checked);
-    },
-    [onChange]
-  );
-
-  const checkboxId = `select-item-${id}`;
-
-  return (
-    <>
-      <input
-        type="checkbox"
-        id={checkboxId}
-        className="pick-item-checkbox" // We'll define this styling in Tile.module.scss or a global CSS
-        checked={selected}
-        onChange={handleChange}
-      />
-      {/* 
-        The label with class "term-check" is placed immediately after.
-        Your custom CSS will show a big checkmark if it's checked.
-      */}
-      <label className="term-check" htmlFor={checkboxId} />
-    </>
   );
 }

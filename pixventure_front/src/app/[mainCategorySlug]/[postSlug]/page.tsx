@@ -31,6 +31,7 @@ interface PostItem {
   thumbnail_url: string;
   locked: boolean;
   tile_size: "small" | "medium" | "large";
+  status: string;
 }
 
 export default function PostPage() {
@@ -130,6 +131,7 @@ export default function PostPage() {
               id: item.id,
               name: post.name,
               slug: `${post.slug}/${item.id}`,
+              status: item.status,
               main_category_slug: post.main_category_slug,
               thumbnail_url: item.thumbnail_url,
               locked: item.locked,

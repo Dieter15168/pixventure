@@ -15,7 +15,8 @@ from .serializers import (
     PostSerializer,
     PostCreateSerializer,
     PostMediaItemDetailSerializer,
-    PostMetaSerializer
+    PostMetaSerializer,
+    MyPostSerializer
 )
 from media.serializers import MediaItemSerializer
 from .permissions import IsPostOwnerOrAdminOrPublicRead
@@ -26,26 +27,35 @@ from taxonomy.models import Term
 # 0. All public posts list
 class PublicPostListView(generics.ListAPIView):
     """
-    GET /api/posts/
-    Returns a paginated list of 'published' posts using PostSerializer.
-    
-    Optionally, if you include ?slug=some-slug, returns only the matching post
-    (still in a paginated results array).
+    GET /api/posts/?slug=some-slug
+    If no slug is provided, returns a paginated list of published posts.
+    If a slug is provided, returns the matching post.
+      - If the post is unpublished, only the owner or an admin will see it.
     """
     serializer_class = PostSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsPostOwnerOrAdminOrPublicRead]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        # Only show PUBLISHED posts
-        qs = Post.objects.filter(status=Post.PUBLISHED).order_by('-published')
-
-        # If ?slug= is provided, filter the queryset accordingly
+        qs = Post.objects.all().order_by('-published')
         slug = self.request.query_params.get('slug')
+        
         if slug:
             qs = qs.filter(slug=slug)
-
-        return qs
+            if self.request.user.is_authenticated:
+                if not self.request.user.is_staff:
+                    # Authenticated non‑staff: allow published OR owned posts.
+                    qs = qs.filter(Q(status=Post.PUBLISHED) | Q(owner=self.request.user))
+                # Staff users can see any post; no extra filtering.
+            else:
+                # Anonymous: only published posts.
+                qs = qs.filter(status=Post.PUBLISHED)
+        else:
+            # No slug: list only published posts.
+            qs = qs.filter(status=Post.PUBLISHED)
+        
+        # Optimize DB access by selecting related owner.
+        return qs.select_related('owner')
     
 # 1. Featured posts list (displayed on main page)
 class FeaturedPostListView(generics.ListAPIView):
@@ -70,7 +80,7 @@ class MyPostsView(generics.ListAPIView):
     Returns the current user’s posts. 
     If none exist, optionally auto-create a private "Quick save" post.
     """
-    serializer_class = PostSerializer
+    serializer_class = MyPostSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 

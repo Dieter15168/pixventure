@@ -109,6 +109,21 @@ class PostSerializer(TileInfoMixin, serializers.ModelSerializer):
         if obj.main_category:
             return obj.main_category.slug
         return None
+    
+    
+class MyPostSerializer(PostSerializer):
+    """
+    Owner-facing serializer for a Post, extends the public serializer
+    by adding `status` (and potentially other user-only fields).
+    """
+    status = serializers.SerializerMethodField()
+
+    class Meta(PostSerializer.Meta):
+        fields = PostSerializer.Meta.fields + ['status']
+
+    def get_status(self, obj):
+        # Return the human-readable status.
+        return obj.get_status_display()
 
 
 class PostMediaItemDetailSerializer(serializers.ModelSerializer):

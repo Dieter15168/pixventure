@@ -10,6 +10,7 @@ export interface Post {
   id: number;
   name: string;
   slug: string;
+  status: string;
   likes_counter: number;
   has_liked: boolean;
   main_category_slug?: string;
