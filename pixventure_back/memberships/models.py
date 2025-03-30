@@ -1,3 +1,5 @@
+# memberships/models.py
+
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -14,10 +16,9 @@ class MembershipPlan(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.duration_days} days)"
-
+    
     def get_expiration_date(self, start_date):
         return start_date + timedelta(days=self.duration_days)
-
 
 class UserMembership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='memberships')
@@ -30,8 +31,11 @@ class UserMembership(models.Model):
         return f"Membership of {self.user.username} for {self.plan.name}"
 
     def save(self, *args, **kwargs):
+        # If the instance is new and end_date hasn't been provided,
+        # ensure that start_date is set before computing end_date.
         if not self.pk and not self.end_date:
-            # Compute end_date on creation if not provided
+            if self.start_date is None:
+                self.start_date = timezone.now()
             self.end_date = self.plan.get_expiration_date(self.start_date)
         super().save(*args, **kwargs)
 
@@ -43,3 +47,4 @@ class UserMembership(models.Model):
             return self.end_date > timezone.now()
         else:
             return False
+        

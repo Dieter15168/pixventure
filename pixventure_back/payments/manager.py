@@ -9,6 +9,7 @@ and ensures that the most current version of the Transaction is retrieved from t
 
 from payments.models import Transaction
 from django.utils import timezone
+from memberships.manager import MembershipManager
 
 class PaymentManager:
     """
@@ -43,4 +44,8 @@ class PaymentManager:
             transaction.status = target_status
         
         transaction.save(update_fields=["metadata", "status", "updated_at"])
-        # Placeholder for additional business logic, e.g. notifying membership manager.
+
+        # Trigger membership creation if payment is completed.
+        if transaction.status == Transaction.STATUS_COMPLETED and transaction.membership_plan:
+            membership_manager = MembershipManager()
+            membership_manager.create_membership(transaction.user, transaction.membership_plan)
