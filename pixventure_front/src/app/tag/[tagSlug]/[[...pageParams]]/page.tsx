@@ -6,25 +6,27 @@ import { useParams } from "next/navigation";
 import { usePostsAPI } from "@/utils/api/posts";
 import PaginatedRoute from "@/components/routes/PaginatedRoute";
 import { usePaginatedRoute } from "@/hooks/usePaginatedRoute";
+import PostsList from "@/components/PostsList/PostsList";
 
+/**
+ * TagListingPage
+ *
+ * Displays posts filtered by a specific tag with integrated pagination.
+ * Supports both /tag/[tagSlug] and /tag/[tagSlug]/page/N routes.
+ */
 export default function TagListingPage() {
-  const { tagSlug, pageParams } = useParams() as {
-    tagSlug: string;
-    pageParams?: string[];
-  };
+  // Destructure the tagSlug from the route parameters.
+  const { tagSlug } = useParams() as { tagSlug: string };
 
-  // Define the base path for page 1. For example: "/tag/test-tag"
+  // Define the base path for page 1, e.g., "/tag/test-tag"
   const basePath = `/tag/${tagSlug}`;
 
-  // Use our custom hook to parse the route and build URLs.
+  // Custom hook parses pagination info from the URL and provides URL building.
   const { currentPage, buildPageUrl } = usePaginatedRoute(basePath, 1);
 
+  // API function to fetch posts by tag.
   const { fetchPostsByTag } = usePostsAPI();
-
-  // Define a fetch function that calls our API with tagSlug and page.
-  const fetchFunction = async (page: number) => {
-    return await fetchPostsByTag(tagSlug, page);
-  };
+  const fetchFunction = async (page: number) => await fetchPostsByTag(tagSlug, page);
 
   return (
     <div>
@@ -34,6 +36,7 @@ export default function TagListingPage() {
         buildPageUrl={buildPageUrl}
         fetchFunction={fetchFunction}
         title={`Posts tagged with "${tagSlug}"`}
+        ListComponent={PostsList} // Pass the posts list component as required
       />
     </div>
   );
