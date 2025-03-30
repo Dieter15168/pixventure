@@ -17,6 +17,7 @@ urlpatterns = [
     path('api/memberships/', include('memberships.urls')),
     path('api/payments/', include('payments.urls')),
     path('api/gourl/', include('integrations.gourl.urls')),
+    path('api/search/', include('search.urls')),
 ]
 
 if settings.DEBUG:

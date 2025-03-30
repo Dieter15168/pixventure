@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'memberships',
     'payments',
     'integrations.gourl',
+    'search',
 ]
 
 REST_FRAMEWORK = {

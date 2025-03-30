@@ -1,10 +1,11 @@
 // components/OffCanvasSearch.tsx
 "use client";
 
-import React, { useState, useEffect, ChangeEvent } from "react";
+import React, { useState, useEffect, ChangeEvent, KeyboardEvent } from "react";
 import { Offcanvas, Button, Form, InputGroup } from "react-bootstrap";
 import { useTermsAPI } from "../../utils/api/terms";
 import TermDisplay from "../TermDisplay";
+import { useRouter } from "next/navigation";
 
 interface Term {
   id: number;
@@ -19,12 +20,12 @@ interface OffCanvasSearchProps {
 }
 
 /**
- * OffCanvasSearch component renders a search panel that loads terms from the API,
- * filters them in real time, and provides a responsive layout.
- * When a search is submitted or a term is clicked, the offcanvas closes.
+ * OffCanvasSearch renders a search panel that allows the user to input a query.
+ * On submission (button click or Enter key), it navigates to the search results page.
  */
 export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) {
   const { fetchAllTerms } = useTermsAPI();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,9 +55,16 @@ export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) 
   };
 
   const handleSubmit = () => {
-    console.log("Search form submitted with query:", searchTerm);
-    // Close the offcanvas after search submission.
+    // Navigate to the search results page with the query parameter.
+    router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
     onHide();
+  };
+
+  // Submit search on Enter key press.
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSubmit();
+    }
   };
 
   // Filter terms based on user input.
@@ -85,6 +93,7 @@ export default function OffCanvasSearch({ show, onHide }: OffCanvasSearchProps) 
                 placeholder="Start typing..."
                 value={searchTerm}
                 onChange={handleInputChange}
+                onKeyDown={handleKeyDown}  // Added handler for Enter key
               />
               <Button variant="primary" onClick={handleSubmit}>
                 Search
