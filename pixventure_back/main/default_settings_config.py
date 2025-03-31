@@ -23,7 +23,7 @@ DEFAULT_SETTINGS = {
     # Maximum bitrate for full watermarked video; original videos wight higher bitrate will have their bitrate reduced
     "max_video_bitrate": 5000000,
     # Duration of the short preview video in seconds
-    "preview_video_duration": 5,
+    "preview_video_duration": 2,
     # In current implementation - CRF value between 0 and 51, where 18 is considered good quality; -1 for using defaults (currently 18)
     "full_watermarked_version_quality": -1, 
     # Same
