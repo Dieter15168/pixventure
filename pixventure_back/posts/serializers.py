@@ -290,7 +290,7 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
             orig_h = original.height or 0
 
             # If either dimension is smaller, we consider it "lower-res"
-            if served_w < orig_w or served_h < orig_h:
+            if served_w < orig_w or served_h < orig_h or obj.media_item.media_type == MediaItem.VIDEO:
                 return True
 
         return False

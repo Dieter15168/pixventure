@@ -16,7 +16,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import ItemViewerNavigation from "@/components/ItemViewerNavigation/ItemViewerNavigation";
-import MediaViewer from "@/components/MediaViewer/MediaViewer"; // <-- Important: use your custom MediaViewer
+import MediaViewer from "@/components/MediaViewer/MediaViewer";
 import { usePostsAPI } from "@/utils/api/posts";
 import styles from "./ItemViewerPage.module.scss";
 
@@ -42,6 +42,7 @@ interface ItemDetail {
   served_width: number;
   served_height: number;
   video_poster_url: string;
+  show_membership_prompt: boolean;
 }
 
 export default function ItemViewerPage() {
@@ -128,6 +129,7 @@ export default function ItemViewerPage() {
     served_width,
     served_height,
     video_poster_url,
+    show_membership_prompt,
   } = itemDetail;
 
   // Construct prev/next URLs for navigation
@@ -188,6 +190,7 @@ export default function ItemViewerPage() {
         onLoadComplete={() => setIsMediaLoading(false)}
         fallbackMediaType={media_type}
         posterUrl={video_poster_url}
+        showMembershipPrompt={show_membership_prompt}
       />
 
       {/**
