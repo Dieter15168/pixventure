@@ -25,7 +25,14 @@ const LikeButton: React.FC<LikeButtonProps> = ({
   const [hasLiked, setHasLiked] = useState<boolean>(initialHasLiked);
   const [loading, setLoading] = useState(false);
 
-  const handleToggleLike = async () => {
+  /**
+   * Handles the like toggle action.
+   * Prevents event propagation and default link navigation.
+   */
+  const handleToggleLike = async (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    e.preventDefault(); // Prevent default anchor navigation
+
     if (loading) return; // Prevent duplicate clicks
     setLoading(true);
 
@@ -65,7 +72,10 @@ const LikeButton: React.FC<LikeButtonProps> = ({
   };
 
   return (
-    <div className={styles.like_button_container} onClick={handleToggleLike}>
+    <div
+      className={styles.like_button_container}
+      onClick={handleToggleLike}
+    >
       <FontAwesomeIcon
         icon={faHeart}
         className={`${styles.like_icon} ${hasLiked ? "text-danger" : ""}`}
