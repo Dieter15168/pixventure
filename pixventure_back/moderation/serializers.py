@@ -45,6 +45,7 @@ class ModerationActionCreateSerializer(serializers.Serializer):
         allow_empty=True
     )
     comment = serializers.CharField(required=False, allow_blank=True)
+    is_featured_post = serializers.BooleanField(required=False, default=False)
 
     def validate(self, data):
         """

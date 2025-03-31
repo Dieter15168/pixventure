@@ -1,11 +1,9 @@
+// src/moderation/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { Tabs, Tab, Badge } from "react-bootstrap";
-import {
-  useModerationAPI,
-  ModerationDashboardData,
-} from "../../utils/api/moderation";
+import { useModerationAPI, ModerationDashboardData } from "../../utils/api/moderation";
 import ModerationRejectModal from "../../components/ModerationRejectModal";
 import ModerationMediaTile from "../../components/ModerationMediaTile";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -24,7 +22,6 @@ export default function ModerationDashboard() {
     type: "post" | "media";
     id: number;
   } | null>(null);
-  // Default active tab key: "posts" or "orphan"
   const [activeKey, setActiveKey] = useState("posts");
 
   useEffect(() => {
@@ -43,12 +40,8 @@ export default function ModerationDashboard() {
   }, [fetchDashboard]);
 
   /**
-   * Updates the moderation status for the given entity (post or media).
-   * For posts, we update "status_display" and for media items we update "status".
-   *
-   * @param {"post" | "media"} entityType - The type of the entity.
-   * @param {number} entityId - The ID of the entity.
-   * @param {string} newStatus - The new status ("Approved" or "Rejected").
+   * Updates the moderation status for the given entity.
+   * For posts, we update "status_display", and for media items we update "status".
    */
   function updateModerationStatus(
     entityType: "post" | "media",
@@ -63,7 +56,6 @@ export default function ModerationDashboard() {
         );
         return { ...prevData, posts: updatedPosts };
       } else if (entityType === "media") {
-        // For media items, update the "status" property
         const updateMediaItems = (items: any[]) =>
           items.map((media: any) =>
             media.id === entityId ? { ...media, status: newStatus } : media
@@ -82,7 +74,7 @@ export default function ModerationDashboard() {
   }
 
   /**
-   * Handles approval of the specified entity.
+   * Handles regular approval of an entity.
    */
   function handleApprove(entityType: "post" | "media", entityId: number) {
     performModerationAction({
@@ -92,11 +84,33 @@ export default function ModerationDashboard() {
     })
       .then((resData) => {
         addNotification("Content approved successfully", "success");
+        // For posts, the backend returns status_display; for media, we update "status"
         updateModerationStatus(entityType, entityId, "Approved");
       })
       .catch((err) => {
         console.error("Approval error", err);
         addNotification("Failed to approve content", "error");
+      });
+  }
+
+  /**
+   * Handles approval of a post as featured.
+   */
+  function handleApproveFeatured(postId: number) {
+    performModerationAction({
+      entity_type: "post",
+      entity_id: postId,
+      action: "approve",
+      is_featured_post: true,
+    })
+      .then((resData) => {
+        addNotification("Content approved as featured successfully", "success");
+        // Update the post status to "Featured" (backend can decide to return this)
+        updateModerationStatus("post", postId, "Featured");
+      })
+      .catch((err) => {
+        console.error("Featured approval error", err);
+        addNotification("Failed to approve as featured", "error");
       });
   }
 
@@ -123,11 +137,7 @@ export default function ModerationDashboard() {
       .then((resData) => {
         addNotification("Content rejected successfully", "success");
         setRejectModalOpen(false);
-        updateModerationStatus(
-          currentEntity.type,
-          currentEntity.id,
-          "Rejected"
-        );
+        updateModerationStatus(currentEntity.type, currentEntity.id, "Rejected");
       })
       .catch((err) => {
         console.error("Rejection error", err);
@@ -152,9 +162,7 @@ export default function ModerationDashboard() {
           title={
             <span>
               Posts Moderation{" "}
-              <Badge bg="secondary">
-                {data?.posts ? data.posts.length : 0}
-              </Badge>
+              <Badge bg="secondary">{data?.posts ? data.posts.length : 0}</Badge>
             </span>
           }
         >
@@ -181,6 +189,12 @@ export default function ModerationDashboard() {
                     onClick={() => handleApprove("post", post.id)}
                   >
                     <FontAwesomeIcon icon={faCheck} /> Approve Post
+                  </button>
+                  <button
+                    className="btn btn-success btn-sm me-2"
+                    onClick={() => handleApproveFeatured(post.id)}
+                  >
+                    <FontAwesomeIcon icon={faCheck} /> Approve as Featured
                   </button>
                   <button
                     className="btn btn-danger btn-sm"

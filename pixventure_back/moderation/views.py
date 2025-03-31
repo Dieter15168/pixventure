@@ -56,7 +56,7 @@ class ModerationActionCreateView(generics.CreateAPIView):
     }
     """
     serializer_class = ModerationActionCreateSerializer
-    permission_classes = []  # Replace with appropriate permission classes (e.g., IsAdminUser)
+    permission_classes = [IsAdminUser]
 
     def perform_create(self, serializer):
         """
@@ -69,12 +69,13 @@ class ModerationActionCreateView(generics.CreateAPIView):
         action = validated_data['action']
         comment = validated_data.get('comment', "")
         rejection_reasons = validated_data.get('rejection_reason', [])
+        is_featured_post = validated_data.get('is_featured_post', False)
 
         manager = ModerationManager()
 
         if action == 'approve':
             if entity_type == 'post':
-                mod_action = manager.handle_post_approval(entity_id, moderator, comment)
+                mod_action = manager.handle_post_approval(entity_id, moderator, comment, is_featured_post)
             elif entity_type == 'media':
                 mod_action = manager.handle_item_approval(entity_id, moderator, comment)
             else:

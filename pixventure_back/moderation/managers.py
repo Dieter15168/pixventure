@@ -16,7 +16,7 @@ class ModerationManager:
     """
 
     @transaction.atomic
-    def handle_post_approval(self, post_id, moderator, comment=""):
+    def handle_post_approval(self, post_id, moderator, comment="", is_featured_post=False):
         """
         Approves a post and all its associated media items that are pending moderation.
         
@@ -47,6 +47,8 @@ class ModerationManager:
             raise ValidationError("Post not found.")
 
         old_status = post.status
+        # Set the featured flag based on the input
+        post.is_featured_post = is_featured_post
         post.status = Post.APPROVED
         post.save()
 

@@ -10,6 +10,8 @@ export function getStatusStyle(status?: string): React.CSSProperties {
     switch (status.toLowerCase()) {
       case "approved":
         return { borderLeft: "4px solid green", backgroundColor: "#e6ffe6" };
+    case "featured":
+            return { borderLeft: "4px solid hotpink", backgroundColor: "#90ee90" };
       case "rejected":
         return { borderLeft: "4px solid red", backgroundColor: "#ffe6e6" };
       default:
