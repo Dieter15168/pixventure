@@ -1,0 +1,12 @@
+// src/components/TermDisplay/TermDisplay.module.scss
+.tag {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    color: #fff;
+    transition: background-color 0.3s ease;
+  
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  }

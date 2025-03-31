@@ -4,7 +4,7 @@
 import React, { useState, useEffect, ChangeEvent, KeyboardEvent } from "react";
 import { Offcanvas, Button, Form, InputGroup } from "react-bootstrap";
 import { useTermsAPI } from "../../utils/api/terms";
-import TermDisplay from "../TermDisplay";
+import TermDisplay from "../TermDisplay/TermDisplay";
 import { useRouter } from "next/navigation";
 
 interface Term {

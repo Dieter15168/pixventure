@@ -1,10 +1,10 @@
-// src/components/ElementContextMenuContent/ElementContextMenuContent.tsx
 "use client";
 
 import React from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
+import TermDisplay from "@/components/TermDisplay/TermDisplay";
 import styles from "./ElementContextMenuContent.module.scss";
 
 interface Term {
@@ -30,17 +30,20 @@ interface ElementContextMenuContentProps {
   onSaveToAlbum: () => void;
   onDelete: () => Promise<void>;
   onEdit: () => void;
+  onTermClick: () => void;
 }
 
 /**
  * ElementContextMenuContent renders the offcanvas content with
- * responsive columns for actions, categories, and tags.
+ * responsive columns for actions and terms (categories & tags).
+ * It reuses the existing TermDisplay component for consistency.
  */
 const ElementContextMenuContent: React.FC<ElementContextMenuContentProps> = ({
   postMeta,
   onSaveToAlbum,
   onDelete,
   onEdit,
+  onTermClick,
 }) => {
   return (
     <Container fluid className={styles.menuContainer}>
@@ -66,43 +69,13 @@ const ElementContextMenuContent: React.FC<ElementContextMenuContentProps> = ({
             )}
           </div>
         </Col>
-        {/* Categories Column */}
-        <Col xs={12} md={3} className="mb-3">
-          {postMeta?.categories && postMeta.categories.length > 0 && (
-            <div className={styles.termsColumn}>
-              <h5>Categories</h5>
-              <div className="d-flex flex-wrap">
-                {postMeta.categories.map((cat) => (
-                  <a
-                    key={cat.id}
-                    href={`/category/${cat.slug}`}
-                    className={`${styles.tag} m-1 p-1 text-decoration-none`}
-                  >
-                    {cat.name}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </Col>
-        {/* Tags Column */}
-        <Col xs={12} md={6} className="mb-3">
-          {postMeta?.tags && postMeta.tags.length > 0 && (
-            <div className={styles.termsColumn}>
-              <h5>Tags</h5>
-              <div className="d-flex flex-wrap">
-                {postMeta.tags.map((tag) => (
-                  <a
-                    key={tag.id}
-                    href={`/tag/${tag.slug}`}
-                    className={`${styles.tag} m-1 p-1 text-decoration-none`}
-                  >
-                    {tag.name}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Terms Column */}
+        <Col xs={12} md={9} className="mb-3">
+          <TermDisplay
+            categories={postMeta?.categories || []}
+            tags={postMeta?.tags || []}
+            onTermClick={onTermClick}
+          />
         </Col>
       </Row>
     </Container>

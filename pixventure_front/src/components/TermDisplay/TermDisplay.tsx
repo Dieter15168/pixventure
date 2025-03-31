@@ -4,6 +4,7 @@
 import React from "react";
 import Link from "next/link";
 import { Row, Col } from "react-bootstrap";
+import styles from "./TermDisplay.module.scss";
 
 interface Term {
   id: number;
@@ -37,7 +38,7 @@ export default function TermDisplay({ categories = [], tags = [], onTermClick }:
                   key={cat.id}
                   href={`/category/${cat.slug}`}
                   onClick={onTermClick}
-                  className="tag m-1 p-1 border border-secondary rounded text-decoration-none text-light"
+                  className={`${styles.tag}  m-1 p-1 border border-secondary rounded text-decoration-none text-light`}
                 >
                   {cat.name}
                 </Link>
@@ -54,7 +55,7 @@ export default function TermDisplay({ categories = [], tags = [], onTermClick }:
                   key={tag.id}
                   href={`/tag/${tag.slug}`}
                   onClick={onTermClick}
-                  className="tag m-1 p-1 border border-secondary rounded text-decoration-none text-light"
+                  className={`${styles.tag} m-1 p-1 border border-secondary rounded text-decoration-none text-light`}
                 >
                   {tag.name}
                 </Link>
@@ -64,7 +65,7 @@ export default function TermDisplay({ categories = [], tags = [], onTermClick }:
         )}
       </Row>
       {categories.length === 0 && tags.length === 0 && (
-        <p>No matching terms found.</p>
+        null
       )}
     </div>
   );
