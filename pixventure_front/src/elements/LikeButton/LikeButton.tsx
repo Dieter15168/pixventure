@@ -6,6 +6,7 @@ import styles from "./LikeButton.module.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
 import { useSocialAPI } from "../../utils/api/social";
+import { useModal } from "../../contexts/ModalContext";
 
 interface LikeButtonProps {
   entity_type: "post" | "media" | "album" | "user_profile";
@@ -21,6 +22,7 @@ const LikeButton: React.FC<LikeButtonProps> = ({
   initialHasLiked,
 }) => {
   const { toggleLike } = useSocialAPI();
+  const { showModal } = useModal();
   const [likesCounter, setLikesCounter] = useState<number>(initialLikesCounter);
   const [hasLiked, setHasLiked] = useState<boolean>(initialHasLiked);
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,7 @@ const LikeButton: React.FC<LikeButtonProps> = ({
   /**
    * Handles the like toggle action.
    * Prevents event propagation and default link navigation.
+   * If the user is not authenticated (401 response), shows the sign in modal.
    */
   const handleToggleLike = async (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -61,8 +64,15 @@ const LikeButton: React.FC<LikeButtonProps> = ({
       if (response.has_liked !== undefined) {
         setHasLiked(response.has_liked);
       }
-    } catch (error) {
-      // On error, revert to previous state.
+    } catch (error: any) {
+      // If unauthorized, revert state and show sign in modal.
+      if (error.response && error.response.status === 401) {
+        setLikesCounter(oldLikes);
+        setHasLiked(oldHasLiked);
+        showModal("Please sign in to like this content.");
+        return;
+      }
+      // On other errors, revert to previous state.
       setLikesCounter(oldLikes);
       setHasLiked(oldHasLiked);
       console.error("Failed to toggle like:", error);
