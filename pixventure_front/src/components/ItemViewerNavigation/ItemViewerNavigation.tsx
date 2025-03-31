@@ -4,9 +4,10 @@
 import React from "react";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faArrowRight, faArrowCircleLeft, faEllipsisH } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faArrowCircleLeft, faEllipsisH, faCrown } from "@fortawesome/free-solid-svg-icons";
 import { useElementMenu, ElementMenuItem } from "@/contexts/ElementMenuContext";
 import LikeButton from "@/elements/LikeButton/LikeButton";
+import GlowingMembershipPrompt from "@/components/GlowingMembershipPrompt/GlowingMembershipPrompt";
 import styles from "./ItemViewerNavigation.module.scss";
 
 interface ItemViewerNavigationProps {
@@ -30,6 +31,11 @@ interface ItemViewerNavigationProps {
     tags?: Array<any>;
     pageContext?: any;
   };
+
+  /**
+   * If true, renders the membership prompt button (glowing prompt) in the navigation.
+   */
+  showMembershipPrompt?: boolean;
 }
 
 const ItemViewerNavigation: React.FC<ItemViewerNavigationProps> = ({
@@ -41,6 +47,7 @@ const ItemViewerNavigation: React.FC<ItemViewerNavigationProps> = ({
   initialLikes,
   initialHasLiked,
   itemMenuData,
+  showMembershipPrompt,
 }) => {
   // Access the menu context.
   const { openMenu } = useElementMenu();
@@ -108,6 +115,17 @@ const ItemViewerNavigation: React.FC<ItemViewerNavigationProps> = ({
       <div className={styles.menuButton} onClick={handleMenuClick}>
         <FontAwesomeIcon icon={faEllipsisH} size="2x" />
       </div>
+
+      {/* Membership Prompt - bottom center */}
+      {showMembershipPrompt && (
+        <div className={styles.membershipPrompt}>
+          <GlowingMembershipPrompt modalText="Please sign up for membership to access premium features.">
+            <span>
+              HD
+            </span>
+          </GlowingMembershipPrompt>
+        </div>
+      )}
     </div>
   );
 };

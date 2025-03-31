@@ -1,0 +1,34 @@
+// src/components/GlowingMembershipPrompt/GlowingMembershipPrompt.module.scss
+.membershipPromptWrapper {
+  position: fixed;
+  bottom: 20px; /* Adjust to align with other bottom UI elements */
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  z-index: 10000; /* Ensure it's above other elements */
+}
+
+.glowingContent {
+  font-size: 32px; /* Bigger text */
+  font-weight: bold; /* Bolder text */
+  background: linear-gradient(to right, #6666ff, #0099ff, #00ff00, #ff3399, #6666ff);
+  background-size: 400% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbow_animation 6s ease-in-out infinite;
+  transition: animation-duration 0.5s ease-in-out;
+}
+
+.membershipPromptWrapper:hover .glowingContent {
+  animation-duration: 1s;
+}
+
+@keyframes rainbow_animation {
+  0%, 100% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 100% 0;
+  }
+}

@@ -174,6 +174,7 @@ export default function ItemViewerPage() {
         initialLikes={likes_counter}
         initialHasLiked={has_liked}
         itemMenuData={itemMenuData}
+        showMembershipPrompt={show_membership_prompt}
       />
 
       {/**

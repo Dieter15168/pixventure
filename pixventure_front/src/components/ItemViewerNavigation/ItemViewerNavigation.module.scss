@@ -1,44 +1,55 @@
 .navContainer {
-    position: fixed;
-    inset: 0; /* covers full screen */
-    pointer-events: none; /* base container won't block zoom */
-    z-index: 9999;        /* above the zoom container */
-  }
-  
-  .backButton {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    pointer-events: auto; /* allow clicks */
-  }
-  
-  .leftArrow,
-  .rightArrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: auto; /* allow clicks */
-  }
-  
-  .leftArrow {
-    left: 20px;
-  }
-  
-  .rightArrow {
-    right: 20px;
-  }
-  
-  .likeButton {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    pointer-events: auto;
-  }
-  
-  .menuButton {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    pointer-events: auto;
-    cursor: pointer;
-  }
+  position: fixed;
+  inset: 0; /* covers full screen */
+  pointer-events: none; /* base container won't block zoom */
+  z-index: 9999;        /* above the zoom container */
+}
+
+.backButton {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  pointer-events: auto; /* allow clicks */
+}
+
+.leftArrow,
+.rightArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: auto; /* allow clicks */
+}
+
+.leftArrow {
+  left: 20px;
+}
+
+.rightArrow {
+  right: 20px;
+}
+
+.likeButton {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  pointer-events: auto;
+}
+
+.menuButton {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* New style for membership prompt positioned at bottom center */
+.membershipPrompt {
+  font-size: 50px;
+  font-weight: bold;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
