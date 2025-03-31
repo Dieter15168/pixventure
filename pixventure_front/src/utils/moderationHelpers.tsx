@@ -11,7 +11,7 @@ export function getStatusStyle(status?: string): React.CSSProperties {
       case "approved":
         return { borderLeft: "4px solid green", backgroundColor: "#e6ffe6" };
     case "featured":
-            return { borderLeft: "4px solid hotpink", backgroundColor: "#90ee90" };
+            return { borderLeft: "4px solid pink", backgroundColor: "#ffe6ff" };
       case "rejected":
         return { borderLeft: "4px solid red", backgroundColor: "#ffe6e6" };
       default:
