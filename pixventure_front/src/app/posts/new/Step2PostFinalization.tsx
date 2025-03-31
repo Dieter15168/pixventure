@@ -8,12 +8,20 @@ import { MinimalMediaItemDTO } from "./AvailableMedia";
 import { usePostsAPI } from "@/utils/api/posts";
 import { useTermsAPI, Term } from "@/utils/api/terms";
 import SharedMasonry from "@/components/common/SharedMasonry";
+import NavigationBar, {
+  NavigationButton,
+} from "@/components/NavigationBar/NavigationBar";
 
 interface Step2Props {
   selectedItems: MinimalMediaItemDTO[];
   onBack: () => void;
 }
 
+/**
+ * Step 2: Finalize the post details.
+ *  - Allows the user to set the post name, featured item, and select terms.
+ *  - Uses a NavigationBar for uniform navigation.
+ */
 export default function Step2PostFinalization({
   selectedItems,
   onBack,
@@ -22,15 +30,15 @@ export default function Step2PostFinalization({
   const { createPost } = usePostsAPI();
   const { fetchAllTerms } = useTermsAPI();
 
-  // Basic post info
+  // Basic post information.
   const [postName, setPostName] = useState("");
   const [featuredId, setFeaturedId] = useState<number | null>(null);
 
-  // Terms data from backend
+  // Terms data.
   const [allCategories, setAllCategories] = useState<Term[]>([]);
   const [allTags, setAllTags] = useState<Term[]>([]);
 
-  // Selected term IDs (stored separately)
+  // Selected term IDs.
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
 
@@ -76,7 +84,7 @@ export default function Step2PostFinalization({
       return;
     }
     try {
-      // Merge category and tag IDs into a single terms array
+      // Merge category and tag IDs into a single terms array.
       const combinedTermIds = [...selectedCategoryIds, ...selectedTagIds];
       const payload = {
         name: postName,
@@ -93,15 +101,21 @@ export default function Step2PostFinalization({
     }
   }
 
+  // Define NavigationBar button groups.
+  const leftButtons: NavigationButton[] = [
+    { label: "Back", onClick: onBack, variant: "secondary" },
+  ];
+  const rightButtons: NavigationButton[] = [
+    { label: "Publish Post", onClick: handlePublish, variant: "success" },
+  ];
+
   return (
     <div>
       <h2>Finalize Your Post (Step 2)</h2>
-      <button
-        className="btn btn-secondary mb-3"
-        onClick={onBack}
-      >
-        &laquo; Back
-      </button>
+      <NavigationBar
+        leftButtons={leftButtons}
+        rightButtons={rightButtons}
+      />
 
       <div className="mb-3">
         <label>
@@ -209,13 +223,6 @@ export default function Step2PostFinalization({
       </div>
 
       <hr />
-
-      <button
-        className="btn btn-success mt-2"
-        onClick={handlePublish}
-      >
-        Publish Post
-      </button>
     </div>
   );
 }

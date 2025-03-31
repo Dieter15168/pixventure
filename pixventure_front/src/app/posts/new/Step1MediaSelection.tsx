@@ -5,6 +5,9 @@ import React, { useEffect, useState } from "react";
 import { useMediaAPI } from "../../../utils/api/media";
 import DragDropZone from "./DragDropZone";
 import AvailableMedia, { MinimalMediaItemDTO } from "./AvailableMedia";
+import NavigationBar, {
+  NavigationButton,
+} from "@/components/NavigationBar/NavigationBar";
 
 interface Step1MediaSelectionProps {
   onNextStep: (selectedItems: MinimalMediaItemDTO[]) => void;
@@ -15,10 +18,10 @@ interface Step1MediaSelectionProps {
 }
 
 /**
- * Step 1 of post creation: 
- *  - fetch existing media
- *  - let user upload new media
- *  - user picks which items to use for this post
+ * Step 1: User picks media items.
+ *  - Fetches available media.
+ *  - Allows file uploads.
+ *  - Lets user select items with added "Check All" and "Uncheck All" options.
  */
 export default function Step1MediaSelection({
   onNextStep,
@@ -31,12 +34,10 @@ export default function Step1MediaSelection({
 
   const [mediaItems, setMediaItems] = useState<MinimalMediaItemDTO[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(true);
-
   const [uploadedCount, setUploadedCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [uploading, setUploading] = useState(false);
-
-  // The user’s selected item IDs
+  // Selected media item IDs.
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function Step1MediaSelection({
     }
   }
 
-  // Called by DragDropZone
+  // Handle file uploads via DragDropZone.
   function handleFiles(files: FileList) {
     const syntheticEvent = {
       target: { files } as Partial<HTMLInputElement>,
@@ -81,7 +82,6 @@ export default function Step1MediaSelection({
         setUploadedCount((prev) => prev + 1);
       } catch (err: any) {
         console.error("Upload failed:", err);
-
         let errorMsg = `Error uploading ${file.name}: `;
         if (err.response?.data?.detail) {
           errorMsg += err.response.data.detail;
@@ -99,12 +99,11 @@ export default function Step1MediaSelection({
     if (newErrors.length > 0) {
       setShowErrorModal(true);
     }
-
-    // Reload after uploads
+    // Reload media items after uploads.
     loadMediaItems();
   };
 
-  // Called by <AvailableMedia> to toggle selection
+  // Toggle selection for an individual tile.
   function handleTileSelectChange(tileId: number, isSelected: boolean) {
     setSelectedIds((prev) => {
       if (isSelected) return [...prev, tileId];
@@ -112,17 +111,50 @@ export default function Step1MediaSelection({
     });
   }
 
-  // Press Next Step => pass actual items to parent
+  // Select all available media.
+  function handleCheckAll() {
+    const allIds = mediaItems.map((item) => item.id);
+    setSelectedIds(allIds);
+  }
+
+  // Unselect all media.
+  function handleUncheckAll() {
+    setSelectedIds([]);
+  }
+
+  // Handle navigation to the next step.
   function handleNext() {
-    // we have selectedIds. We want the actual item objects.
-    const finalSelectedItems = mediaItems.filter((m) => selectedIds.includes(m.id));
+    const finalSelectedItems = mediaItems.filter((m) =>
+      selectedIds.includes(m.id)
+    );
+    if (finalSelectedItems.length === 0) {
+      alert("Please select at least one media item!");
+      return;
+    }
     onNextStep(finalSelectedItems);
   }
+
+  // Define button groups for NavigationBar.
+  const leftButtons: NavigationButton[] = [
+    { label: "Check All", onClick: handleCheckAll, variant: "secondary" },
+    { label: "Uncheck All", onClick: handleUncheckAll, variant: "secondary" },
+  ];
+  const rightButtons: NavigationButton[] = [
+    { label: "Next", onClick: handleNext, variant: "primary" },
+  ];
 
   return (
     <div>
       <h2>Step 1: Pick Items</h2>
-      <DragDropZone onFilesSelected={handleFiles} uploading={uploading} />
+      <NavigationBar
+        leftButtons={leftButtons}
+        rightButtons={rightButtons}
+      />
+
+      <DragDropZone
+        onFilesSelected={handleFiles}
+        uploading={uploading}
+      />
 
       {uploading && (
         <p>
@@ -130,9 +162,12 @@ export default function Step1MediaSelection({
         </p>
       )}
 
-      {!uploading && totalFiles > 0 && uploadedCount === totalFiles && errors.length === 0 && (
-        <p style={{ color: "green" }}>All files uploaded successfully!</p>
-      )}
+      {!uploading &&
+        totalFiles > 0 &&
+        uploadedCount === totalFiles &&
+        errors.length === 0 && (
+          <p style={{ color: "green" }}>All files uploaded successfully!</p>
+        )}
 
       <AvailableMedia
         mediaItems={mediaItems}
@@ -140,10 +175,6 @@ export default function Step1MediaSelection({
         selectedMediaIds={selectedIds}
         onSelectChange={handleTileSelectChange}
       />
-
-      <button type="button" className="btn btn-primary mt-3" onClick={handleNext}>
-        Next
-      </button>
     </div>
   );
 }
