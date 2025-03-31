@@ -8,9 +8,9 @@
 export function getStatusStyle(status?: string): React.CSSProperties {
     if (!status) return {};
     switch (status.toLowerCase()) {
-      case "Approved":
+      case "approved":
         return { borderLeft: "4px solid green", backgroundColor: "#e6ffe6" };
-      case "Rejected":
+      case "rejected":
         return { borderLeft: "4px solid red", backgroundColor: "#ffe6e6" };
       default:
         return {}; // "Pending moderation" or other statuses show a transparent background.
