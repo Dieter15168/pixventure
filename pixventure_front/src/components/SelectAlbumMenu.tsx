@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Modal, Button, ListGroup } from "react-bootstrap";
 import { useAlbumsAPI } from "../utils/api/albums";
 import { useAlbumElementsAPI } from "../utils/api/albumElements";
+import { useModal } from "../contexts/ModalContext";  // Import the modal context
 
 interface Album {
   id: number;
@@ -31,9 +32,10 @@ export default function SelectAlbumMenu({
   onClose,
   onSuccess,
 }: SelectAlbumMenuProps) {
-  // Use fetchMyAlbumsOrderedByLatest instead of fetchAlbums
   const { fetchMyAlbumsOrderedByLatest } = useAlbumsAPI();
   const { addEntityToAlbum } = useAlbumElementsAPI();
+  const { showModal } = useModal(); // Use modal context to open the auth modal
+
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,13 +54,19 @@ export default function SelectAlbumMenu({
         const data = await fetchMyAlbumsOrderedByLatest();
         setAlbums(data);
       } catch (err: any) {
+        // If unauthorized, close modal and open auth modal
+        if (err.response && err.response.status === 401) {
+          onClose();
+          showModal("Please sign in to view your albums.");
+          return;
+        }
         setError(extractErrorMessage(err) || "Failed to load albums");
       } finally {
         setLoading(false);
       }
     };
     loadAlbums();
-  }, [fetchMyAlbumsOrderedByLatest]);
+  }, [fetchMyAlbumsOrderedByLatest, onClose, showModal]);
 
   const handleAlbumClick = async (albumSlug: string, albumId: number) => {
     setAdding(albumId);
@@ -67,6 +75,12 @@ export default function SelectAlbumMenu({
       if (onSuccess) onSuccess();
       onClose();
     } catch (err: any) {
+      // If unauthorized, close modal and open auth modal
+      if (err.response && err.response.status === 401) {
+        onClose();
+        showModal("Please sign in to add items to your album.");
+        return;
+      }
       setError(extractErrorMessage(err) || "Failed to add item to album");
     } finally {
       setAdding(null);
