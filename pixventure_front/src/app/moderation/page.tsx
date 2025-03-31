@@ -1,3 +1,4 @@
+// src/app/moderation/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -6,43 +7,12 @@ import {
   ModerationDashboardData,
 } from "../../utils/api/moderation";
 import ModerationRejectModal from "../../components/ModerationRejectModal";
-import Tile, { TileProps } from "../../components/Tile/Tile";
+import ModerationMediaTile from "../../components/ModerationMediaTile";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { useNotification } from "../../contexts/NotificationContext";
+import { getStatusStyle } from "../../utils/moderationHelpers";
 
-/**
- * Returns style modifications based on the moderation status.
- *
- * @param {string | undefined} status - The moderation status of the element.
- * @returns {React.CSSProperties} - The style modifications for the element.
- */
-function getStatusStyle(status?: string): React.CSSProperties {
-  // If status is undefined or empty, return no additional style.
-  if (!status) return {};
-
-  switch (status.toLowerCase()) {
-    case "approved":
-      return { borderLeft: "4px solid green", backgroundColor: "#e6ffe6" };
-    case "rejected":
-      return { borderLeft: "4px solid red", backgroundColor: "#ffe6e6" };
-    default:
-      return {};
-  }
-}
-
-/**
- * ModerationDashboard Component
- *
- * This component displays posts and orphan media items pending moderation.
- * It allows the moderator to approve or reject items. After an action is performed,
- * the element is visually marked as processed using the updated local state.
- *
- * Best practices followed:
- * - Separation of concerns with helper functions.
- * - Well-documented code for maintainability.
- * - Modular design to facilitate extendability.
- */
 export default function ModerationDashboard() {
   const { fetchDashboard, performModerationAction } = useModerationAPI();
   const { addNotification } = useNotification();
@@ -70,13 +40,6 @@ export default function ModerationDashboard() {
     load();
   }, [fetchDashboard]);
 
-  /**
-   * Updates the local moderation status for a given entity.
-   *
-   * @param {"post" | "media"} entityType - The type of the moderated entity.
-   * @param {number} entityId - The ID of the moderated entity.
-   * @param {string} newStatus - The new moderation status ("Approved" or "Rejected").
-   */
   function updateModerationStatus(
     entityType: "post" | "media",
     entityId: number,
@@ -90,23 +53,26 @@ export default function ModerationDashboard() {
         );
         return { ...prevData, posts: updatedPosts };
       } else if (entityType === "media") {
-        const updatedMedia = prevData.orphan_media.map((media) =>
-          media.id === entityId
-            ? { ...media, status_display: newStatus }
-            : media
-        );
-        return { ...prevData, orphan_media: updatedMedia };
+        // Update both orphan media and media items inside posts.
+        // Here, we assume that if a media item is part of a post, its updated status
+        // is reflected within the post's media_items array.
+        const updateMediaItems = (items: any[]) =>
+          items.map((media: any) =>
+            media.id === entityId ? { ...media, status_display: newStatus } : media
+          );
+        return {
+          ...prevData,
+          posts: prevData.posts.map((post) => ({
+            ...post,
+            media_items: updateMediaItems(post.media_items),
+          })),
+          orphan_media: updateMediaItems(prevData.orphan_media),
+        };
       }
       return prevData;
     });
   }
 
-  /**
-   * Handles the approval action for a given entity.
-   *
-   * @param {"post" | "media"} entityType - The type of the entity.
-   * @param {number} entityId - The ID of the entity.
-   */
   function handleApprove(entityType: "post" | "media", entityId: number) {
     performModerationAction({
       entity_type: entityType,
@@ -116,7 +82,6 @@ export default function ModerationDashboard() {
       .then((resData) => {
         addNotification("Content approved successfully", "success");
         console.log("Approved", resData);
-        // Update the local status to "Approved"
         updateModerationStatus(entityType, entityId, "Approved");
       })
       .catch((err) => {
@@ -125,23 +90,11 @@ export default function ModerationDashboard() {
       });
   }
 
-  /**
-   * Opens the rejection modal for a given entity.
-   *
-   * @param {"post" | "media"} entityType - The type of the entity.
-   * @param {number} entityId - The ID of the entity.
-   */
   function openRejectModal(entityType: "post" | "media", entityId: number) {
     setCurrentEntity({ type: entityType, id: entityId });
     setRejectModalOpen(true);
   }
 
-  /**
-   * Handles the submission of a rejection action with reasons and a comment.
-   *
-   * @param {number[]} reasonIds - Array of selected rejection reason IDs.
-   * @param {string} comment - Additional comment provided by the moderator.
-   */
   function handleRejectSubmit(reasonIds: number[], comment: string) {
     if (!currentEntity) return;
     performModerationAction({
@@ -155,12 +108,7 @@ export default function ModerationDashboard() {
         addNotification("Content rejected successfully", "success");
         console.log("Rejected", resData);
         setRejectModalOpen(false);
-        // Update the local status to "Rejected"
-        updateModerationStatus(
-          currentEntity.type,
-          currentEntity.id,
-          "Rejected"
-        );
+        updateModerationStatus(currentEntity.type, currentEntity.id, "Rejected");
       })
       .catch((err) => {
         console.error("Rejection error", err);
@@ -190,48 +138,54 @@ export default function ModerationDashboard() {
               }}
             >
               <h3>
-                {post.name} (Status: {post.status_display || "Pending"})
+                {post.name} (Status: {post.status_display || "Pending moderation"})
               </h3>
               <p>Slug: {post.slug}</p>
+              {/* Post-level moderation controls */}
+              <div style={{ marginBottom: "1rem" }}>
+                <button
+                  className="btn btn-success btn-sm me-2"
+                  onClick={() => handleApprove("post", post.id)}
+                >
+                  <FontAwesomeIcon icon={faCheck} /> Approve Post
+                </button>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => openRejectModal("post", post.id)}
+                >
+                  <FontAwesomeIcon icon={faTimes} /> Reject Post
+                </button>
+              </div>
+              {/* Visual divider for individual media items moderation */}
+              <hr style={{ margin: "1rem 0" }} />
+              <h4>Media Items Moderation</h4>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 {post.media_items.map((item: any) => {
-                  const tileProps: TileProps = {
+                  const tileProps = {
                     id: item.id,
                     name: item.original_filename || `Media #${item.id}`,
                     thumbnail_url: item.thumbnail_url,
-                    media_type: "photo", // Adjust if needed
+                    media_type: "photo",
                     show_likes: false,
                     likes_counter: 0,
                     has_liked: false,
                     owner_username: "",
                     locked: false,
-                    status: item.status_display,
+                    status: item.status, // "Approved" or possibly "Pending moderation"
                     tile_size: "small",
                     canAddToAlbum: false,
                     entity_type: "media",
                     page_type: "posts_list",
                   };
                   return (
-                    <Tile
+                    <ModerationMediaTile
                       key={item.id}
                       item={tileProps}
+                      onApprove={() => handleApprove("media", item.id)}
+                      onReject={() => openRejectModal("media", item.id)}
                     />
                   );
                 })}
-              </div>
-              <div style={{ marginTop: "0.5rem" }}>
-                <button
-                  className="btn btn-success btn-sm me-2"
-                  onClick={() => handleApprove("post", post.id)}
-                >
-                  <FontAwesomeIcon icon={faCheck} /> Approve
-                </button>
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={() => openRejectModal("post", post.id)}
-                >
-                  <FontAwesomeIcon icon={faTimes} /> Reject
-                </button>
               </div>
             </div>
           ))
@@ -246,7 +200,7 @@ export default function ModerationDashboard() {
         {data?.orphan_media && data.orphan_media.length > 0 ? (
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {data.orphan_media.map((item) => {
-              const tileProps: TileProps = {
+              const tileProps = {
                 id: item.id,
                 name: item.original_filename || `Media #${item.id}`,
                 thumbnail_url: item.thumbnail_url,
@@ -263,29 +217,12 @@ export default function ModerationDashboard() {
                 page_type: "posts_list",
               };
               return (
-                <div
+                <ModerationMediaTile
                   key={item.id}
-                  style={{
-                    position: "relative",
-                    ...getStatusStyle(item.status_display),
-                  }}
-                >
-                  <Tile item={tileProps} />
-                  <div style={{ marginTop: "0.5rem" }}>
-                    <button
-                      className="btn btn-success btn-sm me-2"
-                      onClick={() => handleApprove("media", item.id)}
-                    >
-                      <FontAwesomeIcon icon={faCheck} /> Approve
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => openRejectModal("media", item.id)}
-                    >
-                      <FontAwesomeIcon icon={faTimes} /> Reject
-                    </button>
-                  </div>
-                </div>
+                  item={tileProps}
+                  onApprove={() => handleApprove("media", item.id)}
+                  onReject={() => openRejectModal("media", item.id)}
+                />
               );
             })}
           </div>
