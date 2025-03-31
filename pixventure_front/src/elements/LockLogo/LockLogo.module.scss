@@ -9,10 +9,15 @@
 .lock_logo_link {
   font-size: 70px;
   text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
 
-  // explicitly override all default link colors and hover behaviors
+  // explicitly override all default button states
   &, &:hover, &:active, &:visited {
     color: inherit;
+    background: none;
+    border: none;
   }
 }
 
