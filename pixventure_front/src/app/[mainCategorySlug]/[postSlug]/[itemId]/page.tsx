@@ -19,9 +19,8 @@ import ItemViewerNavigation from "@/components/ItemViewerNavigation/ItemViewerNa
 import MediaViewer from "@/components/MediaViewer/MediaViewer";
 import { usePostsAPI } from "@/utils/api/posts";
 import styles from "./ItemViewerPage.module.scss";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCrown } from "@fortawesome/free-solid-svg-icons";
-import GlowingMembershipPrompt from "@/components/GlowingMembershipPrompt/GlowingMembershipPrompt";
+import GlowingResolutionPrompt from "@/components/GlowingResolutionPrompt/GlowingResolutionPrompt";
+import LockLogo from "@/elements/LockLogo/LockLogo";
 
 // Basic interface for storing info about the post
 interface Post {
@@ -44,6 +43,8 @@ interface ItemDetail {
   item_url: string;
   served_width: number;
   served_height: number;
+  original_width: number;
+  original_height: number;
   video_poster_url: string;
   higher_resolution_available: boolean;
   locked: boolean; // Indicates if the item is locked.
@@ -133,6 +134,8 @@ export default function ItemViewerPage() {
     item_url,
     served_width,
     served_height,
+    original_width,
+    original_height,
     video_poster_url,
     higher_resolution_available,
     locked,
@@ -184,7 +187,6 @@ export default function ItemViewerPage() {
         initialLikes={likes_counter}
         initialHasLiked={has_liked}
         itemMenuData={itemMenuData}
-        higherResolutionAvailable={higher_resolution_available}
       />
 
       {/**
@@ -201,7 +203,6 @@ export default function ItemViewerPage() {
         onLoadComplete={() => setIsMediaLoading(false)}
         fallbackMediaType={media_type}
         posterUrl={video_poster_url}
-        higherResolutionAvailable={higher_resolution_available}
       />
 
       {/**
@@ -209,11 +210,20 @@ export default function ItemViewerPage() {
        * --------------
        * Renders a large glowing crown icon in the center of the screen when the item is locked.
        */}
-      {locked && (
-        <div className={styles.lockedOverlay}>
-          <GlowingMembershipPrompt modalText="Please sign in to unlock this content.">
-            <i className={`fas fa-crown ${styles.locked}`}></i>
-          </GlowingMembershipPrompt>
+      {locked && <LockLogo />}
+
+      {/* Membership Prompt for Higher Resolution */}
+      {higher_resolution_available && (
+        <div className={styles.membershipPrompt}>
+          <GlowingResolutionPrompt
+            servedWidth={served_width}
+            servedHeight={served_height}
+            fullWidth={original_width}
+            fullHeight={original_height}
+            modalText="Please sign up for membership to access premium features."
+          >
+            <span>HD</span>
+          </GlowingResolutionPrompt>
         </div>
       )}
 

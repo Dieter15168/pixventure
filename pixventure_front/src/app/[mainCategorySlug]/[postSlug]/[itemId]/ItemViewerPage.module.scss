@@ -78,3 +78,13 @@
 .locked {
   font-size: 100px;
 }
+
+.membershipPrompt {
+  font-size: 50px;
+  font-weight: bold;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
