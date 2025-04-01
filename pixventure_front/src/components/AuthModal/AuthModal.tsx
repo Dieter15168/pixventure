@@ -6,7 +6,6 @@ import React from "react";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import SignUpForm from "../SignUpForm/SignUpForm";
-import Link from "next/link";
 
 interface AuthModalProps {
   /**
@@ -34,14 +33,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ show, onHide, modalText }) => {
       </Modal.Header>
       <Modal.Body>
         <SignUpForm />
-        <div style={{ marginTop: "15px", textAlign: "center" }}>
-          <p>
-            Already have an account?{" "}
-            <Link href="/signin">
-              Sign in
-            </Link>
-          </p>
-        </div>
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>

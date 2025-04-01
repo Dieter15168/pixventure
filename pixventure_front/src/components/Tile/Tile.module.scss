@@ -120,3 +120,11 @@
 .featured_tile {
   border: 2px solid var(--approved_color, green);
 }
+
+.lock_logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}

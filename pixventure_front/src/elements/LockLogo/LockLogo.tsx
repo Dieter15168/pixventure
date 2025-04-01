@@ -1,10 +1,9 @@
-/// src/elements/LockLogo/LockLogo.tsx
-
+// src/elements/LockLogo/LockLogo.tsx
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import styles from "./LockLogo.module.scss";
-import { useModal } from "../../contexts/ModalContext";
+import AccessModal from "@/components/AccessModal/AccessModal";
 
 interface LockLogoProps {
   /**
@@ -15,19 +14,19 @@ interface LockLogoProps {
 
 /**
  * LockLogo component displays an animated lock icon.
- * On click, it triggers the global sign in modal via the context.
+ * On click, it opens a specialized modal (AccessModal) for the members area.
  */
 const LockLogo: React.FC<LockLogoProps> = ({
-  modalText = "Please sign in to unlock this content.",
+  modalText = "Members Area",
 }) => {
-  const { showModal } = useModal();
+  const [showModal, setShowModal] = useState<boolean>(false);
 
   /**
-   * Handles click event to open the global modal with the specified text.
+   * Handles click event to open the modal.
    */
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    showModal(modalText);
+    setShowModal(true);
   };
 
   return (
@@ -41,6 +40,8 @@ const LockLogo: React.FC<LockLogoProps> = ({
           <i className="fas fa-crown"></i>
         </span>
       </button>
+      {/* Render the specialized AccessModal locally */}
+      <AccessModal show={showModal} onHide={() => setShowModal(false)} />
     </div>
   );
 };

@@ -4,6 +4,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 /**
  * SignUpForm component handles user registration.
@@ -42,7 +43,6 @@ const SignUpForm: React.FC = () => {
 
   return (
     <div>
-      <h1>Sign Up</h1>
       {success && <p style={{ color: "green" }}>{success}</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
       <form
@@ -72,10 +72,18 @@ const SignUpForm: React.FC = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit" style={{ marginTop: "10px" }}>
+        <button
+          type="submit"
+          style={{ marginTop: "10px" }}
+        >
           Sign Up
         </button>
       </form>
+      <div style={{ marginTop: "15px"}}>
+        <p>
+          Already have an account? <Link href="/signin">Sign in</Link>
+        </p>
+      </div>
     </div>
   );
 };
