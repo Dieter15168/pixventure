@@ -12,6 +12,7 @@ import {
   faSignOutAlt,
   faUserCircle,
 } from "@fortawesome/free-solid-svg-icons";
+import useSignOut from "@/hooks/useSignOut";
 
 interface UserState {
   username: string;
@@ -20,12 +21,14 @@ interface UserState {
 
 interface UserPanelProps {
   user: UserState | null;
-  onSignOut?: () => void;
 }
 
-export default function UserPanel({ user, onSignOut }: UserPanelProps) {
+export default function UserPanel({ user }: UserPanelProps) {
+  // Use the sign-out hook
+  const signOut = useSignOut();
+
   if (!user) {
-    // Not logged in
+    // Render dropdown for unauthenticated users
     return (
       <Dropdown>
         <Dropdown.Toggle variant="secondary">Login</Dropdown.Toggle>
@@ -47,20 +50,12 @@ export default function UserPanel({ user, onSignOut }: UserPanelProps) {
     );
   }
 
-  // Logged in
-  const handleSignOut = () => {
-    if (onSignOut) onSignOut();
-  };
-
+  // Render dropdown for authenticated users with sign-out option
   return (
     <Dropdown>
       <Dropdown.Toggle variant="dark">{user.username}</Dropdown.Toggle>
       <Dropdown.Menu align="end">
-        <Dropdown.Item
-          as={Link}
-          href="/signout"
-          onClick={handleSignOut}
-        >
+        <Dropdown.Item onClick={signOut}>
           <FontAwesomeIcon icon={faSignOutAlt} className="me-2" />
           Sign Out
         </Dropdown.Item>
