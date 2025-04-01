@@ -65,3 +65,16 @@
     transform: rotate(360deg);
   }
 }
+
+.lockedOverlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  z-index: 10001; /* Ensure it overlays other UI elements */
+}
+
+.locked {
+  font-size: 100px;
+}

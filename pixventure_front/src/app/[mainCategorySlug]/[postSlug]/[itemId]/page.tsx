@@ -19,6 +19,9 @@ import ItemViewerNavigation from "@/components/ItemViewerNavigation/ItemViewerNa
 import MediaViewer from "@/components/MediaViewer/MediaViewer";
 import { usePostsAPI } from "@/utils/api/posts";
 import styles from "./ItemViewerPage.module.scss";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCrown } from "@fortawesome/free-solid-svg-icons";
+import GlowingMembershipPrompt from "@/components/GlowingMembershipPrompt/GlowingMembershipPrompt";
 
 // Basic interface for storing info about the post
 interface Post {
@@ -43,6 +46,7 @@ interface ItemDetail {
   served_height: number;
   video_poster_url: string;
   higher_resolution_available: boolean;
+  locked: boolean; // Indicates if the item is locked.
 }
 
 export default function ItemViewerPage() {
@@ -55,7 +59,8 @@ export default function ItemViewerPage() {
 
   // "from" param for back navigation
   const searchParams = useSearchParams();
-  const fromParam = searchParams.get("from") || `/${mainCategorySlug}/${postSlug}`;
+  const fromParam =
+    searchParams.get("from") || `/${mainCategorySlug}/${postSlug}`;
 
   // Local state for post and item detail
   const [post, setPost] = useState<Post | null>(null);
@@ -130,15 +135,20 @@ export default function ItemViewerPage() {
     served_height,
     video_poster_url,
     higher_resolution_available,
+    locked,
   } = itemDetail;
 
   // Construct prev/next URLs for navigation
   const prevUrl = previous_item_id
-    ? `/${mainCategorySlug}/${postSlug}/${previous_item_id}?from=${encodeURIComponent(fromParam)}`
+    ? `/${mainCategorySlug}/${postSlug}/${previous_item_id}?from=${encodeURIComponent(
+        fromParam
+      )}`
     : undefined;
 
   const nextUrl = next_item_id
-    ? `/${mainCategorySlug}/${postSlug}/${next_item_id}?from=${encodeURIComponent(fromParam)}`
+    ? `/${mainCategorySlug}/${postSlug}/${next_item_id}?from=${encodeURIComponent(
+        fromParam
+      )}`
     : undefined;
 
   // Data for the item menu
@@ -178,9 +188,9 @@ export default function ItemViewerPage() {
       />
 
       {/**
-       * MEDIA VIEWER (image or video) 
-       * We'll rely on MediaViewer to handle correct rendering & 
-       * center the content on-screen. We pass onLoadComplete to 
+       * MEDIA VIEWER (image or video)
+       * We'll rely on MediaViewer to handle correct rendering &
+       * center the content on-screen. We pass onLoadComplete to
        * turn off the loader overlay once ready.
        */}
       <MediaViewer
@@ -193,6 +203,19 @@ export default function ItemViewerPage() {
         posterUrl={video_poster_url}
         higherResolutionAvailable={higher_resolution_available}
       />
+
+      {/**
+       * LOCKED OVERLAY
+       * --------------
+       * Renders a large glowing crown icon in the center of the screen when the item is locked.
+       */}
+      {locked && (
+        <div className={styles.lockedOverlay}>
+          <GlowingMembershipPrompt modalText="Please sign in to unlock this content.">
+            <i className={`fas fa-crown ${styles.locked}`}></i>
+          </GlowingMembershipPrompt>
+        </div>
+      )}
 
       {/**
        * LOADING OVERLAY
