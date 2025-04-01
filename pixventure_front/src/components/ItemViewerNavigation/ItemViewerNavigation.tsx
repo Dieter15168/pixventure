@@ -35,7 +35,7 @@ interface ItemViewerNavigationProps {
   /**
    * If true, renders the membership prompt button (glowing prompt) in the navigation.
    */
-  showMembershipPrompt?: boolean;
+  higherResolutionAvailable?: boolean;
 }
 
 const ItemViewerNavigation: React.FC<ItemViewerNavigationProps> = ({
@@ -47,7 +47,7 @@ const ItemViewerNavigation: React.FC<ItemViewerNavigationProps> = ({
   initialLikes,
   initialHasLiked,
   itemMenuData,
-  showMembershipPrompt,
+  higherResolutionAvailable,
 }) => {
   // Access the menu context.
   const { openMenu } = useElementMenu();
@@ -117,7 +117,7 @@ const ItemViewerNavigation: React.FC<ItemViewerNavigationProps> = ({
       </div>
 
       {/* Membership Prompt - bottom center */}
-      {showMembershipPrompt && (
+      {higherResolutionAvailable && (
         <div className={styles.membershipPrompt}>
           <GlowingMembershipPrompt modalText="Please sign up for membership to access premium features.">
             <span>

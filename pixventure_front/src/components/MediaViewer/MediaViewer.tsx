@@ -16,7 +16,7 @@ interface MediaViewerProps {
   onLoadComplete?: () => void;
   fallbackMediaType?: MediaType;
   posterUrl?: string;
-  showMembershipPrompt?: boolean;
+  higherResolutionAvailable?: boolean;
 }
 
 /**
@@ -25,7 +25,7 @@ interface MediaViewerProps {
  * Renders either a ZoomableImage for images or
  * a VideoJSPlayer for videos.
  *
- * If "showMembershipPrompt" is true:
+ * If "higherResolutionAvailable" is true:
  *  - The video will not loop.
  *  - When playback finishes, a modal is automatically shown.
  *
@@ -40,7 +40,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   onLoadComplete,
   fallbackMediaType,
   posterUrl,
-  showMembershipPrompt,
+  higherResolutionAvailable,
 }) => {
   const isVideo = determineIfVideo(src, fallbackMediaType);
   const [videoLoading, setVideoLoading] = useState(true);
@@ -68,14 +68,14 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
   }
 
   // Build the options object for VideoJSPlayer.
-  // If showMembershipPrompt is false, we auto-loop the video.
+  // If higherResolutionAvailable is false, we auto-loop the video.
   const videoOptions = {
     controls: true,
     autoplay: false,
     preload: "auto",
     poster: posterUrl,
     sources: [{ src, type: "video/mp4" }],
-    loop: !showMembershipPrompt,
+    loop: !higherResolutionAvailable,
   };
 
   return (
@@ -83,7 +83,7 @@ const MediaViewer: React.FC<MediaViewerProps> = ({
       <VideoJSPlayer
         options={videoOptions}
         onReady={handleVideoReady}
-        showMembershipPrompt={showMembershipPrompt}
+        higherResolutionAvailable={higherResolutionAvailable}
       />
       {videoLoading && (
         <div className={styles.videoSpinnerOverlay}>

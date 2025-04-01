@@ -14,7 +14,7 @@ interface VideoPlayerProps {
    * If true, the player will trigger a membership prompt modal
    * when the video finishes playing.
    */
-  showMembershipPrompt?: boolean;
+  higherResolutionAvailable?: boolean;
 }
 
 /**
@@ -22,13 +22,13 @@ interface VideoPlayerProps {
  * -------------
  * Wraps the Video.js player and adds custom behavior.
  *
- * When "showMembershipPrompt" is true, an event listener is added
+ * When "higherResolutionAvailable" is true, an event listener is added
  * to trigger a modal when the video ends.
  */
 const VideoJSPlayer: React.FC<VideoPlayerProps> = ({
   options,
   onReady,
-  showMembershipPrompt,
+  higherResolutionAvailable,
 }) => {
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
@@ -49,7 +49,7 @@ const VideoJSPlayer: React.FC<VideoPlayerProps> = ({
 
     // If membership prompt is enabled, attach the "ended" event listener.
     let handleEnded: (() => void) | null = null;
-    if (showMembershipPrompt) {
+    if (higherResolutionAvailable) {
       handleEnded = () => {
         // Trigger the modal when video playback finishes.
         showModal("Unlock more features with a membership!");
@@ -67,7 +67,7 @@ const VideoJSPlayer: React.FC<VideoPlayerProps> = ({
         playerRef.current = null;
       }
     };
-  }, [options, onReady, showMembershipPrompt, showModal]);
+  }, [options, onReady, higherResolutionAvailable, showModal]);
 
   return <div data-vjs-player ref={videoRef} />;
 };

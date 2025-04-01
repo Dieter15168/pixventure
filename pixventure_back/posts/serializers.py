@@ -139,10 +139,15 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
       served_height,
       original_width,
       original_height,
-      show_membership_prompt,
+      higher_resolution_available,  # Indicates if a higher resolution version is available for non-locked items.
       locked,
       media_type,
       video_poster_url
+
+    Business Logic for 'higher_resolution_available':
+      - For non-locked items, if the currently served version is a lower-resolution preview (e.g., PREVIEW or BLURRED_PREVIEW)
+        compared to the original image, or if the media type is video, then a higher resolution is available.
+      - For locked items, this flag is always False since membership prompts for locked items are handled differently.
     """
 
     item_id = serializers.SerializerMethodField()
@@ -155,7 +160,7 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
     served_height = serializers.SerializerMethodField()
     original_width = serializers.SerializerMethodField()
     original_height = serializers.SerializerMethodField()
-    show_membership_prompt = serializers.SerializerMethodField()
+    higher_resolution_available = serializers.SerializerMethodField()
     locked = serializers.SerializerMethodField()
     media_type = serializers.SerializerMethodField()
     video_poster_url = serializers.SerializerMethodField()
@@ -173,7 +178,7 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
             'served_height',
             'original_width',
             'original_height',
-            'show_membership_prompt',
+            'higher_resolution_available',
             'locked',
             'media_type',
             'video_poster_url',
@@ -184,13 +189,12 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
         return obj.media_item.id
 
     def get_likes_counter(self, obj):
-        """How many likes does this MediaItem have?"""
+        """Return the number of likes for this MediaItem."""
         return obj.media_item.likes_counter
 
     def get_has_liked(self, obj):
         """
-        Checks if the current user has liked this specific MediaItem,
-        using our DRY utility function.
+        Check if the current user has liked this MediaItem using our DRY utility function.
         """
         request = self.context.get('request')
         if request and request.user.is_authenticated:
@@ -199,8 +203,7 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
 
     def get_previous_item_id(self, obj):
         """
-        Retrieves the ID of the previous MediaItem in the same Post, 
-        based on the position field in PostMedia.
+        Retrieve the ID of the previous MediaItem in the same Post based on the position field in PostMedia.
         """
         current_position = obj.position
         prev_pm = (
@@ -213,8 +216,7 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
 
     def get_next_item_id(self, obj):
         """
-        Retrieves the ID of the next MediaItem in the same Post,
-        based on the position field in PostMedia.
+        Retrieve the ID of the next MediaItem in the same Post based on the position field in PostMedia.
         """
         current_position = obj.position
         next_pm = (
@@ -228,7 +230,7 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
     def _get_display_info(self, obj):
         """
         Returns (chosen_version, chosen_url) for this media item.
-        We cache it in serializer context to avoid multiple queries.
+        Caches the result in the serializer context to avoid multiple queries.
         """
         cache_key = f"postmedia_item_{obj.pk}_info"
         if cache_key not in self.context:
@@ -239,38 +241,49 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
                 media_item=obj.media_item,
                 user=user,
                 post=obj.post,
-                thumbnail=False  # or True if you're serving "thumbnail" in this endpoint
+                thumbnail=False  # Adjust this flag if you're serving thumbnail versions in this endpoint.
             )
             self.context[cache_key] = (chosen_version, chosen_url)
         return self.context[cache_key]
 
     def get_item_url(self, obj):
-        """The final URL. Pulled from the chosen version's info."""
+        """Return the URL of the chosen media version."""
         chosen_version, chosen_url = self._get_display_info(obj)
         return chosen_url
 
     def get_served_width(self, obj):
+        """Return the width of the served media version."""
         chosen_version, _ = self._get_display_info(obj)
         return chosen_version.width if chosen_version and chosen_version.width else None
 
     def get_served_height(self, obj):
+        """Return the height of the served media version."""
         chosen_version, _ = self._get_display_info(obj)
         return chosen_version.height if chosen_version and chosen_version.height else None
 
     def get_original_width(self, obj):
+        """Return the width of the original media version."""
         original = obj.media_item.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
         return original.width if original and original.width else None
 
     def get_original_height(self, obj):
+        """Return the height of the original media version."""
         original = obj.media_item.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
         return original.height if original and original.height else None
 
-    def get_show_membership_prompt(self, obj):
+    def get_higher_resolution_available(self, obj):
         """
-        True if the served version is 'smaller' than the original
-        and is some kind of preview/blurred preview (i.e. for non-paying user).
-        Adapt the condition as you see fit.
+        Determines whether a higher resolution version of the media is available for the user.
+        
+        Business Logic:
+          - If the media item is locked, return False immediately, as locked items use a separate membership prompt.
+          - For non-locked items, if the served version is a lower-resolution preview (e.g. PREVIEW or BLURRED_PREVIEW)
+            compared to the original image, or if the media is a video, then higher resolution is available.
         """
+        # Do not prompt if the item is locked.
+        if self.get_locked(obj):
+            return False
+
         chosen_version, _ = self._get_display_info(obj)
         if not chosen_version:
             return False
@@ -278,7 +291,6 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
         if chosen_version.version_type in [
             MediaItemVersion.PREVIEW,
             MediaItemVersion.BLURRED_PREVIEW,
-            # possibly THUMBNAIL, etc., if you want the prompt for them too
         ]:
             original = obj.media_item.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
             if not original:
@@ -289,7 +301,7 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
             orig_w = original.width or 0
             orig_h = original.height or 0
 
-            # If either dimension is smaller, we consider it "lower-res"
+            # If either dimension is smaller, or if the media type is video, indicate that a higher resolution version is available.
             if served_w < orig_w or served_h < orig_h or obj.media_item.media_type == MediaItem.VIDEO:
                 return True
 
@@ -304,23 +316,22 @@ class PostMediaItemDetailSerializer(serializers.ModelSerializer):
         return is_media_locked(obj.media_item, user, post=obj.post)
 
     def get_media_type(self, obj):
-        """Returns the media type as a string, e.g. 'photo' or 'video'."""
+        """Return the media type as a lowercase string (e.g., 'photo' or 'video')."""
         return obj.media_item.get_media_type_display().lower()
 
     def get_video_poster_url(self, obj):
         """
-        If the media is a video, return a URL to the thumbnail/poster version.
-        Otherwise return None.
+        If the media item is a video, return the URL for its thumbnail/poster version.
+        Otherwise, return None.
         """
         if obj.media_item.media_type != MediaItem.VIDEO:
             return None
 
-        # For example, assume there is a 'THUMBNAIL' version type you use as a poster
+        # Assume there is a 'THUMBNAIL' version type used as a poster.
         thumbnail_version = obj.media_item.versions.filter(
             version_type=MediaItemVersion.THUMBNAIL
         ).first()
 
-        # If a thumbnail version exists, return its URL; otherwise None
         if thumbnail_version and thumbnail_version.file:
             return thumbnail_version.file.url
 

@@ -42,7 +42,7 @@ interface ItemDetail {
   served_width: number;
   served_height: number;
   video_poster_url: string;
-  show_membership_prompt: boolean;
+  higher_resolution_available: boolean;
 }
 
 export default function ItemViewerPage() {
@@ -129,7 +129,7 @@ export default function ItemViewerPage() {
     served_width,
     served_height,
     video_poster_url,
-    show_membership_prompt,
+    higher_resolution_available,
   } = itemDetail;
 
   // Construct prev/next URLs for navigation
@@ -174,7 +174,7 @@ export default function ItemViewerPage() {
         initialLikes={likes_counter}
         initialHasLiked={has_liked}
         itemMenuData={itemMenuData}
-        showMembershipPrompt={show_membership_prompt}
+        higherResolutionAvailable={higher_resolution_available}
       />
 
       {/**
@@ -191,7 +191,7 @@ export default function ItemViewerPage() {
         onLoadComplete={() => setIsMediaLoading(false)}
         fallbackMediaType={media_type}
         posterUrl={video_poster_url}
-        showMembershipPrompt={show_membership_prompt}
+        higherResolutionAvailable={higher_resolution_available}
       />
 
       {/**
