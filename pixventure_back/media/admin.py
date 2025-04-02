@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import MediaItem, MediaItemVersion, MediaItemHash, HashType, DuplicateCase
+from .models import MediaItem, MediaItemVersion, MediaItemHash, HashType, DuplicateCluster
 
 
 class MediaItemHashInline(admin.TabularInline):
@@ -65,40 +65,12 @@ class MediaItemHashAdmin(admin.ModelAdmin):
     list_per_page = 20
 
 
-@admin.register(DuplicateCase)
-class DuplicateCaseAdmin(admin.ModelAdmin):
-    list_display = (
-        'id',
-        'candidate_link',
-        'duplicate_link',
-        'confidence_score',
-        'status_display',
-        'created',
-        'updated',
-    )
-    list_filter = ('status', 'created', 'updated')
-    search_fields = (
-        'candidate__id',
-        'duplicate__id',
-        'candidate__original_filename',  # if you have a filename or title field on MediaItem
-        'duplicate__original_filename',
-    )
-    readonly_fields = ('created', 'updated')
-    ordering = ('-created',)
-
-    def status_display(self, obj):
-        return obj.get_status_display()
-    status_display.short_description = 'Status'
-
-    def candidate_link(self, obj):
-        return f'<a href="/admin/media/mediaitem/{obj.candidate.id}/change/">{obj.candidate.id}</a>'
-    candidate_link.short_description = 'Candidate'
-    candidate_link.allow_tags = True
-
-    def duplicate_link(self, obj):
-        return f'<a href="/admin/media/mediaitem/{obj.duplicate.id}/change/">{obj.duplicate.id}</a>'
-    duplicate_link.short_description = 'Duplicate'
-    duplicate_link.allow_tags = True
+@admin.register(DuplicateCluster)
+class DuplicateClusterAdmin(admin.ModelAdmin):
+    list_display = ('id', 'hash_type', 'hash_value', 'status', 'created', 'updated')
+    list_filter = ('status', 'hash_type')
+    search_fields = ('hash_value', )
+    raw_id_fields = ('items', )
 
 
 admin.site.register(MediaItem, MediaItemAdmin)

@@ -180,27 +180,48 @@ class MediaItemHash(models.Model):
         return f"Hash ({self.hash_type.name}) for MediaItemVersion {self.media_item_version.id}"
     
 
-class DuplicateCase(models.Model):
+class DuplicateCluster(models.Model):
     """
-    Represents a detected duplicate between a candidate media item and an existing duplicate media item.
-    Each record is created per candidate-duplicate pair and includes a confidence score.
+    Groups all media items that share the same hash_value (and hash_type).
+    Moderators can review an entire cluster at once rather than pairwise duplicates.
     """
     PENDING = 0
     CONFIRMED = 1
-    FALSE_POSITIVE = 2
+    IGNORED = 2
 
     STATUS_CHOICES = [
-        (PENDING, 'Pending Review'),
-        (CONFIRMED, 'Confirmed Duplicate'),
-        (FALSE_POSITIVE, 'False Positive'),
+        (PENDING, 'Pending'),
+        (CONFIRMED, 'Confirmed'),
+        (IGNORED, 'Ignored'),
     ]
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    candidate = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='duplicate_candidates')
-    duplicate = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='duplicate_matches')
-    confidence_score = models.FloatField(default=1.0)
-    status = models.IntegerField(choices=STATUS_CHOICES, default=PENDING)
+
+    hash_type = models.ForeignKey(
+        HashType, on_delete=models.CASCADE, related_name='clusters'
+    )
+    hash_value = models.CharField(max_length=64)
+
+    status = models.IntegerField(
+        choices=STATUS_CHOICES,
+        default=PENDING,
+        help_text="Overall status of this cluster."
+    )
+
+    items = models.ManyToManyField(
+        MediaItem,
+        related_name='duplicate_clusters',
+        help_text="All MediaItems in this cluster share the same hash."
+    )
 
     def __str__(self):
-        return f"DuplicateCase: Candidate {self.candidate.id} vs Duplicate {self.duplicate.id} ({self.get_status_display()})"
+        return (
+            f"DuplicateCluster {self.id} - {self.get_status_display()} - "
+            f"{self.hash_type.name}:{self.hash_value}"
+        )
+
+    class Meta:
+        unique_together = ('hash_type', 'hash_value')
+        verbose_name = "Duplicate Cluster"
+        verbose_name_plural = "Duplicate Clusters"
