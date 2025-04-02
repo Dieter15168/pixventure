@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from rest_framework.exceptions import ValidationError
 from posts.models import Post
-from media.models import MediaItem
+from media.models import MediaItem, DuplicateCluster
 from .models import RejectionReason
-from .serializers import PostModerationSerializer, ModerationActionCreateSerializer, RejectionReasonSerializer
+from .serializers import PostModerationSerializer, ModerationActionCreateSerializer, RejectionReasonSerializer, DuplicateClusterModerationSerializer
 from media.serializers import UnpublishedMediaItemSerializer
 from moderation.managers import ModerationManager
 
@@ -33,10 +33,15 @@ class ModerationDashboardView(generics.ListAPIView):
 
         posts_data = PostModerationSerializer(posts_qs, many=True, context={'request': request}).data
         orphan_media_data = UnpublishedMediaItemSerializer(orphan_media_qs, many=True, context={'request': request}).data
+        
+        # Fetch duplicate clusters
+        clusters = DuplicateCluster.objects.filter(status=DuplicateCluster.PENDING).prefetch_related('items__versions')
+        clusters_data = DuplicateClusterModerationSerializer(clusters, many=True, context={'request': request}).data
 
         return Response({
             "posts": posts_data,
             "orphan_media": orphan_media_data,
+            "duplicate_clusters": clusters_data,
         })
 
 
@@ -113,3 +118,17 @@ class ActiveRejectionReasonListView(generics.ListAPIView):
     permission_classes = [IsAdminUser]
     pagination_class = None
     queryset = RejectionReason.objects.filter(is_active=True).order_by('order')
+    
+    
+class DuplicateClusterListView(generics.ListAPIView):
+    """
+    Returns all duplicate clusters that are Pending (or whichever filter you choose).
+    Only accessible to admin users.
+    """
+    serializer_class = DuplicateClusterModerationSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return DuplicateCluster.objects.filter(
+            status=DuplicateCluster.PENDING
+        ).prefetch_related('items__versions', 'hash_type')

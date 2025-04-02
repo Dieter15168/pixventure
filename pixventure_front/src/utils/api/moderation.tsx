@@ -16,6 +16,26 @@ export interface RejectionReason {
   order: number;
 }
 
+export interface DuplicateClusterItem {
+  id: number;
+  media_type: string;
+  status: string;
+  thumbnail_url: string;
+  width: number | null;
+  height: number | null;
+  file_size: number | null;
+  is_best_item: boolean;
+}
+
+export interface DuplicateCluster {
+  id: number;
+  hash_type_name: string;
+  hash_value: string;
+  status: string;
+  best_item_id: number | null;
+  items: DuplicateClusterItem[];
+}
+
 export function useModerationAPI() {
   const axios = useAxios();
 

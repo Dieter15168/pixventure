@@ -4,6 +4,7 @@ from rest_framework import serializers
 from posts.models import Post
 from media.serializers import UnpublishedMediaItemSerializer
 from moderation.models import RejectionReason
+from media.models import DuplicateCluster
 
 class PostModerationSerializer(serializers.ModelSerializer):
     media_items = serializers.SerializerMethodField()
@@ -73,3 +74,59 @@ class RejectionReasonSerializer(serializers.ModelSerializer):
     class Meta:
         model = RejectionReason
         fields = ['id', 'name', 'description', 'order']
+        
+
+class DuplicateClusterItemSerializer(UnpublishedMediaItemSerializer):
+    """
+    Extends UnpublishedMediaItemSerializer to include a boolean flag
+    indicating if this item is the cluster's best item.
+    """
+    is_best_item = serializers.SerializerMethodField()
+
+    class Meta(UnpublishedMediaItemSerializer.Meta):
+        fields = UnpublishedMediaItemSerializer.Meta.fields + ['is_best_item']
+
+    def get_is_best_item(self, obj):
+        cluster = self.context.get('cluster')
+        if cluster and cluster.best_item_id == obj.id:
+            return True
+        return False
+    
+
+class DuplicateClusterModerationSerializer(serializers.ModelSerializer):
+    """
+    Serializer that returns:
+      - Cluster ID
+      - The name of the hash_type (e.g., "phash")
+      - The raw hash_value
+      - The cluster status
+      - The ID of the best_item
+      - A list of items in the cluster with resolution, file size, and an is_best_item flag
+    """
+    items = serializers.SerializerMethodField()
+    hash_type_name = serializers.CharField(source='hash_type.name', read_only=True)
+    best_item_id = serializers.ReadOnlyField()
+
+    class Meta:
+        model = DuplicateCluster
+        fields = [
+            'id',
+            'hash_type_name',
+            'hash_value',
+            'status',
+            'best_item_id',
+            'items',
+        ]
+
+    def get_items(self, obj):
+        # We'll pass the cluster in the serializer context so that
+        # each item can determine if it's the best_item.
+        serializer = DuplicateClusterItemSerializer(
+            obj.items.all(),
+            many=True,
+            context={
+                'request': self.context.get('request'),
+                'cluster': obj,
+            }
+        )
+        return serializer.data
