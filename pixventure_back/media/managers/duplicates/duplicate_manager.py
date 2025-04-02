@@ -24,8 +24,7 @@ class DuplicateManager:
 
         candidate_media_item = version.media_item
 
-        # Try to get or create a cluster for this hash_type + hash_value.
-        # If your logic is to keep them all in one cluster, we do this:
+        # 1. Get or create a cluster for this (hash_type, hash_value).
         try:
             hash_type_obj = HashType.objects.get(name=hash_type)
         except HashType.DoesNotExist:
@@ -38,27 +37,31 @@ class DuplicateManager:
             defaults={"status": DuplicateCluster.PENDING}
         )
 
-        # Add the candidate to the cluster
+        # 2. Add the candidate item to the cluster
         cluster.items.add(candidate_media_item)
 
-        # Also fetch all existing items that share the same hash (exclude current version).
-        # We'll add them to the same cluster if they're not already.
+        # 3. Find all existing items that share the same hash (excluding current version)
         duplicate_hashes = MediaItemHash.objects.filter(
             hash_type__name=hash_type,
             hash_value=hash_value
         ).exclude(media_item_version=version)
 
+        # Add each of those items to the cluster (including older items like Item 1)
         for dup_hash in duplicate_hashes:
             existing_duplicate_item = dup_hash.media_item_version.media_item
             cluster.items.add(existing_duplicate_item)
 
-        # If you want to ensure the cluster remains in PENDING if not confirmed, do it here.
+        # 4. Recompute the best item for the entire cluster now that all relevant items are in
+        cluster.update_best_item()
+
+        # 5. Update status if needed
         if cluster.status != DuplicateCluster.CONFIRMED:
             cluster.status = DuplicateCluster.PENDING
         cluster.save()
 
         logger.info(
-            "DuplicateCluster %s updated with new item %s (hash: %s).",
-            cluster.id, candidate_media_item.id, hash_value
+            "DuplicateCluster %s updated with new item %s (hash: %s). Now has %d items.",
+            cluster.id, candidate_media_item.id, hash_value, cluster.items.count()
         )
+
         return cluster

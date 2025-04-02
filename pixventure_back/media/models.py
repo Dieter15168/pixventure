@@ -179,12 +179,36 @@ class MediaItemHash(models.Model):
     def __str__(self):
         return f"Hash ({self.hash_type.name}) for MediaItemVersion {self.media_item_version.id}"
     
+    
+def _is_better_than(candidate: MediaItem, incumbent: MediaItem) -> bool:
+    """
+    Returns True if candidate is "better" than incumbent by:
+      1) Higher resolution (width x height),
+      2) If resolution ties, bigger file size.
+    """
+    # We assume 'best' means highest total pixels. If items have multiple versions,
+    # we need to figure out which version to compare. Let's assume the original version.
+    cand_original = candidate.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
+    inc_original = incumbent.versions.filter(version_type=MediaItemVersion.ORIGINAL).first()
+
+    # If either doesn't exist or data is missing, default to false or fallback logic
+    if not cand_original or not inc_original:
+        return False
+
+    cand_pixels = (cand_original.width or 0) * (cand_original.height or 0)
+    inc_pixels = (inc_original.width or 0) * (inc_original.height or 0)
+
+    if cand_pixels > inc_pixels:
+        return True
+    elif cand_pixels < inc_pixels:
+        return False
+    else:
+        # If pixel count is the same, fallback to file size.
+        cand_size = cand_original.file_size or 0
+        inc_size = inc_original.file_size or 0
+        return cand_size > inc_size
 
 class DuplicateCluster(models.Model):
-    """
-    Groups all media items that share the same hash_value (and hash_type).
-    Moderators can review an entire cluster at once rather than pairwise duplicates.
-    """
     PENDING = 0
     CONFIRMED = 1
     IGNORED = 2
@@ -202,26 +226,44 @@ class DuplicateCluster(models.Model):
         HashType, on_delete=models.CASCADE, related_name='clusters'
     )
     hash_value = models.CharField(max_length=64)
-
-    status = models.IntegerField(
-        choices=STATUS_CHOICES,
-        default=PENDING,
-        help_text="Overall status of this cluster."
-    )
+    status = models.IntegerField(choices=STATUS_CHOICES, default=PENDING)
 
     items = models.ManyToManyField(
         MediaItem,
-        related_name='duplicate_clusters',
-        help_text="All MediaItems in this cluster share the same hash."
+        related_name='duplicate_clusters'
     )
 
-    def __str__(self):
-        return (
-            f"DuplicateCluster {self.id} - {self.get_status_display()} - "
-            f"{self.hash_type.name}:{self.hash_value}"
-        )
+    best_item = models.ForeignKey(
+        MediaItem,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='best_in_clusters'
+    )
 
     class Meta:
         unique_together = ('hash_type', 'hash_value')
         verbose_name = "Duplicate Cluster"
         verbose_name_plural = "Duplicate Clusters"
+
+    def __str__(self):
+        return f"Cluster {self.id} - {self.hash_type.name}:{self.hash_value}"
+
+    def update_best_item(self):
+        """
+        Always re-evaluates which item in this cluster is 'best' according to:
+        1. Higher resolution (width * height)
+        2. If resolution ties, prefer larger file size.
+        """
+        if not self.items.exists():
+            self.best_item = None
+            self.save()
+            return
+
+        best_item = None
+        for item in self.items.all():
+            if best_item is None or _is_better_than(item, best_item):
+                best_item = item
+
+        self.best_item = best_item
+        self.save()
