@@ -1,10 +1,14 @@
 # media/managers/media_item_creation_manager.py
 import random
+import logging
+from celery import chain
 from media.models import MediaItem, MediaItemVersion
 from media.services.file_processor import process_uploaded_file
 from media.managers.media_versions.media_version_manager import MediaVersionManager
-from media.managers.hashing.hashing_manager import HashingManager
+from media.jobs.dispatcher import dispatch_fuzzy_hash, dispatch_duplicate_detection
 from main.providers.settings_provider import SettingsProvider
+
+logger = logging.getLogger(__name__)
 
 class MediaItemCreationManager:
     """
@@ -49,10 +53,11 @@ class MediaItemCreationManager:
         try:
             media_item = MediaItem.objects.get(id=media_item_id)
             original_version = media_item.versions.get(version_type=MediaItemVersion.ORIGINAL)
-            # This call dispatches the fuzzy hash task.
-            HashingManager.process_fuzzy_hash(original_version.id, hash_type="phash")
+            chain(
+                dispatch_fuzzy_hash(original_version.id, "phash", regenerate=False),
+                dispatch_duplicate_detection()
+            ).apply_async(ignore_result=True)
         except Exception as e:
-            # Log error if needed; fuzzy hash failure shouldn't block item creation.
-            pass
+            logger.error("Error scheduling hash and duplicate detection: %s", str(e))
 
         return result

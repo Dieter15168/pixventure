@@ -178,3 +178,29 @@ class MediaItemHash(models.Model):
 
     def __str__(self):
         return f"Hash ({self.hash_type.name}) for MediaItemVersion {self.media_item_version.id}"
+    
+
+class DuplicateCase(models.Model):
+    """
+    Represents a detected duplicate between a candidate media item and an existing duplicate media item.
+    Each record is created per candidate-duplicate pair and includes a confidence score.
+    """
+    PENDING = 0
+    CONFIRMED = 1
+    FALSE_POSITIVE = 2
+
+    STATUS_CHOICES = [
+        (PENDING, 'Pending Review'),
+        (CONFIRMED, 'Confirmed Duplicate'),
+        (FALSE_POSITIVE, 'False Positive'),
+    ]
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    candidate = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='duplicate_candidates')
+    duplicate = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='duplicate_matches')
+    confidence_score = models.FloatField(default=1.0)
+    status = models.IntegerField(choices=STATUS_CHOICES, default=PENDING)
+
+    def __str__(self):
+        return f"DuplicateCase: Candidate {self.candidate.id} vs Duplicate {self.duplicate.id} ({self.get_status_display()})"

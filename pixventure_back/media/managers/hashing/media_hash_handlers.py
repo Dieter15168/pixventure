@@ -13,7 +13,7 @@ def handle_fuzzy_hash(media_item_version_id, config, regenerate=False, hash_type
     :param config: Configuration dictionary (not used in this simple handler, but provided for consistency).
     :param regenerate: Boolean flag (ignored here).
     :param hash_type: Type of hash to compute, defaults to "phash".
-    :return: The computed fuzzy hash as a string.
+    :return: Return a context dictionary with all necessary data.
     """
     try:
         version = MediaItemVersion.objects.get(id=media_item_version_id)
@@ -31,4 +31,10 @@ def handle_fuzzy_hash(media_item_version_id, config, regenerate=False, hash_type
     )
     
     logger.info("Computed fuzzy hash for MediaItemVersion %s", media_item_version_id)
-    return hash_value
+    
+    return {
+        "media_item_version_id": media_item_version_id,
+        "hash_value": hash_value,
+        "hash_type": hash_type,
+    }
+
