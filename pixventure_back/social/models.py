@@ -12,7 +12,7 @@ class Like(models.Model):
     Represents a 'like' action by a user (liking_user) on a target,
     which can be a Post, MediaItem, Album, or another User (liked_user).
     """
-    liking_user = models.ForeignKey(User, on_delete=models.CASCADE)
+    liking_user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, null=True, blank=True, on_delete=models.CASCADE)
     media_item = models.ForeignKey(MediaItem, null=True, blank=True, on_delete=models.CASCADE)
     album = models.ForeignKey(Album, null=True, blank=True, on_delete=models.CASCADE)
