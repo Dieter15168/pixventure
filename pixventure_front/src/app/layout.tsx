@@ -10,6 +10,7 @@ import { AuthProvider } from "../contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ModalProvider } from "../contexts/ModalContext";
 import ElementMenuClientSetup from "./ElementMenuClientSetup";
+import GoogleTagManager from "@/components/GoogleTagManager";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -17,7 +18,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       lang="en"
       data-bs-theme="dark"
     >
-      <head />
+      <head>
+        <GoogleTagManager />
+      </head>
 
       <body>
         <AuthProvider>
