@@ -1,7 +1,12 @@
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
 from django.contrib.auth import get_user_model
 from django.db import connections, transaction
 from accounts.models import UserProfile
 from memberships.models import MembershipPlan, UserMembership
+
+EXTRA_MONTHS_ADD = 5
 
 User = get_user_model()
 
@@ -33,6 +38,18 @@ def migrate_user_meta():
 
     with transaction.atomic(using='default'):
         for row in rows:
+            # row indices:
+            # [0] last_visit
+            # [1] is_banned
+            # [2] ban_reason
+            # [3] likes_counter
+            # [4] is_extension_of_user_id
+            # [5] balance
+            # [6] is_active_paid_member
+            # [7] membership_type
+            # [8] membership_active_until
+            # [9] user_rating
+
             legacy_user_id = row[4]
             if not legacy_user_id:
                 continue
@@ -60,18 +77,23 @@ def migrate_user_meta():
                     plan = year_plan
 
                 if plan:
+                    end_date = row[8]
+                    if end_date:
+                        # Add an extra months to the end_date
+                        end_date = end_date + relativedelta(months=EXTRA_MONTHS_ADD)
+
                     # Prevent duplicates by checking if a membership exists for this user+plan+end_date
                     membership_exists = UserMembership.objects.using('default').filter(
                         user=user,
                         plan=plan,
-                        end_date=row[8]
+                        end_date=end_date
                     ).exists()
 
                     if not membership_exists:
                         UserMembership.objects.using('default').create(
                             user=user,
                             plan=plan,
-                            end_date=row[8],
+                            end_date=end_date,
                             is_active=True
                         )
                         created_memberships += 1
