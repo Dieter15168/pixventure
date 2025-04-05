@@ -87,7 +87,7 @@ interface TileLinkInfo {
  * The URL is built using entity_type:
  * - For "post": "/{main_category_slug}/{slug}"
  * - For "media": "/{main_category_slug}/{slug}"
- * - For "album": "/{slug}" (with additional album-specific logic if needed)
+ * - For "album": "/{slug}"
  *
  * @param item The tile properties.
  * @returns An object containing the finalHref and linkAction.
@@ -218,7 +218,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
       ? styles.card_medium
       : styles.card_small;
 
-  // Build counters for media counts.
+  // Build counters for media counts
   const counters = [];
   if (images_count > 0) counters.push({ type: "photo", count: images_count });
   if (videos_count > 0) counters.push({ type: "video", count: videos_count });
@@ -228,12 +228,12 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
 
   const checkboxId = `select-item-${id}`;
 
-  // Compute link details.
+  // Compute link details
   const { finalHref, linkAction } = computeTileLink(item);
   const wrapInLink = linkAction !== "none";
   const linkProps = linkAction === "newTab" ? { target: "_blank" } : {};
 
-  // Add conditional class for radio selection.
+  // Add conditional class for radio selection
   const cardClasses = `${styles.inline_card} ${cardClass} ${
     selectMode === "radio" && selected ? styles.featured_tile : ""
   } mb-2`;
@@ -268,7 +268,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
         <input
           type="checkbox"
           id={checkboxId}
-          className="pick-item-checkbox"
+          className={styles["pick-item-checkbox"]}
           checked={!!selected}
           onChange={(e) => onSelectChange?.(id, e.target.checked)}
         />
@@ -306,19 +306,19 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
           onClick={handleMenuClick}
         >
           {/* 
-      TEMPORARY: Hide menu icon for albums and on post_creation / moderation pages.
-      This will be re-enabled once the necessary features (e.g., menu actions for albums) are implemented.
-    */}
+            TEMPORARY: Hide menu icon for albums and on post_creation / moderation pages.
+            This will be re-enabled once the necessary features (e.g., menu actions for albums) are implemented.
+          */}
           <FontAwesomeIcon
             icon={faEllipsisH}
-            className="text_over_image_tile"
+            className={styles.text_over_image_tile}
           />
         </div>
       )}
     </div>
   );
 
-  // Render using TileContainer for post_creation mode.
+  // Render using TileContainer for post_creation mode
   if (page_type === "post_creation") {
     return (
       <TileContainer
@@ -338,7 +338,7 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
     );
   }
 
-  // Normal mode: render container as a <div>.
+  // Normal mode: render container as a <div>
   return (
     <div className={styles.item_container}>
       {wrapInLink ? (

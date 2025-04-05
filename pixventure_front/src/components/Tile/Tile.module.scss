@@ -58,7 +58,7 @@
 }
 
 /* The big check in the bottom-left corner */
-:global(.pick-item-checkbox[type="checkbox"]) {
+.pick-item-checkbox[type="checkbox"] {
   -webkit-appearance: none;
   appearance: none;
   width: 40px;
@@ -76,11 +76,11 @@
 }
 
 /* If not checked, just a hollow square. If checked, fill with color + checkmark */
-:global(.pick-item-checkbox[type="checkbox"]:checked) {
+.pick-item-checkbox[type="checkbox"]:checked {
   background: var(--main_dominant_color);
   border-color: var(--main_dominant_color);
 }
-:global(.pick-item-checkbox[type="checkbox"]:checked:after) {
+.pick-item-checkbox[type="checkbox"]:checked:after {
   content: "\2713";
   color: var(--secondary_menu_color, white);
   position: absolute;
@@ -91,7 +91,7 @@
 }
 
 /* If you want an outline or color change on label when checked */
-:global(.pick-item-checkbox[type="checkbox"]:checked + .term-check) {
+.pick-item-checkbox[type="checkbox"]:checked + .term-check {
   outline: 4px solid var(--main_dominant_color);
   color: var(--main_dominant_color);
 }
