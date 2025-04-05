@@ -93,10 +93,22 @@ WSGI_APPLICATION = 'pixventure_back.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # },
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'NAME': BASE_DIR / 'new_app.sqlite3',
+    },
+    'legacy': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'pixventure_legacy',
+        'USER': 'daniel',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    },
 }
 
 
