@@ -102,7 +102,7 @@ function computeTileLink(item: TileProps): TileLinkInfo {
   if (page_type === "random_items_list") {
     return { finalHref: `/media-redirect/${id}`, linkAction: "newTab" };
   }
-    if (page_type === "album" && entity_type === "media") {
+  if (page_type === "album" && entity_type === "media") {
     return { finalHref: `/media-redirect/${id}`, linkAction: "newTab" };
   }
   if (page_type === "moderation" || page_type === "album") {
@@ -297,15 +297,24 @@ const Tile: React.FC<{ item: TileProps }> = ({ item }) => {
       ) : (
         <div className="w-100"></div>
       )}
-      <div
-        className="flex-shrink-1"
-        onClick={handleMenuClick}
-      >
-        <FontAwesomeIcon
-          icon={faEllipsisH}
-          className="text_over_image_tile"
-        />
-      </div>
+      {!(
+        entity_type === "album" ||
+        ["post_creation", "moderation"].includes(page_type)
+      ) && (
+        <div
+          className="flex-shrink-1"
+          onClick={handleMenuClick}
+        >
+          {/* 
+      TEMPORARY: Hide menu icon for albums and on post_creation / moderation pages.
+      This will be re-enabled once the necessary features (e.g., menu actions for albums) are implemented.
+    */}
+          <FontAwesomeIcon
+            icon={faEllipsisH}
+            className="text_over_image_tile"
+          />
+        </div>
+      )}
     </div>
   );
 

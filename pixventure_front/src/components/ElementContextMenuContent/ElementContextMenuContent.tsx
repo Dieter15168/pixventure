@@ -55,7 +55,7 @@ const ElementContextMenuContent: React.FC<ElementContextMenuContentProps> = ({
               <FontAwesomeIcon icon={faPlus} className="me-2" />
               Save to Album
             </Button>
-            {postMeta?.can_edit && (
+            {/* {postMeta?.can_edit && (
               <>
                 <Button variant="outline-light" className="mb-2" onClick={onEdit}>
                   <FontAwesomeIcon icon={faEdit} className="me-2" />
@@ -66,7 +66,7 @@ const ElementContextMenuContent: React.FC<ElementContextMenuContentProps> = ({
                   Delete
                 </Button>
               </>
-            )}
+            )} */}
           </div>
         </Col>
         {/* Terms Column */}
